@@ -1,0 +1,13 @@
+# Thư mục môi trường ảo
+venv/
+/venv/
+*.venv/
+
+# Thư mục cache của Python
+__pycache__/
+*.pyc
+
+# Thư mục cấu hình của PyCharm
+.idea/
+
+.env/
