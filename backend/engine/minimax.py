@@ -2,7 +2,7 @@ import chess
 import time
 import random
 
-ENGINE_DEPTH = 4
+ENGINE_DEPTH = 3
 # Giá trị quân cờ theo tiêu chuẩn:
 MATE_SCORE = 1000000
 MAX_DEPTH_FOR_MATE = 500
@@ -167,6 +167,15 @@ def get_move_score(board, move):
     if board.gives_check(move):
         return 25   # Ưu tiên chiếu
     return 0
+
+
+def clear_transposition_table():
+    """
+    Xóa sạch Bảng băm (Transposition Table) để chuẩn bị cho ván cờ mới.
+    """
+    global TRANS_TABLE
+    TRANS_TABLE = {}
+    print("--- Transposition Table Cleared ---")
 
 # =====================================================================
 # THUẬT TOÁN ALPHA-BETA PRUNING
@@ -393,12 +402,18 @@ def quiescence_search(board, alpha, beta, is_maximizing_player):
 
     # Lọc ra chỉ các nước đi ồn ào (noisy moves)
     # Bao gồm bắt quân, chiếu Vua (check), và phong cấp
-    noisy_moves = [
+    noisy_moves_list = [
         move for move in board.legal_moves
         if board.is_capture(move) or board.gives_check(move) or move.promotion
     ]
 
-    for move in noisy_moves:
+    legal_moves = sorted(
+        noisy_moves_list,
+        key=lambda move: get_move_score(board, move),  # Dùng lại hàm chấm điểm
+        reverse=True
+    )
+
+    for move in legal_moves:
         board.push(move)
 
         # Gọi đệ quy cho tìm kiếm tĩnh

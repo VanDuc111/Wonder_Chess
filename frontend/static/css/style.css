@@ -707,7 +707,7 @@ body {
 #start-bot-game-btn {
     width: 100%;
     padding: var(--spacing-unit);
-    background-color: var(--color-primary); /* Màu xanh lá cây */
+    background-color: var(--color-primary);
     color: white;
     border: none;
     border-radius: var(--radius-default);
@@ -720,4 +720,8 @@ body {
 
 #start-bot-game-btn:hover {
     background-color: var(--color-primary-hover);
+}
+
+#gameOverModal .modal-content {
+    background-color: var(--color-background-start);
 }

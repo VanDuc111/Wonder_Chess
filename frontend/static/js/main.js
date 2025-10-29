@@ -14,6 +14,7 @@
     let timerInterval = null;
     const JS_MATE_SCORE_BASE = 1000000;
     const JS_MATE_DEPTH_ADJUSTMENT = 500;
+    let gameOverModalInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const welcomeScreen = document.getElementById('welcome-screen');
@@ -44,6 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Chatbot chào mừng
         const welcomeMessage = `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
         displayChatbotMessage(welcomeMessage);
+
+        fetch('/api/game/clear_cache', { method: 'POST' });
 
         // Cập nhật tên người dùng trong tiêu đề
         document.title = `WonderChess - Chào mừng ${nickname}`;
@@ -92,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedMode === 'analyze') {
                 setAnalyzeMode();
             }
-            // (Nút 'Chơi với Bot' đã được xử lý bằng Modal riêng)
             // =============================
         });
     });
@@ -183,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             //create new chessboard
             initChessboard(boardOrientation);
+            fetch('/api/game/clear_cache', { method: 'POST' });
 
             const boardContainer = document.querySelector('.chess-board-area');
 
@@ -229,66 +232,77 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateEvaluationBar(score, fen) {
         const evalBar = document.getElementById('eval-white-advantage');
         const evalScoreText = document.getElementById('evaluation-score');
-        let formattedScore;
+        let formattedScore = "0.00"; // Điểm mặc định
+        let percentAdvantage = 50;   // Thanh 50% mặc định
+
+        // 1. Tạo bản sao game cục bộ để kiểm tra FEN
         let localGame = null;
         if (fen) {
             localGame = new Chess(fen);
         } else {
-            localGame = game; // Dự phòng (fallback)
+            localGame = game; // Dùng game toàn cục nếu FEN không có
         }
 
-        // 1. XỬ LÝ ĐIỂM CHIẾU HẾT (MATE SCORE)
-        if (typeof score === 'string' && score.startsWith('#')) {
-
-            // Chuyển "#+1" thành "M1" (hoặc bất cứ thứ gì bạn muốn)
-            // Logic tính M_in_X của bạn (dòng 225) đã SAI
-            // Hãy tin vào điểm #+1 (Mate in 1) hoặc #+5 (Mate in 5) từ engine
-            formattedScore = score.replace("#+", "M+").replace("#-", "M-");
-
-            const percentAdvantage = (score.includes('+')) ? 100 : 0;
-            evalBar.style.height = `${percentAdvantage}%`;
-
-        }
-        // 2. XỬ LÝ ĐIỂM SỐ THÔNG THƯỜNG (PAWN SCORE)
-        else if (typeof score === 'number') {
-
-            // GIỚI HẠN HIỂN THỊ LÀ 10 TỐT (thay vì 1000)
-            const MAX_EVAL_DISPLAY_PAWNS = 10.0;
-
-            let cappedScore = Math.max(-MAX_EVAL_DISPLAY_PAWNS, Math.min(MAX_EVAL_DISPLAY_PAWNS, score));
-            const percentAdvantage = 50 + (cappedScore / (MAX_EVAL_DISPLAY_PAWNS * 2)) * 100;
-
-            evalBar.style.height = `${percentAdvantage}%`;
-
-            const displayScore = score;
-
-            if (displayScore > 0) {
-                formattedScore = `+${displayScore.toFixed(2)}`;
-            } else {
-                // Bao gồm cả 0.00 và số âm
-                formattedScore = `${displayScore.toFixed(2)}`;
-            }
-        }
-        // 3. XỬ LÝ CÁC TRƯỜNG HỢP LỖI KHÁC (NaN, v.v.)
-        else {
-            formattedScore = "0.00";
-            evalBar.style.height = '50%';
-        }
-
-        evalScoreText.textContent = formattedScore;
-
-        // 3. XỬ LÝ KHI GAME KẾT THÚC (TỶ SỐ)
+        // === LOGIC MỚI: KIỂM TRA GAME OVER TRƯỚC ===
         if (localGame.game_over()) {
             if (localGame.in_checkmate()) {
-                if (localGame.turn() === 'b') {
-                    evalScoreText.textContent = "1-0";
+                formattedScore = (localGame.turn() === 'b') ? "1-0" : "0-1";
+                percentAdvantage = (localGame.turn() === 'b') ? 100 : 0;
+            } else {
+                formattedScore = "1/2-1/2";
+                percentAdvantage = 50;
+            }
+            evalBar.style.height = `${percentAdvantage}%`;
+            evalScoreText.textContent = formattedScore;
+            return; // Kết thúc hàm
+        }
+        // ==========================================
+
+        // 2. XỬ LÝ ĐIỂM SỐ (NẾU GAME CHƯA KẾT THÚC)
+        if (typeof score === 'string' && score.startsWith('#')) {
+            // Xử lý điểm mate "#+1" từ engine (nếu có)
+            formattedScore = score.replace("#+", "M+").replace("#-", "M-");
+            percentAdvantage = (score.includes('+')) ? 100 : 0;
+
+        } else if (typeof score === 'number') {
+            // Xử lý điểm số Centipawn (ví dụ: 48 hoặc 999996)
+
+            // Đặt ngưỡng MATE (lấy từ hằng số global của bạn)
+            const MATE_THRESHOLD = JS_MATE_SCORE_BASE - JS_MATE_DEPTH_ADJUSTMENT;
+
+            // 2a. XỬ LÝ MATE-IN-X (Vấn đề 3)
+            if (Math.abs(score) > MATE_THRESHOLD) {
+                // Tính số nước đi (ví dụ: 1000000 - 999997 = 3 nước)
+                const movesToMate = JS_MATE_SCORE_BASE - Math.abs(score);
+
+                formattedScore = (score > 0) ? `M+${movesToMate}` : `M-${movesToMate}`;
+                percentAdvantage = (score > 0) ? 100 : 0;
+            }
+            // 2b. XỬ LÝ ĐIỂM TỐT THÔNG THƯỜNG
+            else {
+                const pawnScore = score / 100.0; // Chuyển 48 thành 0.48
+                const MAX_EVAL_DISPLAY_PAWNS = 10.0;
+
+                let cappedScore = Math.max(-MAX_EVAL_DISPLAY_PAWNS, Math.min(MAX_EVAL_DISPLAY_PAWNS, pawnScore));
+                percentAdvantage = 50 + (cappedScore / (MAX_EVAL_DISPLAY_PAWNS * 2)) * 100;
+
+                const displayScore = pawnScore;
+                if (displayScore > 0) {
+                    formattedScore = `+${displayScore.toFixed(2)}`;
                 } else {
-                    evalScoreText.textContent = "0-1";
+                    formattedScore = `${displayScore.toFixed(2)}`;
                 }
-            } else if (localGame.in_draw()) {
-                evalScoreText.textContent = "1/2-1/2";
             }
         }
+        // 3. XỬ LÝ LỖI (NaN, v.v.)
+        else {
+            formattedScore = "0.00";
+            percentAdvantage = 50;
+        }
+
+        // Cập nhật UI
+        evalBar.style.height = `${percentAdvantage}%`;
+        evalScoreText.textContent = formattedScore;
     }
 
 
@@ -439,23 +453,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleTurnEnd(newFen) {
         // 1. Kiểm tra kết thúc Game
         updateUI(newFen);
-        if (game.game_over()) {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                updateEvaluationBar(0);
-            }
-            return;
-        }
 
         // 2. Chuyển đổi Đồng hồ (Chỉ khi có timer)
         if (timerInterval) {
             startTimer(game.turn());
         }
 
-        // 3. TÍNH ĐIỂM SỐ MỚI (Chỉ tính 1 lần sau mỗi lượt)
-
-        // 4. Kiểm tra và gọi Bot
+        // 3. Kiểm tra và gọi Bot
         if (playerColor !== null && game.turn() !== playerColor) {
             // Bot sẽ tự gọi handleTurnEnd() sau khi nó đi xong
             await handleBotTurn();
@@ -465,18 +469,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 moveHistory[currentFenIndex].score = scoreText;
             }
         }
+
+        // 4. KIỂM TRA GAME OVER
+        if (game.game_over()) {
+            updateEvaluationBar(0, newFen);
+
+            let title = "Ván đấu kết thúc";
+            let body = "Ván cờ hòa!";
+
+            if (game.in_checkmate()) {
+                const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
+                body = `${winner} thắng cuộc.`;
+            }
+
+            showGameOverModal(title, body);
+            // ==========================================
+
+            return;
+        }
+
+        // 5. Khởi động lại đồng hồ cho lượt tiếp theo (nếu game chưa kết thúc)
+        if (timerInterval) {
+            startTimer(game.turn());
+        }
     }
 
-    function handleScoreUpdate(scoreText, fen) { // Thêm fen
+    function handleScoreUpdate(scoreText, fen) {
         if (typeof scoreText === 'string' && scoreText.startsWith('#')) {
-            updateEvaluationBar(scoreText, fen); // Truyền fen
+            updateEvaluationBar(scoreText, fen);
         } else {
             const evaluationValueCentipawns = parseFloat(scoreText);
             if (!isNaN(evaluationValueCentipawns)) {
-                const evaluationValuePawns = evaluationValueCentipawns / 100.0;
-                updateEvaluationBar(evaluationValuePawns, fen); // Truyền fen
+                const evaluationValuePawns = evaluationValueCentipawns;
+                updateEvaluationBar(evaluationValuePawns, fen);
             } else {
-                updateEvaluationBar(0.0, fen); // Truyền fen
+                updateEvaluationBar(0.0, fen);
             }
         }
     }
@@ -718,6 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Lấy hướng bàn cờ trước khi nó bị phá hủy bởi initChessboard
         const currentOrientation = board.orientation();
+        fetch('/api/game/clear_cache', { method: 'POST' });
 
         // 2. TÁI KHỞI TẠO BÀN CỜ VÀ LỊCH SỬ MỚI
         initChessboard(currentOrientation);
@@ -1072,6 +1100,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Áp dụng cho lựa chọn thời gian
     setupModalButtonSelection('.setting-group button[data-time]');
 
+    // Hàm xử lý modal game over
+    const gameOverModalEl = document.getElementById('gameOverModal');
+    if (gameOverModalEl) {
+        gameOverModalInstance = new bootstrap.Modal(gameOverModalEl, {
+            keyboard: false,
+            backdrop: 'static'
+        });
+    }
+
+    function showGameOverModal(title, body) {
+        const titleEl = document.getElementById('gameOverModalTitle');
+        const bodyEl = document.getElementById('gameOverModalBody');
+
+        if (titleEl) titleEl.textContent = title;
+        if (bodyEl) bodyEl.textContent = body;
+
+        if (gameOverModalInstance) {
+            gameOverModalInstance.show();
+        }
+    }
 
 
 });

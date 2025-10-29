@@ -6,7 +6,8 @@ from backend.engine.minimax import (
     find_best_move,
     evaluate_board,
     ENGINE_DEPTH,
-    MATE_SCORE
+    MATE_SCORE,
+    clear_transposition_table
 )
 
 game_bp = Blueprint('game', __name__)
@@ -160,3 +161,14 @@ def get_engine_score():
             'error': f'Lỗi Engine Server: {e}',
             'engine_results': engine_results  # Trả về mặc định để frontend không bị lỗi
         }), 500
+
+@game_bp.route('/clear_cache', methods=['POST'])
+def api_clear_cache():
+    """
+    Endpoint này được gọi từ frontend khi một ván cờ MỚI bắt đầu.
+    """
+    try:
+        clear_transposition_table()
+        return jsonify({'success': True, 'message': 'Engine cache cleared.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
