@@ -111,7 +111,7 @@ def evaluate_board(board):
         else:
             return MATE_SCORE  # Đen bị chiếu hết (điểm cực cao)
 
-    if board.is_stalemate() or board.is_insufficient_material():
+    if board.is_stalemate() or board.is_insufficient_material() or board.is_repetition() or board.is_fifty_moves():
         return 0  # Hòa
 
     score = 0
@@ -187,6 +187,9 @@ def alpha_beta(board, depth, alpha, beta, is_maximizing_player):
     alpha: Điểm số tốt nhất mà Maximizer (Bot) tìm thấy trên đường đi.
     beta: Điểm số tốt nhất mà Minimizer (Đối thủ) tìm thấy trên đường đi.
     """
+
+    if board.is_repetition() or board.is_fifty_moves():
+        return 0  # Trả về 0 (Hòa)
     # === TRA CỨU BẢNG BĂM ===
     fen = board.fen()
     if fen in TRANS_TABLE:
@@ -402,10 +405,14 @@ def quiescence_search(board, alpha, beta, is_maximizing_player):
 
     # Lọc ra chỉ các nước đi ồn ào (noisy moves)
     # Bao gồm bắt quân, chiếu Vua (check), và phong cấp
-    noisy_moves_list = [
-        move for move in board.legal_moves
-        if board.is_capture(move) or board.gives_check(move) or move.promotion
-    ]
+    if board.is_checkmate():
+        noisy_moves_list = list(board.legal_moves)
+    else:
+
+        noisy_moves_list = [
+            move for move in board.legal_moves
+            if board.is_capture(move) or board.gives_check(move) or move.promotion
+        ]
 
     legal_moves = sorted(
         noisy_moves_list,

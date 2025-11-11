@@ -15,6 +15,9 @@
     const JS_MATE_SCORE_BASE = 1000000;
     const JS_MATE_DEPTH_ADJUSTMENT = 500;
     let gameOverModalInstance = null;
+    let loadDataModalInstance = null;
+    let currentWebcamStream = null; // Biến để lưu luồng camera
+    const videoElement = document.getElementById('webcam-feed');
 
 document.addEventListener('DOMContentLoaded', () => {
     const welcomeScreen = document.getElementById('welcome-screen');
@@ -25,7 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const userDisplaySpan = document.getElementById('user-display');
     const loginButton = document.getElementById('login-button');
-
+    const loadDataModalEl = document.getElementById('loadDataModal');
+    if (loadDataModalEl) {
+        loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
+        loadDataModalEl.addEventListener('hidden.bs.modal', stopWebcam);
+    }
     // Hàm chào mừng và chuyển hướng
     function startApp(nickname) {
         // 1. Lưu Nickname
@@ -450,6 +457,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
+    function handleScoreUpdate(scoreText, fen) {
+        if (typeof scoreText === 'string' && scoreText.startsWith('#')) {
+            updateEvaluationBar(scoreText, fen);
+        } else {
+            const evaluationValueCentipawns = parseFloat(scoreText);
+            if (!isNaN(evaluationValueCentipawns)) {
+                const evaluationValuePawns = evaluationValueCentipawns;
+                updateEvaluationBar(evaluationValuePawns, fen);
+            } else {
+                updateEvaluationBar(0.0, fen);
+            }
+        }
+    }
+
     async function handleTurnEnd(newFen) {
         // 1. Kiểm tra kết thúc Game
         updateUI(newFen);
@@ -483,6 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             showGameOverModal(title, body);
+            isPlayerTurn = true;
             // ==========================================
 
             return;
@@ -491,20 +514,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 5. Khởi động lại đồng hồ cho lượt tiếp theo (nếu game chưa kết thúc)
         if (timerInterval) {
             startTimer(game.turn());
-        }
-    }
-
-    function handleScoreUpdate(scoreText, fen) {
-        if (typeof scoreText === 'string' && scoreText.startsWith('#')) {
-            updateEvaluationBar(scoreText, fen);
-        } else {
-            const evaluationValueCentipawns = parseFloat(scoreText);
-            if (!isNaN(evaluationValueCentipawns)) {
-                const evaluationValuePawns = evaluationValueCentipawns;
-                updateEvaluationBar(evaluationValuePawns, fen);
-            } else {
-                updateEvaluationBar(0.0, fen);
-            }
         }
     }
 
@@ -983,9 +992,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ====== LOAD DATA ======
 
-    setupModalBehavior('loadDataModal', '#load-pgn-btn');
+    // setupModalBehavior('loadDataModal', '#load-pgn-btn');
 
-    document.getElementById('confirm-load-btn').addEventListener('click', () => {
+    document.getElementById('confirm-load-btn').addEventListener('click', async () => {
 
         let success = false;
         let fenToLoad = null;
@@ -1016,20 +1025,94 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Tạm thời bỏ qua image-pane cho đến khi có Backend Vision API
+        else if (activeTabId === 'image-pane') {
+            const imageInput = document.getElementById('image-upload-input');
+            const statusEl = document.getElementById('image-upload-status');
+
+            if (imageInput.files.length === 0) {
+                statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
+                return;
+            }
+
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            statusEl.textContent = 'Đang tải lên và phân tích...';
+
+            // Gọi API Backend
+            const response = await fetch('/api/image/analyze_image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                success = true;
+                fenToLoad = data.fen;
+                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
+            } else {
+                statusEl.textContent = `Lỗi: ${data.error}`;
+                return; // Dừng lại nếu lỗi
+            }
+        }
+        else if (activeTabId === 'live-scan-pane') {
+            const statusEl = document.getElementById('scan-status');
+            const videoElement = document.getElementById('webcam-feed');
+
+            if (!currentWebcamStream) {
+                statusEl.textContent = 'Lỗi: Camera chưa được bật.';
+                return;
+            }
+
+            statusEl.textContent = 'Đang chụp và phân tích...';
+
+            // 1. Tạo một canvas ẩn để "chụp ảnh"
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            // 2. Chuyển ảnh từ canvas sang file (Blob)
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+
+            // 3. Gửi file (Blob) đến API (giống hệt code Tải ảnh)
+            const formData = new FormData();
+            formData.append('file', blob, 'webcam-scan.jpg');
+
+            const response = await fetch('/api/image/analyze_image', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                success = true;
+                fenToLoad = data.fen;
+                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
+                stopWebcam(); // Tắt camera sau khi thành công
+            } else {
+                statusEl.textContent = `Lỗi: ${data.error}`;
+                return;
+            }
+        }
 
         // 3. Xử lý kết quả và cập nhật giao diện
         if (success && fenToLoad) {
             // Cập nhật bàn cờ với vị trí mới
             board.position(fenToLoad);
-
             updateUI(fenToLoad);
-
+            if (loadDataModalInstance) {
+                loadDataModalInstance.hide();
+            }
 
         } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
             alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ. Vui lòng kiểm tra lại.");
         }
     });
+
 
     /**
      * Thiết lập hành vi hiển thị và đóng (bao gồm cả click ra ngoài) cho Modal tùy chỉnh (không dùng Bootstrap JS).
@@ -1120,6 +1203,56 @@ document.addEventListener('DOMContentLoaded', () => {
             gameOverModalInstance.show();
         }
     }
+
+    /**
+     * Bật camera của người dùng và hiển thị lên thẻ <video>
+     */
+    async function startWebcam() {
+        // Dừng stream cũ (nếu có)
+        if (currentWebcamStream) {
+            stopWebcam();
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'environment' // Ưu tiên camera sau (trên điện thoại)
+                }
+            });
+
+            const videoElement = document.getElementById('webcam-feed');
+            videoElement.srcObject = stream;
+            currentWebcamStream = stream;
+
+        } catch (err) {
+            console.error("Lỗi bật webcam:", err);
+            document.getElementById('scan-status').textContent = 'Lỗi: Không thể truy cập camera.';
+        }
+    }
+
+    /**
+     * Tắt camera
+     */
+    function stopWebcam() {
+        if (currentWebcamStream) {
+            currentWebcamStream.getTracks().forEach(track => {
+                track.stop();
+            });
+            currentWebcamStream = null;
+        }
+    }
+
+    const liveScanTab = document.getElementById('live-scan-tab');
+    if (liveScanTab) {
+        liveScanTab.addEventListener('shown.bs.tab', function () {
+            startWebcam(); // Bật camera khi tab được chọn
+        });
+    }
+
+    // Tắt camera khi người dùng chọn các tab khác
+    document.getElementById('pgn-tab').addEventListener('shown.bs.tab', stopWebcam);
+    document.getElementById('fen-tab').addEventListener('shown.bs.tab', stopWebcam);
+    document.getElementById('image-tab').addEventListener('shown.bs.tab', stopWebcam);
 
 
 });
