@@ -144,7 +144,6 @@ body {
 }
 
 .main-content-row {
-    /* Chiều cao của nội dung chính = 100vh - Chiều cao của Navbar và padding */
     height: calc(100vh - 100px);
     overflow-y: hidden;
 }
@@ -180,16 +179,55 @@ body {
     font-weight: bold;
 }
 
+#user-display {
+    /* Làm chữ "đầy đặn" hơn */
+    font-weight: 700;
+    font-size: 1.1rem; /* Hơi to hơn một chút */
+
+    /* Hiệu ứng Gradient (Lấy cảm hứng từ Gemini) */
+    background-image: linear-gradient(90deg,
+        #4285F4, /* Google Blue */
+        #9B59B6, /* Purple */
+        #F39C12, /* Orange */
+        #34A853  /* Google Green */
+    );
+
+    /* Cắt background theo hình dạng của chữ */
+    -webkit-background-clip: text; /* Cho Safari/Chrome */
+    background-clip: text;
+
+    /* Làm chữ trong suốt để lộ gradient */
+    color: transparent;
+
+    /* Đảm bảo gradient bao phủ toàn bộ chữ */
+    background-size: 100%;
+}
+
+/* 2. Tách biệt lời chào trên Mobile (khi menu thu gọn) */
+/* 991.98px là breakpoint 'lg' của Bootstrap (khi navbar chuyển sang hamburger) */
+@media (max-width: 991.98px) {
+    #navbar-user-section {
+        /* Đẩy "Chào, Đức!" ra giữa (thay vì bên trái) */
+        justify-content: center !important;
+
+        /* Thêm khoảng cách với các link menu ở trên */
+        margin-top: 1rem;
+
+        /* Thêm một đường kẻ mờ phân cách */
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
+
 /*-----CHATBOT------*/
 /* ========================================= */
 
 .chatbot-container {
     background: var(--color-element-background);
-    /* Bỏ min-height 80vh, dùng height: 100% của cột cha */
     height: 100%;
-    display: flex; /* Dùng Flexbox để cố định footer (form) ở dưới */
+    display: flex;
     flex-direction: column;
-    padding: 1rem; /* Padding cho container */
+    padding: 1rem;
 }
 
 
@@ -198,8 +236,8 @@ body {
     overflow-y: auto !important;
     overflow-x: hidden !important;
     margin-bottom: 10px;
-    scrollbar-width: thin; /* Firefox */
-    scrollbar-color: #555 #1e1e3f; /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #555 #1e1e3f;
 }
 #chatbot-messages::-webkit-scrollbar {
     width: 6px;
@@ -218,6 +256,46 @@ body {
     margin-bottom: 15px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     text-align: left;
+}
+
+@media (max-width: 767.98px) {
+
+    body,
+    .main-content-row {
+        height: auto;
+        overflow: visible;
+    }
+
+    .chatbot-container {
+        height: 500px;
+        margin-top: 20px;
+    }
+    .button-group-container {
+        display: flex;
+        flex-wrap: nowrap; /* Ép các nút về 1 hàng */
+        gap: 4px; /* Khoảng cách nhỏ giữa các nút */
+    }
+    .button-group-container .btn {
+        flex-grow: 1; /* Chia đều không gian */
+        flex-basis: 0; /* Co giãn linh hoạt */
+        padding: .35rem .25rem; /* Giảm padding cho vừa */
+        font-size: 0.8rem; /* Giảm cỡ chữ */
+        white-space: nowrap; /* Ngăn chữ "Load" rớt hàng */
+    }
+
+    /* 3. Sửa lỗi Timer (Vấn đề 1, 2) */
+    /* Tính toán vị trí mới cho timer:
+       PGN(45px) + margin PGN(16px) + Nút (khoảng 35px) + margin Nút(10px) = ~106px
+    */
+    .timer-bottom-right {
+        bottom: 106px;
+        right: 15px;
+    }
+
+    .chess-board-area.rotated-board .timer-top-right {
+        bottom: 106px; /* Đồng bộ khi xoay bàn cờ */
+        top: auto;
+    }
 }
 
 .user-message {
@@ -314,7 +392,7 @@ body {
     margin: 0 auto;
     box-sizing: border-box;
     padding: 16px;
-    min-width: 500px;
+    /*min-width: 500px;*/
 }
 
 .load-area {
@@ -323,14 +401,29 @@ body {
 }
 
 #chessboard-main-container {
-    max-width: 100%;
+    flex-grow: 1;
+    width: 100%;
+    min-width: 0;
 }
 
 #myBoard {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
+    width: 100% !important; /* Ghi đè mọi inline style do JS đặt */
+    height: auto !important; /* Cho phép chiều cao tự động co theo chiều rộng */
+    box-sizing: border-box;
     aspect-ratio: 1 / 1;
+    touch-action: none;
+}
+
+#myBoard > div {
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* 4. Đảm bảo các ô cờ (img) cũng co giãn */
+/* (Thư viện chessboard.js phiên bản cũ có thể cần cái này) */
+#myBoard img {
+    max-width: 100%;
+    height: auto;
 }
 
 .timer-box {
@@ -457,9 +550,29 @@ body {
 }
 /*=== CÁC NÚT ĐIỀU HƯỚNG ===*/
 .button-group-container {
-    max-width: 500px;
-    width: 100%;
-    margin-top: var(--spacing-unit);
+    display: flex; /* Dùng Flexbox */
+    flex-wrap: wrap; /* Cho phép rớt hàng */
+    justify-content: center; /* Căn giữa các nút */
+    gap: 5px; /* Thêm khoảng cách nhỏ giữa các nút */
+}
+.button-group-container .btn {
+     flex-grow: 1; /* Cho phép các nút lớn lên 1 chút */
+     flex-basis: 100px; /* Chiều rộng cơ bản (tùy chỉnh) */
+}
+
+/* 2. Sửa lỗi vị trí Timer trên mobile */
+/* Áp dụng khi màn hình nhỏ hơn 576px (breakpoint 'sm' của Bootstrap) */
+@media (max-width: 575.98px) {
+    .timer-bottom-right {
+        /* Đẩy timer lên trên các nút (PGN 45px + Nút 40px = 85px) */
+        bottom: 95px;
+    }
+
+    .chess-board-area.rotated-board .timer-top-right {
+        /* Vị trí tương tự khi xoay */
+        bottom: 95px;
+        top: auto;
+    }
 }
 
 /* ========================================= */
@@ -724,4 +837,46 @@ body {
 
 #gameOverModal .modal-content {
     background-color: var(--color-background-start);
+}
+
+.typing-indicator {
+    display: flex;
+    padding: 10px;
+}
+
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    background-color: #9E9E9E; /* Màu xám nhạt */
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 2px;
+
+    /* Tên animation */
+    animation-name: bounce;
+    /* Thời gian chạy */
+    animation-duration: 1.2s;
+    /* Lặp lại vô hạn */
+    animation-iteration-count: infinite;
+    /* Chạy mượt */
+    animation-timing-function: ease-in-out;
+}
+
+/* Thêm delay cho các chấm tiếp theo */
+.typing-indicator span:nth-of-type(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-of-type(3) {
+    animation-delay: 0.4s;
+}
+
+/* Định nghĩa animation "bounce" */
+@keyframes bounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-5px);
+    }
 }

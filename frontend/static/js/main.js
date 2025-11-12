@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatbotMessages = document.getElementById('chatbot-messages');
 
     const userDisplaySpan = document.getElementById('user-display');
-    const loginButton = document.getElementById('login-button');
     const loadDataModalEl = document.getElementById('loadDataModal');
     if (loadDataModalEl) {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
@@ -46,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userDisplaySpan) {
             userDisplaySpan.textContent = `Chào, ${nickname}!`;
             userDisplaySpan.classList.remove('d-none');
-            loginButton.classList.add('d-none');
         }
 
         // 3. Chatbot chào mừng
@@ -68,11 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nickname) {
             startApp(nickname);
         }
-        if (loginButton) {
-        loginButton.addEventListener('click', () => {
-            alert('Chức năng Đăng nhập đang được phát triển (Sẽ tích hợp Google OAuth tại đây).');
-        });
-    }
     });
 
     const storedNickname = localStorage.getItem('userNickname');
@@ -799,8 +792,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add(sender === 'user' ? 'user-message' : 'alice-message');
         // Gán một ID tạm thời
-        messageDiv.id = `msg-${Date.now()}`;
-        messageDiv.textContent = ''; // Bắt đầu bằng nội dung rỗng
+        if (sender === 'Alice') {
+            // Chèn hiệu ứng "đang gõ" cho Alice
+            messageDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+        } else {
+            // Người dùng thì không cần
+            messageDiv.textContent = '';
+        }
+
         chatbox.appendChild(messageDiv);
         chatbox.scrollTop = chatbox.scrollHeight;
         return messageDiv;
@@ -841,6 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const STREAM_DELAY_MS = 5;
             let fullResponseText = "";
+            let isFirstChunk = true;
 
             while (!done) {
                 const { value, done: readerDone } = await reader.read();
@@ -850,6 +856,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const chunk = decoder.decode(value, { stream: true });
 
                 for (const char of chunk) {
+                    if (isFirstChunk) {
+                        // Nếu đây là chữ cái đầu tiên, XÓA hiệu ứng 3 chấm
+                        aliceMessageElement.innerHTML = '';
+                        isFirstChunk = false; // Đánh dấu là đã xử lý
+                    }
                     aliceMessageElement.textContent += char;
                     fullResponseText += char;
 
