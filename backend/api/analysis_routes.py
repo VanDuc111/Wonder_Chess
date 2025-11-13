@@ -9,36 +9,37 @@ def chat_analysis():
     data = request.get_json()
     user_question = data.get('user_question')
     fen = data.get('fen')
+    pgn = data.get('pgn')
+    last_move_san = data.get('last_move_san', 'N/A')
 
     if not fen or not user_question:
         return jsonify({'success': False, 'error': 'Thiếu FEN hoặc câu hỏi người dùng.'}), 400
-    engine_results = {'search_score' 'best_move': 'N/A', 'pv': 'Engine Failed'}
+    engine_results = {
+        'search_score': '0',
+        'best_move': 'N/A',
+        'pv': 'Engine Failed'
+    }
 
     try:
         engine_results = find_best_move(fen, depth=ENGINE_DEPTH)
     except Exception as e:
-        print(f"Lỗi xử lý Engine: {e}");
+        print(f"Lỗi xử lý Engine: {e}")
         pass
 
         # === PHẦN SỬA LỖI ĐỊNH DẠNG ĐIỂM SỐ ===
-    raw_score = engine_results['search_score']
+    raw_score = engine_results.get('search_score', '0')
     formatted_score = 'N/A'  # Giá trị mặc định
 
     try:
-        # 1. Thử chuyển đổi điểm số (ví dụ: '238') sang số nguyên
         score_cp = int(raw_score)
 
-        # 2. Chia cho 100 để ra điểm Tốt (ví dụ: 2.38)
         score_pawn = score_cp / 100.0
 
-        # 3. Định dạng nó thành chuỗi "%.2f" VÀ thêm dấu '+' nếu dương
         formatted_score = f"{score_pawn:+.2f}"
 
     except ValueError:
-        # 4. Nếu không phải là số (ví dụ: '#+1', '#-1', '?')
-        # Chỉ cần giữ nguyên giá trị gốc
         if raw_score.startswith('#'):
-            formatted_score = f"Mate ({raw_score})"  # Hiển thị rõ là "Mate"
+            formatted_score = f"Mate ({raw_score})"
         else:
             formatted_score = raw_score
 
@@ -51,9 +52,11 @@ def chat_analysis():
 
     **Ngữ cảnh (Context) cho bạn:**
     Đây là dữ liệu phân tích của bàn cờ MÀ NGƯỜI DÙNG ĐANG XEM.
-    - Vị trí (FEN): {fen}
+    - Lịch sử PGN ván cờ: {pgn}
+    - Nước đi VỪA MỚI XẢY RA (dẫn đến FEN hiện tại): {last_move_san}
+    - Vị trí (FEN) (Sau nước đi đó): {fen}
     - Đánh giá thế cờ (Score): {formatted_score}
-    - Nước đi tốt nhất (Best Move): {engine_results['best_move']}
+    - Nước đi tốt nhất tiếp theo (Best Move): {engine_results['best_move']}
     - Chuỗi nước đi chính (PV): {engine_results['pv']}
 
     ---
@@ -66,7 +69,13 @@ def chat_analysis():
     , hay Nước đi tốt nhất (vì chúng không liên quan).
     * **Nếu câu hỏi là về PHÂN TÍCH BÀN CỜ** (ví dụ: "Nước nào tốt nhất cho tôi?", "Ai đang thắng?", "Nước đi của tôi có tốt không?")
     , thì lúc đó bạn MỚI được sử dụng "Dữ liệu Phân tích Engine" ở trên để giải thích.
-
+    * **TRƯỜNG HỢP ĐẶC BIỆT: Nếu hỏi về "điểm số" (ví dụ: "điểm số hiện tại?", "sao lại là +0.16?", "giải thích điểm"):**
+      Người dùng đã thấy con số {formatted_score}. **ĐỪNG** chỉ lặp lại nó hoặc giải thích "0.16 = 0.16 Tốt".
+      Thay vào đó, hãy:
+      1. Nhìn vào "Nước đi VỪA MỚI XẢY RA ({last_move_san})".
+      2. Giải thích **mục đích** của nước đi đó. (ví dụ: "Nước {last_move_san} vừa rồi là một nước đi phát triển, nhằm kiểm soát trung tâm...")
+      3. Giải thích **tại sao** điểm số là {formatted_score}. (ví dụ: "...và Engine đánh giá đây là một nước đi tốt, giúp củng cố lợi thế.")
+      4. Đề cập đến **"Nước đi TỐT NHẤT tiếp theo ({engine_results['best_move']})"** như một cách để đối phó hoặc phát huy lợi thế.
     **Ưu tiên 2: Giọng điệu.**
     Luôn thân thiện, chuyên nghiệp và khích lệ. Sử dụng **bold** (dấu **) để nhấn mạnh các thuật ngữ quan trọng.
 

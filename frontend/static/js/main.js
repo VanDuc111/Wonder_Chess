@@ -4,7 +4,6 @@
     let moveHistory = [];
     let currentFenIndex = 0;
     const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let pendingPromotion = null;
     let playerColor = null;
     let isPlayerTurn = true;
     let selectedBotColor = 'w';
@@ -12,6 +11,7 @@
     let whiteTime = 0;
     let blackTime = 0;
     let timerInterval = null;
+    let isTimedGame = false;
     const JS_MATE_SCORE_BASE = 1000000;
     const JS_MATE_DEPTH_ADJUSTMENT = 500;
     let gameOverModalInstance = null;
@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fetch('/api/game/clear_cache', { method: 'POST' });
 
-        // Cập nhật tên người dùng trong tiêu đề
         document.title = `WonderChess - Chào mừng ${nickname}`;
 
         initChessboard();
@@ -150,7 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (defaultTimeBtn) {
         defaultTimeBtn.classList.add('selected');
     }
-
+    const defaultColorBtn = document.querySelector(`.color-select[data-color="${selectedBotColor}"]`);
+    if (defaultColorBtn) {
+        defaultColorBtn.classList.add('selected');
+    }
     // 3. LOGIC BẮT ĐẦU GAME BOT (Nút "Bắt đầu" trong Modal)
     const startBotGameBtn = document.getElementById('start-bot-game-btn');
     if (startBotGameBtn) {
@@ -451,111 +453,231 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    /**
+     * Tiền xử lý (pre-processes) điểm số thô từ engine trước khi gửi đến thanh điểm.
+     * Hàm này đóng vai trò "điều phối" (dispatcher):
+     * - Nếu là chuỗi Mate ("#+1"), nó sẽ gửi thẳng chuỗi đó.
+     * - Nếu là chuỗi số ("98"), nó chuyển sang số (98) và gửi đi.
+     * - Nếu lỗi, nó gửi 0.0.
+     *
+     * @param {string} scoreText Điểm số thô dạng chuỗi (centipawn hoặc mate) nhận từ engine.
+     * @param {string} fen FEN của thế cờ, dùng để truyền xuống updateEvaluationBar.
+     */
     function handleScoreUpdate(scoreText, fen) {
         if (typeof scoreText === 'string' && scoreText.startsWith('#')) {
             updateEvaluationBar(scoreText, fen);
         } else {
-            const evaluationValueCentipawns = parseFloat(scoreText);
-            if (!isNaN(evaluationValueCentipawns)) {
-                const evaluationValuePawns = evaluationValueCentipawns;
-                updateEvaluationBar(evaluationValuePawns, fen);
+            const scoreInCentipawns = parseFloat(scoreText);
+
+            if (!isNaN(scoreInCentipawns)) {
+                updateEvaluationBar(scoreInCentipawns, fen);
             } else {
                 updateEvaluationBar(0.0, fen);
             }
         }
     }
 
+
     async function handleTurnEnd(newFen) {
-        // 1. Kiểm tra kết thúc Game
         updateUI(newFen);
 
-        // 2. Chuyển đổi Đồng hồ (Chỉ khi có timer)
-        if (timerInterval) {
-            startTimer(game.turn());
+        // 1. Dừng đồng hồ của Người chơi
+        if (isTimedGame) {
+            clearInterval(timerInterval);
         }
 
-        // 3. Kiểm tra và gọi Bot
-        if (playerColor !== null && game.turn() !== playerColor) {
-            // Bot sẽ tự gọi handleTurnEnd() sau khi nó đi xong
-            await handleBotTurn();
-        } else {
-            const scoreText = await fetchDeepEvaluation(newFen);
-            if (scoreText && moveHistory[currentFenIndex]) {
-                moveHistory[currentFenIndex].score = scoreText;
-            }
-        }
-
-        // 4. KIỂM TRA GAME OVER
+        // 2. KIỂM TRA GAME OVER (Do Người chơi gây ra)
         if (game.game_over()) {
+            if (isTimedGame) clearInterval(timerInterval);
             updateEvaluationBar(0, newFen);
 
             let title = "Ván đấu kết thúc";
             let body = "Ván cờ hòa!";
-
             if (game.in_checkmate()) {
                 const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-                body = `${winner} thắng cuộc.`;
+                body = `Chiếu hết! ${winner} thắng cuộc.`;
             }
 
-            showGameOverModal(title, body);
+            setTimeout(() => { showGameOverModal(title, body); }, 200);
             isPlayerTurn = true;
-            // ==========================================
-
             return;
         }
 
-        // 5. Khởi động lại đồng hồ cho lượt tiếp theo (nếu game chưa kết thúc)
-        if (timerInterval) {
-            startTimer(game.turn());
+        fetchDeepEvaluation(newFen).then(scoreText => {
+            if (scoreText && moveHistory[currentFenIndex]) {
+                moveHistory[currentFenIndex].score = scoreText;
+            }
+        });
+
+        // 4. Quyết định lượt đi tiếp theo
+        if (playerColor !== null) {
+        // 4a. Nếu là CHẾ ĐỘ ĐẤU VỚI BOT
+
+        if (game.turn() !== playerColor) {
+            // === ĐẾN LƯỢT BOT ===
+            if (isTimedGame) startTimer(game.turn()); // Bật đồng hồ cho Bot
+            await handleBotTurn(); // Gọi Bot xử lý
+        } else {
+            // === ĐẾN LƯỢT NGƯỜI CHƠI ===
+            if (isTimedGame) startTimer(game.turn());
+            isPlayerTurn = true; // Cho phép người chơi đi
         }
+
+    } else {
+        // 4b. Nếu là CHẾ ĐỘ PHÂN TÍCH (playerColor === null)
+        // Không làm gì về timer, không gọi Bot
+        isPlayerTurn = true; // Luôn cho phép người chơi đi
+    }
     }
 
-    // Hàm xử lý lượt đi của Bot
     async function handleBotTurn() {
+    isPlayerTurn = false; // Khóa bàn cờ
+    try {
+        const response = await fetch('/api/game/bot_move', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fen: game.fen(), time_limit: selectedBotTime})
+        });
 
-        isPlayerTurn = false;
-        try {
-            const response = await fetch('/api/game/bot_move', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fen: game.fen(), time_limit: selectedBotTime})
-            });
-            const data = await response.json();
+        const data = await response.json();
 
-             if (data.success) {
-                const botMoveUci = data.move_uci;
-                const newFen = data.fen;
-                const evalScoreText = data.evaluation;
+        // Dừng đồng hồ của Bot NGAY KHI có kết quả
+        if (isTimedGame) clearInterval(timerInterval);
 
-                // 1. Cập nhật Lịch sử FEN (QUAN TRỌNG)
-                if (currentFenIndex < moveHistory.length - 1) {
-                    moveHistory = moveHistory.slice(0, currentFenIndex + 1);
+         if (data.success) {
+            const botMoveUci = data.move_uci;
+            const newFen = data.fen;
+            const evalScoreText = data.evaluation;
+
+            // --- XỬ LÝ NƯỚC ĐI CỦA BOT ---
+            // (Cập nhật cache, game.move, board.position, updateUI, handleScoreUpdate...)
+            if (currentFenIndex < moveHistory.length - 1) {
+                moveHistory = moveHistory.slice(0, currentFenIndex + 1);
+            }
+            moveHistory.push({ fen: newFen, score: evalScoreText });
+            currentFenIndex = moveHistory.length - 1;
+
+            game.move(botMoveUci, { sloppy: true });
+            board.position(game.fen());
+
+            updateUI(newFen);
+            handleScoreUpdate(evalScoreText, newFen);
+            console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
+            // ---------------------------
+
+            if (game.game_over()) {
+                if (isTimedGame) clearInterval(timerInterval);
+                updateEvaluationBar(0, newFen);
+
+                // === GỌI HÀM PHỤ CỦA BẠN ===
+                let title = "Ván đấu kết thúc";
+                let body = "Ván cờ hòa!";
+                if (game.in_checkmate()) {
+                    const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
+                    body = `Chiếu hết! ${winner} thắng cuộc.`;
                 }
-                // Thêm đối tượng mới VỚI CẢ FEN VÀ ĐIỂM SỐ
-                moveHistory.push({ fen: newFen, score: evalScoreText });
-                currentFenIndex = moveHistory.length - 1;
-
-                // 2. Thực hiện nước đi trên đối tượng game và board
-                game.move(botMoveUci, { sloppy: true });
-                board.position(game.fen());
-
-                updateUI(newFen);
-                handleScoreUpdate(evalScoreText, newFen);
-                console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
-                if (game.game_over()) {
-                    if (timerInterval) clearInterval(timerInterval);
-                } else if (timerInterval) {
-                    startTimer(game.turn());
-                }
+                setTimeout(() => {
+                    showGameOverModal(title, body);
+                }, 200);
 
             } else {
-                 console.error('Bot Error:', data.error);
+                // Nếu game chưa kết thúc -> BẬT ĐỒNG HỒ CHO NGƯỜI CHƠI
+                if (isTimedGame) {
+                    startTimer(game.turn());
+                }
             }
-        } catch (error) {
-            console.error('Lỗi kết nối Bot:', error);
+
+        } else {
+             console.error('Bot Error:', data.error);
+             // Nếu lỗi, trả lại lượt cho người chơi
+             if (isTimedGame) startTimer(game.turn());
         }
-        isPlayerTurn = true;
+    } catch (error) {
+        console.error('Lỗi kết nối Bot:', error);
+        if (isTimedGame) startTimer(game.turn());
     }
+    isPlayerTurn = true; // Mở khóa bàn cờ cho người chơi
+}
+        // async function handleTurnEnd(newFen) {
+    //
+    //     updateUI(newFen);
+    //
+    //     if (timerInterval) {
+    //         startTimer(game.turn());
+    //     }
+    //
+    //     if (playerColor !== null && game.turn() !== playerColor) {
+    //         // Bot sẽ tự gọi handleTurnEnd() sau khi nó đi xong
+    //         await handleBotTurn();
+    //     } else {
+    //         const scoreText = await fetchDeepEvaluation(newFen);
+    //         if (scoreText && moveHistory[currentFenIndex]) {
+    //             moveHistory[currentFenIndex].score = scoreText;
+    //         }
+    //     }
+    //
+    //     // 4. KIỂM TRA GAME OVER
+    //     if (game.game_over()) {
+    //         updateEvaluationBar(0, newFen);
+    //
+    //         let title = "Ván đấu kết thúc";
+    //         let body = "Ván cờ hòa!";
+    //
+    //         if (game.in_checkmate()) {
+    //             const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
+    //             body = `${winner} thắng cuộc.`;
+    //         }
+    //
+    //         showGameOverModal(title, body);
+    //         isPlayerTurn = true;
+    //         return;
+    //     }
+    //
+    //     if (timerInterval) {
+    //         startTimer(game.turn());
+    //     }
+    // }
+
+    // Hàm xử lý lượt đi của Bot
+    // async function handleBotTurn() {
+    //
+    //     isPlayerTurn = false;
+    //     try {
+    //         const response = await fetch('/api/game/bot_move', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({ fen: game.fen(), time_limit: selectedBotTime})
+    //         });
+    //         const data = await response.json();
+    //
+    //          if (data.success) {
+    //             const botMoveUci = data.move_uci;
+    //             const newFen = data.fen;
+    //             const evalScoreText = data.evaluation;
+    //
+    //             // 1. Cập nhật Lịch sử FEN (QUAN TRỌNG)
+    //             if (currentFenIndex < moveHistory.length - 1) {
+    //                 moveHistory = moveHistory.slice(0, currentFenIndex + 1);
+    //             }
+    //             moveHistory.push({ fen: newFen, score: evalScoreText });
+    //             currentFenIndex = moveHistory.length - 1;
+    //
+    //             // 2. Thực hiện nước đi
+    //             game.move(botMoveUci, { sloppy: true });
+    //             board.position(game.fen());
+    //
+    //             updateUI(newFen);
+    //             handleScoreUpdate(evalScoreText, newFen);
+    //             console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
+    //
+    //         } else {
+    //              console.error('Bot Error:', data.error);
+    //         }
+    //     } catch (error) {
+    //         console.error('Lỗi kết nối Bot:', error);
+    //     }
+    //     isPlayerTurn = true;
+    // }
 
     function onDragStart(source, piece, position, orientation) {
         // 1. CHẶN NẾU KHÔNG PHẢI LƯỢT CỦA NGƯỜI CHƠI
@@ -572,6 +694,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
+    /**
+     *  Hàm cập nhật lịch sử pgn
+     *
+     */
     function updatePgnHistory() {
         const historyList = document.getElementById('pgn-history-list');
         if (!historyList) {
@@ -579,10 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Lấy lịch sử nước đi từ đối tượng game (Chess.js)
-        const tempGame = new Chess();
-        tempGame.load_pgn(game.pgn());
-
-        const history = tempGame.history({ verbose: true });
+        const history = game.history({ verbose: true });
 
         let pgnHtml = '';
 
@@ -606,12 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         historyList.innerHTML = pgnHtml;
-        // $('.move-text').on('click', function() {
-        //     const index = parseInt($(this).data('index'));
-        //     loadFen(index); // Tải FEN tại chỉ mục đó
-        // });
 
-        // Tự động cuộn đến nước đi cuối cùng
         historyList.parentElement.scrollLeft = historyList.scrollWidth;
     }
 
@@ -824,7 +942,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Lấy FEN và lịch sử hiện tại
         const currentFen = game.fen();
         const pgnHistory = game.pgn();
-
+        const history = game.history({ verbose: true });
+        let lastMoveSan = 'N/A';
+        if (history.length > 0) {
+            lastMoveSan = history[history.length - 1]?.san;
+        }
         // 2. Gửi yêu cầu tới Backend (/api/chat_analysis)
         try {
             const response = await fetch('/api/analysis/chat_analysis', {
@@ -833,7 +955,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     user_question: message,
                     fen: currentFen,
-                    pgn: pgnHistory
+                    pgn: pgnHistory,
+                    last_move_san: lastMoveSan
                 })
             });
             if (!response.ok) {
@@ -917,6 +1040,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         whiteTime = 0;
         blackTime = 0;
+        isTimedGame = false;
 
         // Ẩn/Đưa về trạng thái mặc định trên giao diện
         const timerWhiteEl = document.getElementById('timer-white');
@@ -943,6 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const initialTimeSeconds = minutes * 60;
         whiteTime = initialTimeSeconds;
         blackTime = initialTimeSeconds;
+        isTimedGame = true;
 
         // Hiển thị đồng hồ
         document.getElementById('timer-white').style.display = 'block';
@@ -994,16 +1119,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Xử lý HẾT GIỜ (Flag the game)
                 const winner = isWhiteTurn ? 'Đen' : 'Trắng';
-                alert(`Hết giờ! ${winner} thắng cuộc.`);
-                // Bạn sẽ cần thêm logic để kết thúc ván đấu
-                // chessBoard.setGameOver(); // Giả định
+                const body = `Hết giờ! ${winner} thắng cuộc.`;
+                showGameOverModal("Hết giờ", body);
             }
         }, 1000);
     }
 
     // ====== LOAD DATA ======
-
-    // setupModalBehavior('loadDataModal', '#load-pgn-btn');
 
     document.getElementById('confirm-load-btn').addEventListener('click', async () => {
 
@@ -1113,7 +1235,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Xử lý kết quả và cập nhật giao diện
         if (success && fenToLoad) {
             // Cập nhật bàn cờ với vị trí mới
+            game.load(fenToLoad);
             board.position(fenToLoad);
+            fetch('/api/game/clear_cache', { method: 'POST' });
+            moveHistory = [{ fen: fenToLoad, score: null }]; // Tạo cache mới
+            currentFenIndex = 0;
+
+            await fetchDeepEvaluation(fenToLoad);
             updateUI(fenToLoad);
             if (loadDataModalInstance) {
                 loadDataModalInstance.hide();
@@ -1164,14 +1292,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupModalButtonSelection(selector) {
         document.querySelectorAll(selector).forEach(button => {
             button.addEventListener('click', function() {
-                // Lấy tất cả các nút trong cùng nhóm
                 const group = this.parentElement.querySelectorAll('button');
 
-                // Xóa trạng thái active khỏi tất cả các nút
-                group.forEach(btn => btn.classList.remove('active'));
+                group.forEach(btn => btn.classList.remove('selected'));
 
-                // Thêm trạng thái active vào nút hiện tại
-                this.classList.add('active');
+                this.classList.add('selected');
 
                 // Màu quân và thời gian
                 const color = this.getAttribute('data-color');

@@ -192,11 +192,8 @@ body {
         #34A853  /* Google Green */
     );
 
-    /* Cắt background theo hình dạng của chữ */
-    -webkit-background-clip: text; /* Cho Safari/Chrome */
+    -webkit-background-clip: text;
     background-clip: text;
-
-    /* Làm chữ trong suốt để lộ gradient */
     color: transparent;
 
     /* Đảm bảo gradient bao phủ toàn bộ chữ */
@@ -207,13 +204,8 @@ body {
 /* 991.98px là breakpoint 'lg' của Bootstrap (khi navbar chuyển sang hamburger) */
 @media (max-width: 991.98px) {
     #navbar-user-section {
-        /* Đẩy "Chào, Đức!" ra giữa (thay vì bên trái) */
         justify-content: center !important;
-
-        /* Thêm khoảng cách với các link menu ở trên */
         margin-top: 1rem;
-
-        /* Thêm một đường kẻ mờ phân cách */
         padding-top: 1rem;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
@@ -228,6 +220,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 1rem;
+    overflow-y: auto;
 }
 
 
@@ -272,28 +265,25 @@ body {
     }
     .button-group-container {
         display: flex;
-        flex-wrap: nowrap; /* Ép các nút về 1 hàng */
-        gap: 4px; /* Khoảng cách nhỏ giữa các nút */
+        flex-wrap: nowrap;
+        gap: 4px;
     }
     .button-group-container .btn {
-        flex-grow: 1; /* Chia đều không gian */
-        flex-basis: 0; /* Co giãn linh hoạt */
-        padding: .35rem .25rem; /* Giảm padding cho vừa */
-        font-size: 0.8rem; /* Giảm cỡ chữ */
-        white-space: nowrap; /* Ngăn chữ "Load" rớt hàng */
+        flex-grow: 1;
+        flex-basis: 0;
+        padding: .35rem .25rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
     }
 
-    /* 3. Sửa lỗi Timer (Vấn đề 1, 2) */
-    /* Tính toán vị trí mới cho timer:
-       PGN(45px) + margin PGN(16px) + Nút (khoảng 35px) + margin Nút(10px) = ~106px
-    */
+
     .timer-bottom-right {
-        bottom: 106px;
+        bottom: 120px;
         right: 15px;
     }
 
     .chess-board-area.rotated-board .timer-top-right {
-        bottom: 106px; /* Đồng bộ khi xoay bàn cờ */
+        bottom: 120px;
         top: auto;
     }
 }
@@ -392,7 +382,6 @@ body {
     margin: 0 auto;
     box-sizing: border-box;
     padding: 16px;
-    /*min-width: 500px;*/
 }
 
 .load-area {
@@ -419,27 +408,22 @@ body {
     box-sizing: border-box;
 }
 
-/* 4. Đảm bảo các ô cờ (img) cũng co giãn */
-/* (Thư viện chessboard.js phiên bản cũ có thể cần cái này) */
 #myBoard img {
     max-width: 100%;
     height: auto;
 }
 
 .timer-box {
-    position: absolute;
     background-color: #3b3e4f;
     color: var(--color-text-light, #ffffff);
     padding: 5px 10px;
     border-radius: 5px;
     font-size: 1.1rem;
     font-weight: bold;
-    z-index: 10;
     opacity: 0.7;
     transition: opacity 0.3s, background-color 0.3s;
+    position: absolute;
 }
-
-
 .timer-box.active {
     background-color: #4CAF50;
     opacity: 1.0;
@@ -453,7 +437,20 @@ body {
 
 
 .timer-bottom-right {
+
     bottom: 120px;
+    right: 15px;
+}
+
+.chess-board-area.rotated-board .timer-top-right {
+    top: auto;
+    bottom: 106px;
+    right: 15px;
+}
+
+.chess-board-area.rotated-board .timer-bottom-right {
+    bottom: auto;
+    top: 15px;
     right: 15px;
 }
 
@@ -464,20 +461,6 @@ body {
     font-weight: bold;
     border-color: #4CAF50;
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-}
-
-.chess-board-area.rotated-board .timer-top-right {
-    /* ĐỒNG HỒ ĐEN CŨ (timer-black) DI CHUYỂN XUỐNG DƯỚI */
-    top: auto;
-    bottom: 120px;
-    right: 15px;
-}
-
-.chess-board-area.rotated-board .timer-bottom-right {
-    /* ĐỒNG HỒ TRẮNG CŨ (timer-white) DI CHUYỂN LÊN TRÊN */
-    bottom: auto;
-    top: 15px;
-    right: 15px;
 }
 
 #pgn-history-container {
@@ -493,7 +476,8 @@ body {
     box-sizing: border-box;
     background-color: var(--color-background-end);
     border-radius: var(--radius-default);
-
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 #pgn-history-list {
@@ -558,21 +542,6 @@ body {
 .button-group-container .btn {
      flex-grow: 1; /* Cho phép các nút lớn lên 1 chút */
      flex-basis: 100px; /* Chiều rộng cơ bản (tùy chỉnh) */
-}
-
-/* 2. Sửa lỗi vị trí Timer trên mobile */
-/* Áp dụng khi màn hình nhỏ hơn 576px (breakpoint 'sm' của Bootstrap) */
-@media (max-width: 575.98px) {
-    .timer-bottom-right {
-        /* Đẩy timer lên trên các nút (PGN 45px + Nút 40px = 85px) */
-        bottom: 95px;
-    }
-
-    .chess-board-area.rotated-board .timer-top-right {
-        /* Vị trí tương tự khi xoay */
-        bottom: 95px;
-        top: auto;
-    }
 }
 
 /* ========================================= */
