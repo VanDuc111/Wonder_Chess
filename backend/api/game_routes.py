@@ -5,7 +5,6 @@ import chess.engine
 from backend.engine.minimax import (
     find_best_move,
     evaluate_board,
-    ENGINE_DEPTH,
     MATE_SCORE,
     clear_transposition_table
 )
@@ -85,44 +84,40 @@ def make_move():
 
 @game_bp.route('/bot_move', methods=['POST'])
 def bot_move():
-    data = request.json
+    data = request.get_json()
     fen = data.get('fen')
-    time_limit = data.get('time_limit')
+    time_limit_str = data.get('time_limit', '0') # Mặc định là '0' nếu không có
 
     if not fen:
-        return jsonify({'success': False, 'error': 'Thiếu tham số fen.'}), 400
+        return jsonify({'success': False, 'error': 'FEN is required'}), 400
 
     try:
-        board = chess.Board(fen)
+        # Chuyển đổi time_limit từ string sang int
+        # '0' sẽ là vô hạn, các số khác là số phút
+        time_limit_minutes = int(time_limit_str)
 
-        # 1. TÍNH TOÁN NƯỚC ĐI TỐT NHẤT (Đã bỏ tiền tố 'chess_engine.')
-        result_dict = find_best_move(fen, depth=ENGINE_DEPTH, time_limit=time_limit)
-        best_move_uci = result_dict['best_move']
+        # GỌI HÀM find_best_move VỚI time_limit
+        engine_results = find_best_move(fen, time_limit=time_limit_minutes)
 
-        evaluation_text = result_dict['search_score']
-        # 2. TÍNH TOÁN ĐIỂM SỐ HIỆN TẠI (Trước khi Bot đi)
-
-        if best_move_uci:
-
-            # 3. ÁP DỤNG NƯỚC ĐI CỦA BOT ĐỂ TẠO FEN MỚI
-            board.push_uci(best_move_uci)
-            new_fen = board.fen()
+        if engine_results.get('best_move'):
+            # (Bạn cần tạo một đối tượng board để thực hiện nước đi và lấy FEN mới)
+            temp_board = chess.Board(fen)
+            temp_board.push_uci(engine_results['best_move'])
+            new_fen = temp_board.fen()
 
             return jsonify({
                 'success': True,
-                'move_uci': best_move_uci,
+                'move_uci': engine_results['best_move'],
                 'fen': new_fen,
-                'evaluation': evaluation_text  # TRẢ VỀ ĐIỂM SỐ MỚI
+                'evaluation': engine_results['search_score']
             })
         else:
-            return jsonify({
-                'success': False,
-                'error': result_dict.get('pv', 'Bot không tìm thấy nước đi (Game over)'),
-                'game_over': True
-            }), 200
+            return jsonify({'success': False, 'error': engine_results.get('pv', 'Bot could not find a move')}), 500
 
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid time_limit format'}), 400
     except Exception as e:
-        return jsonify({'success': False, 'error': f'Lỗi Engine Server: {e}'}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @game_bp.route('/evaluate', methods=['POST'])
@@ -142,7 +137,7 @@ def get_engine_score():
 
     try:
         # GỌI HÀM TRỰC TIẾP
-        results = find_best_move(fen, depth=ENGINE_DEPTH)
+        results = find_best_move(fen, depth=None)
 
         # Cập nhật kết quả
         engine_results.update(results)
@@ -159,7 +154,7 @@ def get_engine_score():
         return jsonify({
             'success': False,
             'error': f'Lỗi Engine Server: {e}',
-            'engine_results': engine_results  # Trả về mặc định để frontend không bị lỗi
+            'engine_results': engine_results
         }), 500
 
 @game_bp.route('/clear_cache', methods=['POST'])

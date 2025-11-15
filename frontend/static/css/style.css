@@ -316,8 +316,18 @@ body {
 }
 
 #chatbot-form {
-    flex-shrink: 0; /* Đảm bảo form không bị thu nhỏ */
-    margin-top: auto !important; /* Dẩy form xuống dưới cùng (quan trọng) */
+    flex-shrink: 0;
+    margin-top: auto !important;
+
+    /* Đặt làm container vị trí */
+    position: relative;
+
+    /* Style cho thanh chat */
+    background: var(--color-input-background);
+    border-radius: 25px; /* Bo tròn 4 góc (kiểu "pill") */
+    display: flex;
+    align-items: center;
+    padding: 5px; /* Thêm 1 chút padding cho đẹp */
 }
 
 .message-bubble {
@@ -330,27 +340,69 @@ body {
 }
 
 #chatbot-input {
-    /* Đảm bảo màu chữ nhập vào là trắng sáng, không bị mờ */
-    background: var(--color-input-background);
+    /* Reset (Bỏ viền, bỏ nền) */
+    background: transparent;
+    border: none;
+    box-shadow: none !important;
+    outline: none !important;
+
+    /* Lấp đầy không gian */
+    flex-grow: 1;
+    width: 100%;
+
+    /* Style chữ */
     color: var(--color-text-light);
-    border-color: #333 !important;
+    padding: 0.75rem 1rem; /* Padding bên trong */
+
+    /* QUAN TRỌNG: Tạo khoảng trống bên phải cho nút bấm */
+    padding-right: 45px;
 }
 
 #chatbot-input::placeholder {
     color: var(--color-text-placeholder);
 }
 
-/* Tùy chỉnh nút Gửi/Icon Mũi tên */
+
 #send-chat-button {
-     background-color: var(--color-success);
-    border-color: var(--color-success);
-    padding: 0.375rem 0.75rem; /* Giữ padding mặc định hoặc tùy chỉnh */
+    /* 1. Reset màu nền và viền */
+    position: absolute;
+    right: 5px; /* Cách lề phải 5px */
+    top: 50%;
+    transform: translateY(-50%); /* Căn giữa dọc */
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important; /* Xóa hiệu ứng focus của Bootstrap */
+
+    /* 2. Đặt màu cho icon bên trong */
+    color: var(--color-text-secondary);
+
+    /* 3. Tạo hình tròn */
+    border-radius: 50% !important;
+
+    /* 4. Đảm bảo kích thước vuông (cho hình tròn) */
+    width: 40px;  /* (Bạn có thể tùy chỉnh kích thước) */
+    height: 40px; /* (Phải bằng width) */
+
+    /* 5. Căn giữa icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Xóa padding cũ của .btn */
+
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* 6. Thêm hiệu ứng hover xám tròn */
+#send-chat-button:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* Màu xám mờ */
+    color: var(--color-text-light);
+}
+
+
 #send-chat-button i {
-    /* Đảm bảo icon có kích thước phù hợp */
     font-size: 1.2rem;
     vertical-align: middle;
+    margin: 0;
 }
 
 .col-lg-6{

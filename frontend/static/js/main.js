@@ -16,8 +16,9 @@
     const JS_MATE_DEPTH_ADJUSTMENT = 500;
     let gameOverModalInstance = null;
     let loadDataModalInstance = null;
-    let currentWebcamStream = null; // Biến để lưu luồng camera
-    const videoElement = document.getElementById('webcam-feed');
+    let currentWebcamStream = null;
+    let timerWhiteEl = null;
+    let timerBlackEl = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const welcomeScreen = document.getElementById('welcome-screen');
@@ -25,9 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const nicknameForm = document.getElementById('nickname-form');
     const nicknameInput = document.getElementById('nickname-input');
     const chatbotMessages = document.getElementById('chatbot-messages');
+    const chatbotInput = document.getElementById('chatbot-input');
+    const chatbotSendButton = document.getElementById('send-chat-button');
 
     const userDisplaySpan = document.getElementById('user-display');
     const loadDataModalEl = document.getElementById('loadDataModal');
+
+    timerWhiteEl = document.getElementById('timer-white');
+    timerBlackEl = document.getElementById('timer-black');
     if (loadDataModalEl) {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
         loadDataModalEl.addEventListener('hidden.bs.modal', stopWebcam);
@@ -102,17 +108,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setAnalyzeMode() {
         // 1. Dừng và reset đồng hồ
-        resetTimers(); // Hàm này bạn đã có
+        resetTimers();
 
         // 2. Reset biến trạng thái Bot
         playerColor = null;
         isPlayerTurn = true;
 
         // 3. Khởi tạo lại bàn cờ về hướng 'white'
-        // Hàm initChessboard đã tự động reset FEN, lịch sử, v.v.
         initChessboard('white');
 
-        // 4. Bỏ xoay (nếu có)
+        // 4. Bỏ xoay
         const scoreWrapper = document.querySelector('.score-alignment-wrapper');
         if (scoreWrapper) {
             scoreWrapper.classList.remove('rotated-score');
@@ -124,8 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 5. Cập nhật UI lần cuối để lấy điểm 0.00
         updateUI(STARTING_FEN);
-        // (Vì moveHistory đã được reset, chúng ta cần gọi hàm này
-        // để lấy điểm 0.00 cho FEN ban đầu)
         handleScoreUpdate("0.00");
     }
       // Gắn sự kiện cho nút "Chơi với Bot" trên Navbar
@@ -242,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fen) {
             localGame = new Chess(fen);
         } else {
-            localGame = game; // Dùng game toàn cục nếu FEN không có
+            localGame = game;
         }
 
         // === LOGIC MỚI: KIỂM TRA GAME OVER TRƯỚC ===
@@ -256,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             evalBar.style.height = `${percentAdvantage}%`;
             evalScoreText.textContent = formattedScore;
-            return; // Kết thúc hàm
+            return;
         }
         // ==========================================
 
@@ -323,13 +326,12 @@ document.addEventListener('DOMContentLoaded', () => {
             position: STARTING_FEN,
             pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png',
             orientation: orientation,
-            onDrop: onDrop, // Hàm xử lý khi thả quân cờ
+            onDrop: onDrop,
             onDragStart: onDragStart,
-            onSnapEnd: onSnapEnd // Hàm xử lý sau khi di chuyển
+            onSnapEnd: onSnapEnd
         };
 
         board = Chessboard('myBoard', config);
-        // addSquareClickListener();
         window.addEventListener('resize', () => {
             board.resize();
             syncBoardAndEvalHeight();
@@ -346,25 +348,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hàm khớp chiều cao thanh điểm và bàn cờ
     function syncBoardAndEvalHeight() {
-    const boardContainer = document.getElementById('chessboard-main-container');
-    const scoreBarContainer = document.querySelector('.score-bar-container');
-    const evalScore = document.getElementById('evaluation-score');
-    const wrapper = document.querySelector('.score-alignment-wrapper');
+        const boardContainer = document.getElementById('chessboard-main-container');
+        const scoreBarContainer = document.querySelector('.score-bar-container');
+        const evalScore = document.getElementById('evaluation-score');
+        const wrapper = document.querySelector('.score-alignment-wrapper');
 
-    if (!boardContainer || !scoreBarContainer || !wrapper) return;
+        if (!boardContainer || !scoreBarContainer || !wrapper) return;
 
-    const totalBoardAreaHeight = boardContainer.offsetHeight; // Chiều cao tổng của bàn cờ
-    wrapper.style.height = `${totalBoardAreaHeight}px`;
+        const totalBoardAreaHeight = boardContainer.offsetHeight; // Chiều cao tổng của bàn cờ
+        wrapper.style.height = `${totalBoardAreaHeight}px`;
 
-    const scoreHeight = evalScore ? evalScore.offsetHeight : 0;
-    const verticalSpacing = 20; // Khoảng margin/padding giữa bar và điểm số
+        const scoreHeight = evalScore ? evalScore.offsetHeight : 0;
+        const verticalSpacing = 20; // Khoảng margin/padding giữa bar và điểm số
 
-    const targetBarContainerHeight = totalBoardAreaHeight - scoreHeight - verticalSpacing;
+        const targetBarContainerHeight = totalBoardAreaHeight - scoreHeight - verticalSpacing;
 
-    scoreBarContainer.style.height = `${targetBarContainerHeight}px`;
-    }
+        scoreBarContainer.style.height = `${targetBarContainerHeight}px`;
+        }
 
 
+    // Hàm kiểm soát nước đi
     async function makeMove(moveUci) {
         const currentFen = game.fen();
         const move = game.move(moveUci, { sloppy: true });
@@ -387,14 +390,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 }
 
-                // Thêm đối tượng mới với FEN
                 moveHistory.push({ fen: newFen, score: null });
 
                 currentFenIndex = moveHistory.length - 1;
                 game.move(moveUci, { sloppy: true });
                 board.position(game.fen());
 
-                return true; // Nước đi thành công
+                return true;
 
             } else {
                 console.error('Lỗi Backend (make_move):', data.error);
@@ -406,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-    // Xử lý sự kiện kéo thả (onDrop)
+    // Xử lý sự kiện kéo thả
     async function onDrop(source, target) {
         let moveUci = source + target;
 
@@ -531,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleBotTurn() {
-    isPlayerTurn = false; // Khóa bàn cờ
+    isPlayerTurn = false;
     try {
         const response = await fetch('/api/game/bot_move', {
             method: 'POST',
@@ -598,86 +600,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     isPlayerTurn = true; // Mở khóa bàn cờ cho người chơi
 }
-        // async function handleTurnEnd(newFen) {
-    //
-    //     updateUI(newFen);
-    //
-    //     if (timerInterval) {
-    //         startTimer(game.turn());
-    //     }
-    //
-    //     if (playerColor !== null && game.turn() !== playerColor) {
-    //         // Bot sẽ tự gọi handleTurnEnd() sau khi nó đi xong
-    //         await handleBotTurn();
-    //     } else {
-    //         const scoreText = await fetchDeepEvaluation(newFen);
-    //         if (scoreText && moveHistory[currentFenIndex]) {
-    //             moveHistory[currentFenIndex].score = scoreText;
-    //         }
-    //     }
-    //
-    //     // 4. KIỂM TRA GAME OVER
-    //     if (game.game_over()) {
-    //         updateEvaluationBar(0, newFen);
-    //
-    //         let title = "Ván đấu kết thúc";
-    //         let body = "Ván cờ hòa!";
-    //
-    //         if (game.in_checkmate()) {
-    //             const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-    //             body = `${winner} thắng cuộc.`;
-    //         }
-    //
-    //         showGameOverModal(title, body);
-    //         isPlayerTurn = true;
-    //         return;
-    //     }
-    //
-    //     if (timerInterval) {
-    //         startTimer(game.turn());
-    //     }
-    // }
-
-    // Hàm xử lý lượt đi của Bot
-    // async function handleBotTurn() {
-    //
-    //     isPlayerTurn = false;
-    //     try {
-    //         const response = await fetch('/api/game/bot_move', {
-    //             method: 'POST',
-    //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify({ fen: game.fen(), time_limit: selectedBotTime})
-    //         });
-    //         const data = await response.json();
-    //
-    //          if (data.success) {
-    //             const botMoveUci = data.move_uci;
-    //             const newFen = data.fen;
-    //             const evalScoreText = data.evaluation;
-    //
-    //             // 1. Cập nhật Lịch sử FEN (QUAN TRỌNG)
-    //             if (currentFenIndex < moveHistory.length - 1) {
-    //                 moveHistory = moveHistory.slice(0, currentFenIndex + 1);
-    //             }
-    //             moveHistory.push({ fen: newFen, score: evalScoreText });
-    //             currentFenIndex = moveHistory.length - 1;
-    //
-    //             // 2. Thực hiện nước đi
-    //             game.move(botMoveUci, { sloppy: true });
-    //             board.position(game.fen());
-    //
-    //             updateUI(newFen);
-    //             handleScoreUpdate(evalScoreText, newFen);
-    //             console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
-    //
-    //         } else {
-    //              console.error('Bot Error:', data.error);
-    //         }
-    //     } catch (error) {
-    //         console.error('Lỗi kết nối Bot:', error);
-    //     }
-    //     isPlayerTurn = true;
-    // }
 
     function onDragStart(source, piece, position, orientation) {
         // 1. CHẶN NẾU KHÔNG PHẢI LƯỢT CỦA NGƯỜI CHƠI
@@ -797,11 +719,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Hàm cập nhật giao diện
-    async function updateUI(fen) {
-
-        // Cập nhật trạng thái các nút (Prev/Next)
+    function updateUI(fen) {
         updateButtonState();
-        updatePgnHistory(game.history({ verbose: true }));
+        updatePgnHistory();
     }
 
     // Các nút điều chỉnh Fen hiện tại
@@ -856,7 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('[data-action="last"]').prop('disabled', isLastMove);
     }
 
-    // Hàm này thiết lập lại trò chơi về trạng thái ban đầu
+    // Hàm thiết lập lại trò chơi về trạng thái ban đầu
     function clearBoard() {
         // 1. Lấy hướng bàn cờ hiện tại
         if (!board) {
@@ -891,7 +811,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== TÍCH HỢP AI GEMINI =====
 
     function appendMessage(sender, text) {
-        const chatbox = document.getElementById('chatbot-messages');
         const messageDiv = document.createElement('div');
         if (sender === 'user') {
             messageDiv.classList.add('user-message');
@@ -901,17 +820,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         messageDiv.textContent = text;
 
-        chatbox.appendChild(messageDiv);
-        chatbox.scrollTop = chatbox.scrollHeight;
+        chatbotMessages.appendChild(messageDiv);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     }
 
+    /**
+     * Tạo một bong bóng chat MỚI (thường là để chờ Alice trả lời).
+     *
+     * @param {string} sender "user" hoặc "Alice"
+     * @returns {HTMLElement} Trả về 'messageDiv' để hàm streaming có thể điền text vào.
+     */
     function createNewMessageElement(sender) {
-        const chatbox = document.getElementById('chatbot-messages');
+
         const messageDiv = document.createElement('div');
         messageDiv.classList.add(sender === 'user' ? 'user-message' : 'alice-message');
-        // Gán một ID tạm thời
+
         if (sender === 'Alice') {
-            // Chèn hiệu ứng "đang gõ" cho Alice
             messageDiv.innerHTML = `
                 <div class="typing-indicator">
                     <span></span>
@@ -920,26 +844,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         } else {
-            // Người dùng thì không cần
             messageDiv.textContent = '';
         }
 
-        chatbox.appendChild(messageDiv);
-        chatbox.scrollTop = chatbox.scrollHeight;
+        chatbotMessages.appendChild(messageDiv);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
         return messageDiv;
     }
 
     document.getElementById('chatbot-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const input = document.getElementById('chatbot-input');
-        const message = input.value.trim();
-        if (!message) return;
+
+        const message = chatbotInput.value.trim();
+
+        // 2. Kiểm tra khóa (Dùng biến toàn cục)
+        if (!message || chatbotInput.disabled) {
+            return;
+        }
+
+        // 3. Khóa input (Dùng biến toàn cục)
+        chatbotInput.disabled = true;
+        chatbotSendButton.disabled = true;
+
+        // 4. Kiểm tra tin nhắn đầu tiên (DÙNG BIẾN TOÀN CỤC 'chatbotMessages')
+        const isFirstUserMessage = (chatbotMessages.children.length === 1);
 
         appendMessage('user', message);
-        input.value = '';
+        chatbotInput.value = ''; // (Dùng biến toàn cục)
         const aliceMessageElement = createNewMessageElement('Alice');
 
-        // 1. Lấy FEN và lịch sử hiện tại
+        // 5. Lấy FEN và lịch sử (Code này giữ nguyên)
         const currentFen = game.fen();
         const pgnHistory = game.pgn();
         const history = game.history({ verbose: true });
@@ -947,7 +881,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (history.length > 0) {
             lastMoveSan = history[history.length - 1]?.san;
         }
-        // 2. Gửi yêu cầu tới Backend (/api/chat_analysis)
+
+        // 6. Gửi yêu cầu (Code này giữ nguyên)
         try {
             const response = await fetch('/api/analysis/chat_analysis', {
                 method: 'POST',
@@ -956,12 +891,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     user_question: message,
                     fen: currentFen,
                     pgn: pgnHistory,
-                    last_move_san: lastMoveSan
+                    last_move_san: lastMoveSan,
+                    is_first_message: isFirstUserMessage
                 })
             });
             if (!response.ok) {
                 throw new Error(`Lỗi HTTP: ${response.status}. Không thể kết nối với Alice.`);
             }
+
             // --- XỬ LÝ STREAMING ---
             const reader = response.body.getReader();
             const decoder = new TextDecoder('utf-8');
@@ -974,42 +911,55 @@ document.addEventListener('DOMContentLoaded', () => {
             while (!done) {
                 const { value, done: readerDone } = await reader.read();
                 done = readerDone;
-
-                // Giải mã phần dữ liệu nhận được
                 const chunk = decoder.decode(value, { stream: true });
 
                 for (const char of chunk) {
                     if (isFirstChunk) {
-                        // Nếu đây là chữ cái đầu tiên, XÓA hiệu ứng 3 chấm
                         aliceMessageElement.innerHTML = '';
-                        isFirstChunk = false; // Đánh dấu là đã xử lý
+                        isFirstChunk = false;
                     }
                     aliceMessageElement.textContent += char;
                     fullResponseText += char;
-
                     await sleep(STREAM_DELAY_MS);
-
-                    const chatbox = document.getElementById('chatbot-messages');
-                    chatbox.scrollTop = chatbox.scrollHeight;
+                    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
                 }
             }
-            // --- KẾT THÚC XỬ LÝ STREAMING ---
+
             const finalHtml = convertSimpleMarkdownToHtml(fullResponseText);
             aliceMessageElement.innerHTML = finalHtml;
+
         } catch (error) {
             aliceMessageElement.textContent += ` [Lỗi: Không thể nhận phản hồi. ${error.message}]`;
             console.error('Lỗi trong Fetch API hoặc JSON:', error);
+        } finally {
+            // 8. Mở khóa (Dùng biến toàn cục)
+            chatbotInput.disabled = false;
+            chatbotSendButton.disabled = false;
+            chatbotInput.focus();
         }
     });
 
-    // Hàm hỗ trợ chuyển đổi text
+    /**
+     * Hàm hỗ trợ chuyển đổi text Markdown đơn giản sang HTML.
+     */
     function convertSimpleMarkdownToHtml(text) {
-        // 1. Chuyển đổi **bold** sang <strong>
-        let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        let html = text;
 
-        // 2. (Khuyến nghị) Chuyển đổi ký tự xuống dòng (\n) sang thẻ <br>
-        //    để AI có thể xuống dòng khi trả lời.
+        // 1. Chuyển đổi **Bold** (kể cả khi có dấu : ! ? bên trong)
+        // [^\s] = Bất kỳ ký tự nào KHÔNG phải khoảng trắng (để tránh lỗi greedy)
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // 2. Chuyển đổi * Bullet Points *
+        // (^ = đầu dòng, \s* = 0 hoặc nhiều khoảng trắng, \* = dấu sao, (.*) = nội dung)
+        // (gm flags = global và multiline, để nó tìm ở mọi đầu dòng)
+        html = html.replace(/^(\s*)\* (.*?)$/gm, '<li style="margin-left: 20px;">$2</li>');
+
+        // 3. Chuyển đổi \n (xuống dòng) sang <br>
+        // (Phải chạy sau cùng để không làm hỏng logic bullet point ở trên)
         html = html.replace(/\n/g, '<br>');
+
+        // 4. Sửa lỗi <br> thừa nếu nó đứng ngay trước <li>
+        html = html.replace(/<br><li/g, '<li');
 
         return html;
     }
@@ -1026,8 +976,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // HÀM HELPER: CẬP NHẬT GIAO DIỆN ĐỒNG HỒ
     // =======================================================
     function updateTimerDisplay() {
-        document.getElementById('timer-white').textContent = formatTime(whiteTime);
-        document.getElementById('timer-black').textContent = formatTime(blackTime);
+        if (timerWhiteEl) timerWhiteEl.textContent = formatTime(whiteTime);
+        if (timerBlackEl) timerBlackEl.textContent = formatTime(blackTime);
     }
 
     // =======================================================
@@ -1042,9 +992,6 @@ document.addEventListener('DOMContentLoaded', () => {
         blackTime = 0;
         isTimedGame = false;
 
-        // Ẩn/Đưa về trạng thái mặc định trên giao diện
-        const timerWhiteEl = document.getElementById('timer-white');
-        const timerBlackEl = document.getElementById('timer-black');
         if (timerWhiteEl) {
             timerWhiteEl.style.display = 'none';
             timerWhiteEl.classList.remove('active');
@@ -1063,18 +1010,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function initTimers(minutes) {
         resetTimers();
 
-        // Thời gian ban đầu (giây)
         const initialTimeSeconds = minutes * 60;
         whiteTime = initialTimeSeconds;
         blackTime = initialTimeSeconds;
         isTimedGame = true;
 
-        // Hiển thị đồng hồ
-        document.getElementById('timer-white').style.display = 'block';
-        document.getElementById('timer-black').style.display = 'block';
+        // Dùng biến toàn cục
+        if (timerWhiteEl) timerWhiteEl.style.display = 'block';
+        if (timerBlackEl) timerBlackEl.style.display = 'block';
 
         updateTimerDisplay();
-
     }
 
     // =======================================================
@@ -1085,16 +1030,12 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(timerInterval);
         }
 
-        const whiteTimerEl = document.getElementById('timer-white');
-        const blackTimerEl = document.getElementById('timer-black');
-
-        // Cập nhật trạng thái Active (màu xanh lá cây)
         if (colorToMove === 'w') {
-            whiteTimerEl.classList.add('active');
-            blackTimerEl.classList.remove('active');
+            if (timerWhiteEl) timerWhiteEl.classList.add('active');
+            if (timerBlackEl) timerBlackEl.classList.remove('active');
         } else { // chess.BLACK
-            whiteTimerEl.classList.remove('active');
-            blackTimerEl.classList.add('active');
+            if (timerWhiteEl) timerWhiteEl.classList.remove('active');
+            if (timerBlackEl) timerBlackEl.classList.add('active');
         }
 
         // Thiết lập bộ đếm 1 giây
@@ -1116,8 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentTime <= 0) {
                 clearInterval(timerInterval);
                 timerInterval = null;
+                isTimedGame = false; // Game đã kết thúc
 
-                // Xử lý HẾT GIỜ (Flag the game)
                 const winner = isWhiteTurn ? 'Đen' : 'Trắng';
                 const body = `Hết giờ! ${winner} thắng cuộc.`;
                 showGameOverModal("Hết giờ", body);
@@ -1192,7 +1133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else if (activeTabId === 'live-scan-pane') {
             const statusEl = document.getElementById('scan-status');
-            const videoElement = document.getElementById('webcam-feed');
 
             if (!currentWebcamStream) {
                 statusEl.textContent = 'Lỗi: Camera chưa được bật.';
@@ -1344,7 +1284,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * Bật camera của người dùng và hiển thị lên thẻ <video>
      */
     async function startWebcam() {
-        // Dừng stream cũ (nếu có)
         if (currentWebcamStream) {
             stopWebcam();
         }
@@ -1352,11 +1291,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    facingMode: 'environment' // Ưu tiên camera sau (trên điện thoại)
+                    facingMode: 'environment'
                 }
             });
-
-            const videoElement = document.getElementById('webcam-feed');
             videoElement.srcObject = stream;
             currentWebcamStream = stream;
 

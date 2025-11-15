@@ -38,7 +38,6 @@ def stream_gemini_response(prompt_context):
             response_generator = model.generate_content(
                 prompt_context,
                 stream=True
-                # KHÔNG có safety_settings
             )
 
             # 3. Stream (yield) từng chunk về cho Flask
