@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const userDisplaySpan = document.getElementById('user-display');
     const loadDataModalEl = document.getElementById('loadDataModal');
+    const videoElement = document.getElementById('webcam-feed');
 
     timerWhiteEl = document.getElementById('timer-white');
     timerBlackEl = document.getElementById('timer-black');
@@ -285,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // 2b. XỬ LÝ ĐIỂM TỐT THÔNG THƯỜNG
             else {
-                const pawnScore = score / 100.0; // Chuyển 48 thành 0.48
+                const pawnScore = score; // Chuyển 48 thành 0.48
                 const MAX_EVAL_DISPLAY_PAWNS = 10.0;
 
                 let cappedScore = Math.max(-MAX_EVAL_DISPLAY_PAWNS, Math.min(MAX_EVAL_DISPLAY_PAWNS, pawnScore));
@@ -481,56 +482,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     async function handleTurnEnd(newFen) {
-        updateUI(newFen);
+    updateUI(newFen);
 
-        // 1. Dừng đồng hồ của Người chơi
+    // 1. Dừng đồng hồ của Người chơi
+    if (isTimedGame) {
+        clearInterval(timerInterval);
+    }
+
+    // 2. KIỂM TRA GAME OVER (Do Người chơi gây ra)
+    // (Phải kiểm tra trước khi fetch hoặc bật timer mới)
+    if (game.game_over()) {
+        if (isTimedGame) clearInterval(timerInterval); // Đảm bảo tắt hẳn
+        updateEvaluationBar(0, newFen);
+
+        let title = "Ván đấu kết thúc";
+        let body = "Ván cờ hòa!";
+        if (game.in_checkmate()) {
+            const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
+            body = `Chiếu hết! ${winner} thắng cuộc.`;
+        }
+
+        setTimeout(() => { showGameOverModal(title, body); }, 200);
+        isPlayerTurn = true;
+        return; // Dừng mọi thứ
+    }
+
+    // 3. Lấy điểm của User (Chạy ngầm, không 'await')
+    // Bằng cách dùng .then(), chúng ta cho phép code chạy tiếp
+    // mà không cần chờ 4 giây.
+    fetchDeepEvaluation(newFen).then(scoreText => {
+        if (scoreText && moveHistory[currentFenIndex]) {
+            moveHistory[currentFenIndex].score = scoreText;
+        }
+    });
+
+    // 4. Quyết định lượt đi tiếp theo
+    if (playerColor !== null && game.turn() !== playerColor) {
+        // === ĐẾN LƯỢT BOT ===
+        // Bật đồng hồ cho Bot NGAY LẬP TỨC
         if (isTimedGame) {
-            clearInterval(timerInterval);
+            startTimer(game.turn());
         }
-
-        // 2. KIỂM TRA GAME OVER (Do Người chơi gây ra)
-        if (game.game_over()) {
-            if (isTimedGame) clearInterval(timerInterval);
-            updateEvaluationBar(0, newFen);
-
-            let title = "Ván đấu kết thúc";
-            let body = "Ván cờ hòa!";
-            if (game.in_checkmate()) {
-                const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-                body = `Chiếu hết! ${winner} thắng cuộc.`;
-            }
-
-            setTimeout(() => { showGameOverModal(title, body); }, 200);
-            isPlayerTurn = true;
-            return;
-        }
-
-        fetchDeepEvaluation(newFen).then(scoreText => {
-            if (scoreText && moveHistory[currentFenIndex]) {
-                moveHistory[currentFenIndex].score = scoreText;
-            }
-        });
-
-        // 4. Quyết định lượt đi tiếp theo
-        if (playerColor !== null) {
-        // 4a. Nếu là CHẾ ĐỘ ĐẤU VỚI BOT
-
-        if (game.turn() !== playerColor) {
-            // === ĐẾN LƯỢT BOT ===
-            if (isTimedGame) startTimer(game.turn()); // Bật đồng hồ cho Bot
-            await handleBotTurn(); // Gọi Bot xử lý
-        } else {
-            // === ĐẾN LƯỢT NGƯỜI CHƠI ===
-            if (isTimedGame) startTimer(game.turn());
-            isPlayerTurn = true; // Cho phép người chơi đi
-        }
-
+        await handleBotTurn(); // Chờ Bot đi (Bot sẽ tự bật đồng hồ User)
     } else {
-        // 4b. Nếu là CHẾ ĐỘ PHÂN TÍCH (playerColor === null)
-        // Không làm gì về timer, không gọi Bot
-        isPlayerTurn = true; // Luôn cho phép người chơi đi
+        // === CHẾ ĐỘ PHÂN TÍCH ===
+        if (isTimedGame) {
+            startTimer(game.turn());
+        }
+        isPlayerTurn = true;
     }
-    }
+}
 
     async function handleBotTurn() {
     isPlayerTurn = false;
@@ -546,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Dừng đồng hồ của Bot NGAY KHI có kết quả
         if (isTimedGame) clearInterval(timerInterval);
 
-         if (data.success) {
+         if (data.success && data.move_uci) {
             const botMoveUci = data.move_uci;
             const newFen = data.fen;
             const evalScoreText = data.evaluation;
@@ -711,7 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleScoreUpdate(scoreToLoad, fenToLoad);
         } else {
             // Nếu lỡ điểm bị null, hiển thị 0.00 (tránh gọi API)
-            updateEvaluationBar(0.0, fenToLoad);
+            // updateEvaluationBar(0.0, fenToLoad);
         }
 
         // 5. Cập nhật PGN và các nút

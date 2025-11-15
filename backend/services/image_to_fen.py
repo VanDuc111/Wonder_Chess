@@ -2,6 +2,14 @@ import cv2
 import os
 import numpy as np
 
+ROBOFLOW_API_KEY = os.getenv("ROBOFLOW_API_KEY")
+ROBOFLOW_PROJECT_ID = os.getenv("ROBOFLOW_PROJECT_ID")
+ROBOFLOW_VERSION = os.getenv("ROBOFLOW_VERSION")
+
+# Kiểm tra đảm bảo các biến đã được tải (đây là thực hành tốt)
+if not all([ROBOFLOW_API_KEY, ROBOFLOW_PROJECT_ID, ROBOFLOW_VERSION]):
+    raise ValueError("Roboflow environment variables are not set!")
+
 # Giả định kích thước chuẩn mà chúng ta sẽ resize ảnh về
 # Kích thước này giúp việc khớp mẫu (template matching) ổn định
 STANDARD_BOARD_SIZE = 640

@@ -4,10 +4,6 @@ from flask import Flask, render_template, jsonify, request
 from backend.api.game_routes import game_bp
 from backend.api.analysis_routes import analysis_bp
 from backend.api.image_routes import image_bp
-from dotenv import load_dotenv
-load_dotenv()
-
-import chess
 
 # Khởi tạo ứng dụng Flask
 

@@ -86,19 +86,12 @@ def make_move():
 def bot_move():
     data = request.get_json()
     fen = data.get('fen')
-    time_limit_str = data.get('time_limit', '0') # Mặc định là '0' nếu không có
 
     if not fen:
         return jsonify({'success': False, 'error': 'FEN is required'}), 400
 
     try:
-        # Chuyển đổi time_limit từ string sang int
-        # '0' sẽ là vô hạn, các số khác là số phút
-        time_limit_minutes = int(time_limit_str)
-
-        # GỌI HÀM find_best_move VỚI time_limit
-        engine_results = find_best_move(fen, time_limit=time_limit_minutes)
-
+        engine_results = find_best_move(fen)
         if engine_results.get('best_move'):
             # (Bạn cần tạo một đối tượng board để thực hiện nước đi và lấy FEN mới)
             temp_board = chess.Board(fen)
@@ -137,7 +130,7 @@ def get_engine_score():
 
     try:
         # GỌI HÀM TRỰC TIẾP
-        results = find_best_move(fen, depth=None)
+        results = find_best_move(fen)
 
         # Cập nhật kết quả
         engine_results.update(results)

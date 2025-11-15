@@ -2,8 +2,7 @@ import chess
 import time
 import random
 
-# ENGINE_DEPTH = 3
-MAX_ALLOWED_DEPTH = 8
+ENGINE_DEPTH = 2
 # Giá trị quân cờ theo tiêu chuẩn:
 MATE_SCORE = 1000000
 MAX_DEPTH_FOR_MATE = 500
@@ -301,14 +300,14 @@ def alpha_beta(board, depth, alpha, beta, is_maximizing_player):
 # HÀM CHỌN NƯỚC ĐI TỐT NHẤT (SỬ DỤNG ALPHA-BETA VÀ ITERATIVE DEEPENING)
 # =====================================================================
 
-def find_best_move(fen, depth=None, time_limit=None):  # 'depth' không còn được dùng cố định
+def find_best_move(fen, depth=ENGINE_DEPTH, time_limit=None):
     global TRANS_TABLE
     board = chess.Board(fen)
 
     if board.is_game_over():
         result_str = board.result()
         friendly_score = "Game Over"
-        best_move_uci = "N/A"  # Đổi tên biến để tránh nhầm lẫn
+        best_move_uci = "N/A"
         pv = "N/A"
 
         if board.is_checkmate():
@@ -326,136 +325,51 @@ def find_best_move(fen, depth=None, time_limit=None):  # 'depth' không còn đ�
 
     is_maximizing_player = (board.turn == chess.WHITE)
 
-    # --- QUẢN LÝ THỜI GIAN ---
-    start_time = time.time()
-    # Tính toán thời gian tối đa cho nước đi này
-    # Nếu time_limit là '0' (vô hạn), hoặc không có, cho phép một khoảng thời gian mặc định lớn
-    if time_limit is None or int(time_limit) == 0:
-        time_to_think = 1000000  # Rất lớn, coi như vô hạn cho mục đích thực tế
-    else:
-        # Ví dụ: Dùng 1/20 tổng thời gian cho nước đi này
-        # Điều này cần tinh chỉnh cho phù hợp với độ khó của bot và số nước game trung bình
-        time_to_think = int(time_limit) * 60 / 20  # time_limit là phút, chuyển sang giây / 20 nước
+    best_move = None
+    best_eval = -float('inf') if is_maximizing_player else float('inf')
 
-    # Đảm bảo Bot không mất quá 15 giây cho 1 nước nếu game không có thời gian
-    # Hoặc nếu thời gian tính toán quá lớn
-    time_to_think = min(time_to_think, 15)
+    legal_moves = sorted(
+        list(board.legal_moves),
+        key=lambda move: get_move_score(board, move),
+        reverse=True
+    )
 
-    # Nếu game không có thời gian, mặc định tìm sâu ENGINE_DEPTH (cũ)
-    # hoặc một độ sâu hợp lý (ví dụ: 4)
-    if int(time_limit) == 0:
-        max_allowed_depth_for_no_time = 4  # Tùy chỉnh độ sâu mặc định
-    else:
-        max_allowed_depth_for_no_time = MAX_ALLOWED_DEPTH
-    # --------------------------
+    alpha = -float('inf')
+    beta = float('inf')
 
-    # Khởi tạo các biến để lưu kết quả từ Iterative Deepening
-    best_move_current_depth = None
-    best_eval_current_depth = -float('inf') if is_maximizing_player else float('inf')
-    principal_variation_moves = []  # Để lưu chuỗi nước đi chính
+    for move in legal_moves:
+        board.push(move)
+        eval = alpha_beta(board, depth - 1, alpha, beta, not is_maximizing_player)
+        board.pop()
 
-    # Vòng lặp Iterative Deepening
-    for current_depth in range(1, max_allowed_depth_for_no_time + 1):
-        # Thiết lập alpha và beta cho cấp độ gốc của mỗi vòng lặp
-        alpha = -float('inf')
-        beta = float('inf')
+        if is_maximizing_player:
+            if eval > best_eval:
+                best_eval = eval
+                best_move = move
+            alpha = max(alpha, best_eval)
+        else:
+            if eval < best_eval:
+                best_eval = eval
+                best_move = move
+            beta = min(beta, best_eval)
 
-        # Lưu nước đi tốt nhất và điểm số cho độ sâu hiện tại
-        local_best_move = None
-        local_best_eval = -float('inf') if is_maximizing_player else float('inf')
-
-        # Sắp xếp nước đi (quan trọng cho Alpha-Beta)
-        # Sử dụng kết quả từ độ sâu trước để sắp xếp nước đi hiện tại (nếu có)
-        legal_moves_sorted = sorted(
-            list(board.legal_moves),
-            key=lambda move: get_move_score(board, move),  # Vẫn dùng get_move_score cơ bản
-            reverse=True
-        )
-
-        # Nếu đã có PV từ độ sâu trước, ưu tiên nước đi đó lên đầu
-        # (Đây là một tối ưu hóa quan trọng cho Iterative Deepening)
-        if principal_variation_moves:
-            for pv_move in reversed(principal_variation_moves):  # Ưu tiên các nước của PV
-                if pv_move in legal_moves_sorted:
-                    legal_moves_sorted.remove(pv_move)
-                    legal_moves_sorted.insert(0, pv_move)
-
-        current_pv_for_depth = []  # PV cho độ sâu hiện tại
-
-        for move in legal_moves_sorted:
-            # KIỂM TRA THỜI GIAN SAU MỖI NƯỚC GỐC
-            if (time.time() - start_time) > time_to_think:
-                print(f"Hết thời gian sau độ sâu {current_depth - 1} nước!")
-                break  # Thoát vòng lặp nước đi, dùng kết quả từ độ sâu trước
-
-            board.push(move)
-            # Gọi Alpha-Beta, đảo ngược vai trò
-            eval = alpha_beta(board, current_depth - 1, alpha, beta, not is_maximizing_player)
-            board.pop()
-
-            if is_maximizing_player:
-                if eval > local_best_eval:
-                    local_best_eval = eval
-                    local_best_move = move
-                alpha = max(alpha, local_best_eval)  # Cập nhật alpha
-            else:
-                if eval < local_best_eval:
-                    local_best_eval = eval
-                    local_best_move = move
-                beta = min(beta, local_best_eval)  # Cập nhật beta
-
-        # Nếu không tìm thấy nước đi nào ở độ sâu hiện tại (do hết thời gian hoặc không có nước đi hợp lệ)
-        if local_best_move is None and not best_move_current_depth:
-            # Điều này chỉ xảy ra ở depth=1 hoặc nếu hết sạch thời gian
-            # Trong trường hợp này, hãy lấy nước đi hợp lệ đầu tiên làm mặc định
-            if board.legal_moves:
-                best_move_current_depth = list(board.legal_moves)[0]
-                best_eval_current_depth = evaluate_board(board)  # Đánh giá cơ bản
-            else:
-                # Game đã kết thúc nhưng chưa được phát hiện ở trên
-                return {'search_score': 'Game Over', 'best_move': 'N/A', 'pv': 'N/A'}
-
-        # Nếu chúng ta hoàn thành độ sâu hiện tại, lưu kết quả
-        if local_best_move:
-            best_move_current_depth = local_best_move
-            best_eval_current_depth = local_best_eval
-
-            # Cập nhật Principal Variation (PV)
-            # Bạn cần một cách để lấy PV từ alpha_beta, nhưng để đơn giản ban đầu,
-            # chúng ta chỉ lấy nước đi tốt nhất hiện tại.
-            principal_variation_moves = [best_move_current_depth]
-
-        print(
-            f"Depth: {current_depth}, Best Move: {best_move_current_depth.uci() if best_move_current_depth else 'None'}, Eval: {best_eval_current_depth}")
-
-        # KIỂM TRA THỜI GIAN LẦN NỮA SAU KHI HOÀN THÀNH MỘT ĐỘ SÂU
-        if (
-                time.time() - start_time) > time_to_think and current_depth > 1:  # Đảm bảo đã hoàn thành ít nhất 1 độ sâu đầy đủ
-            print(f"Hết thời gian, dừng ở độ sâu {current_depth - 1}.")
-            break  # Thoát vòng lặp Iterative Deepening
-
-    # Kết quả cuối cùng
-    if best_move_current_depth:
-        # Điều chỉnh điểm số cho Mate (nếu có)
-        if abs(best_eval_current_depth) >= MATE_SCORE - MAX_DEPTH_FOR_MATE:
-            # Nếu là chiếu hết, hiển thị #+N hoặc #-N
-            if best_eval_current_depth > 0:
-                # Đếm số nước đi đến chiếu hết
-                moves_to_mate = (MATE_SCORE - best_eval_current_depth + 1) // 2
+    if best_move:
+        if abs(best_eval) >= MATE_SCORE - MAX_DEPTH_FOR_MATE:
+            if best_eval > 0:
+                moves_to_mate = (MATE_SCORE - best_eval + 1) // 2
                 best_move_score_text = f"#{moves_to_mate}"
             else:
-                moves_to_mate = (MATE_SCORE + best_eval_current_depth) // 2
+                moves_to_mate = (MATE_SCORE + best_eval) // 2
                 best_move_score_text = f"#-{moves_to_mate}"
         else:
-            best_move_score_text = f"{best_eval_current_depth / 100:.2f}"
+            best_move_score_text = f"{best_eval/100:.2f}"
 
         return {
             'search_score': best_move_score_text,
-            'best_move': best_move_current_depth.uci(),
-            'pv': ' '.join([m.uci() for m in principal_variation_moves])  # Chỉ hiển thị nước đi tốt nhất
+            'best_move': best_move.uci(),
+            'pv': best_move.uci()
         }
 
-    # Trả về dictionary lỗi nếu không tìm thấy nước đi nào
     return {
         'search_score': '0.00',
         'best_move': None,

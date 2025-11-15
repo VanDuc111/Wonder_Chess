@@ -29,7 +29,7 @@ def chat_analysis():
     # 3. LUÔN LUÔN lấy dữ liệu engine (cho ngữ cảnh)
     engine_results = {'search_score': '0', 'best_move': 'N/A', 'pv': 'N/A'}
     try:
-        engine_results_from_find = find_best_move(fen, depth=None)
+        engine_results_from_find = find_best_move(fen)
         engine_results.update(engine_results_from_find)
     except Exception as e:
         print(f"LỖI ENGINE (find_best_move): {e}")
