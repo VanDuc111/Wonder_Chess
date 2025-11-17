@@ -455,6 +455,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+function updateAllHighlights() {
+    // 1. Xóa tất cả highlight cũ
+    document.querySelectorAll('#myBoard .square-55d63').forEach(square => {
+        square.classList.remove('square-selected'); // Vàng
+        square.classList.remove('highlight-move');  // Chấm xanh
+        square.classList.remove('highlight-check'); // Đỏ
+    });
+
+    // 2. Highlight Vua bị chiếu (Ô Đỏ)
+    // (Chúng ta cần đảm bảo 'game' đã được load đúng FEN)
+    if (game.in_check()) {
+        const kingSquare = findKingSquare(game.turn());
+        if (kingSquare) {
+            document.querySelector(`#myBoard .square-${kingSquare}`).classList.add('highlight-check');
+        }
+    }
+
+    // 3. Highlight Nước đi Cuối cùng (Ô Vàng)
+    const history = game.history({ verbose: true });
+    if (history.length > 0) {
+        const lastMove = history[history.length - 1];
+        // Chỉ highlight nếu FEN hiện tại là FEN cuối cùng
+        if (currentFenIndex === moveHistory.length - 1) {
+            document.querySelector(`#myBoard .square-${lastMove.from}`).classList.add('square-selected');
+            document.querySelector(`#myBoard .square-${lastMove.to}`).classList.add('square-selected');
+        }
+    }
+}
+
+    /**
+ * Tìm Vua (Helper function, cần 'game' toàn cục)
+ * @param {string} color Màu 'w' hoặc 'b'
+ */
+function findKingSquare(color) {
+    // Tạo một mảng 64 ô
+    const squares = [
+        'a1','b1','c1','d1','e1','f1','g1','h1', 'a2','b2','c2','d2','e2','f2','g2','h2',
+        'a3','b3','c3','d3','e3','f3','g3','h3', 'a4','b4','c4','d4','e4','f4','g4','h4',
+        'a5','b5','c5','d5','e5','f5','g5','h5', 'a6','b6','c6','d6','e6','f6','g6','h6',
+        'a7','b7','c7','d7','e7','f7','g7','h7', 'a8','b8','c8','d8','e8','f8','g8','h8'
+    ];
+    for (const square of squares) {
+        const piece = game.get(square); // game.get() là hàm đúng
+        if (piece && piece.type === 'k' && piece.color === color) {
+            return square;
+        }
+    }
+    return null;
+}
+
 
     /**
      * Tiền xử lý (pre-processes) điểm số thô từ engine trước khi gửi đến thanh điểm.
@@ -482,56 +532,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     async function handleTurnEnd(newFen) {
-    updateUI(newFen);
 
-    // 1. Dừng đồng hồ của Người chơi
-    if (isTimedGame) {
-        clearInterval(timerInterval);
-    }
+        updateAllHighlights();
+        updateUI(newFen);
 
-    // 2. KIỂM TRA GAME OVER (Do Người chơi gây ra)
-    // (Phải kiểm tra trước khi fetch hoặc bật timer mới)
-    if (game.game_over()) {
-        if (isTimedGame) clearInterval(timerInterval); // Đảm bảo tắt hẳn
-        updateEvaluationBar(0, newFen);
-
-        let title = "Ván đấu kết thúc";
-        let body = "Ván cờ hòa!";
-        if (game.in_checkmate()) {
-            const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-            body = `Chiếu hết! ${winner} thắng cuộc.`;
-        }
-
-        setTimeout(() => { showGameOverModal(title, body); }, 200);
-        isPlayerTurn = true;
-        return; // Dừng mọi thứ
-    }
-
-    // 3. Lấy điểm của User (Chạy ngầm, không 'await')
-    // Bằng cách dùng .then(), chúng ta cho phép code chạy tiếp
-    // mà không cần chờ 4 giây.
-    fetchDeepEvaluation(newFen).then(scoreText => {
-        if (scoreText && moveHistory[currentFenIndex]) {
-            moveHistory[currentFenIndex].score = scoreText;
-        }
-    });
-
-    // 4. Quyết định lượt đi tiếp theo
-    if (playerColor !== null && game.turn() !== playerColor) {
-        // === ĐẾN LƯỢT BOT ===
-        // Bật đồng hồ cho Bot NGAY LẬP TỨC
+        // 1. Dừng đồng hồ của Người chơi
         if (isTimedGame) {
-            startTimer(game.turn());
+            clearInterval(timerInterval);
         }
-        await handleBotTurn(); // Chờ Bot đi (Bot sẽ tự bật đồng hồ User)
-    } else {
-        // === CHẾ ĐỘ PHÂN TÍCH ===
-        if (isTimedGame) {
-            startTimer(game.turn());
+
+        // 2. KIỂM TRA GAME OVER (Do Người chơi gây ra)
+        // (Phải kiểm tra trước khi fetch hoặc bật timer mới)
+        if (game.game_over()) {
+            if (isTimedGame) clearInterval(timerInterval); // Đảm bảo tắt hẳn
+            updateEvaluationBar(0, newFen);
+
+            let title = "Ván đấu kết thúc";
+            let body = "Ván cờ hòa!";
+            if (game.in_checkmate()) {
+                const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
+                body = `Chiếu hết! ${winner} thắng cuộc.`;
+            }
+
+            setTimeout(() => { showGameOverModal(title, body); }, 200);
+            isPlayerTurn = true;
+            return; // Dừng mọi thứ
         }
-        isPlayerTurn = true;
+
+        // 3. Lấy điểm của User (Chạy ngầm, không 'await')
+        // Bằng cách dùng .then(), chúng ta cho phép code chạy tiếp
+        // mà không cần chờ 4 giây.
+        fetchDeepEvaluation(newFen).then(scoreText => {
+            if (scoreText && moveHistory[currentFenIndex]) {
+                moveHistory[currentFenIndex].score = scoreText;
+            }
+        });
+
+        // 4. Quyết định lượt đi tiếp theo
+        if (playerColor !== null && game.turn() !== playerColor) {
+            // === ĐẾN LƯỢT BOT ===
+            // Bật đồng hồ cho Bot NGAY LẬP TỨC
+            if (isTimedGame) {
+                startTimer(game.turn());
+            }
+            await handleBotTurn(); // Chờ Bot đi (Bot sẽ tự bật đồng hồ User)
+        } else {
+            // === CHẾ ĐỘ PHÂN TÍCH ===
+            if (isTimedGame) {
+                startTimer(game.turn());
+            }
+            isPlayerTurn = true;
+        }
     }
-}
 
     async function handleBotTurn() {
     isPlayerTurn = false;
@@ -562,6 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             game.move(botMoveUci, { sloppy: true });
             board.position(game.fen());
+            updateAllHighlights();
 
             updateUI(newFen);
             handleScoreUpdate(evalScoreText, newFen);
@@ -602,20 +655,45 @@ document.addEventListener('DOMContentLoaded', () => {
     isPlayerTurn = true; // Mở khóa bàn cờ cho người chơi
 }
 
+
+    /**
+     *
+
+     */
     function onDragStart(source, piece, position, orientation) {
-        // 1. CHẶN NẾU KHÔNG PHẢI LƯỢT CỦA NGƯỜI CHƠI
-        if (!isPlayerTurn) {
-            return false; // Chặn mọi thao tác kéo thả
-        }
-
-        // 2. CHẶN NẾU KHÔNG PHẢI QUÂN CỜ CỦA LƯỢT HIỆN TẠI
-        // piece[0] là màu ('w' hoặc 'b')
-        if (game.turn() !== piece[0]) {
-            return false;
-        }
-
-        return true;
+    // 1. CHẶN NẾU KHÔNG PHẢI LƯỢT CỦA NGƯỜI CHƠI
+    if (!isPlayerTurn) {
+        return false;
     }
+
+    // 2. CHẶN NẾU KHÔNG PHẢI QUÂN CỜ CỦA LƯỢT HIỆN TẠI
+    if (game.turn() !== piece[0]) {
+        return false;
+    }
+
+    // === BẮT ĐẦU SỬA LỖI ===
+    updateAllHighlights();
+
+    // 4. Lấy danh sách nước đi hợp lệ cho quân cờ này
+    const moves = game.moves({
+        square: source,
+        verbose: true // Cần 'verbose' để lấy ô 'to'
+    });
+
+    // Nếu không có nước nào, không cho kéo
+    if (moves.length === 0) {
+        return false;
+    }
+
+    // 5. Hiển thị các chấm xanh (highlight-move)
+    for (const move of moves) {
+        // Thêm class 'highlight-move' vào ô 'to'
+        document.querySelector(`#myBoard .square-${move.to}`).classList.add('highlight-move');
+    }
+    // === KẾT THÚC SỬA LỖI ===
+
+    return true; // Cho phép kéo
+}
 
     /**
      *  Hàm cập nhật lịch sử pgn
@@ -705,8 +783,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const fenToLoad = historyItem.fen;
         const scoreToLoad = historyItem.score;
 
-        // game.load(fenToLoad);
         board.position(fenToLoad);
+        updateAllHighlights();
 
         if (scoreToLoad) {
             handleScoreUpdate(scoreToLoad, fenToLoad);
