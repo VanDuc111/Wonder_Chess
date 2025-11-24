@@ -1,44 +1,64 @@
-
 :root {
     /* Màu nền & Nền tối (Dark Theme) */
-    --color-background-start: #1A1A2E;   /* Màu tím than đậm */
-    --color-background-end: #0F0F1A;     /* Màu đen nhạt */
+    --color-background-start: #1A1A2E;
+    /* Màu tím than đậm */
+    --color-background-end: #0F0F1A;
+    /* Màu đen nhạt */
     --color-element-background: rgba(255, 255, 255, 0.05);
-    --color-input-background: #1e1e3f;   /* Nền cho ô input*/
+    --color-input-background: #1e1e3f;
+    /* Nền cho ô input*/
 
     /* Màu chủ đạo */
-    --color-primary: #4CAF50;            /* Màu xanh lá chính */
-    --color-primary-hover: #45a049;      /* Màu xanh lá khi hover */
+    --color-primary: #4CAF50;
+    /* Màu xanh lá chính */
+    --color-primary-hover: #45a049;
+    /* Màu xanh lá khi hover */
     --color-danger: #dc3545;
     --color-success: #3cb371;
 
     /* Màu chữ */
-    --color-text-light: #E0E0E0;         /* Màu chữ sáng */
-    --color-text-placeholder: rgba(224, 224, 224, 0.5); /* Màu placeholder */
-    --color-text-secondary: rgba(255,255,255,0.7);
+    --color-text-light: #E0E0E0;
+
+    --color-text-dark: #1e1e3f;
+    /* Màu chữ sáng */
+    --color-text-placeholder: rgba(224, 224, 224, 0.5);
+    /* Màu placeholder */
+    --color-text-secondary: rgba(255, 255, 255, 0.7);
     /* Các giá trị khác (Border, Shadow) */
     --color-border-subtle: rgba(255, 255, 255, 0.1);
     --shadow-deep: 0 10px 30px rgba(0, 0, 0, 0.5);
-    --color-chess-white: #e9e9e9; /* Màu trắng cho quân/ô/ưu thế */
-    --color-chess-black: #000000; /* Màu đen cho quân/ô/ưu thế */
-    --color-highlight-squared: rgba(245, 235, 114, 0.6); /* Màu ô di chuyển */
+    --color-chess-white: #e9e9e9;
+    /* Màu trắng cho quân/ô/ưu thế */
+    --color-chess-black: #000000;
+    /* Màu đen cho quân/ô/ưu thế */
+    --color-highlight-squared: rgba(245, 235, 114, 0.6);
+    /* Màu ô di chuyển */
     --color-highlight-check: rgba(220, 53, 69, 0.5);
 
-    --color-eval-gradient-start: #302d41; /* Xanh đậm nhẹ */
-    --color-eval-gradient-end: #57546e;   /* Tím xám nhẹ */
+    --color-eval-gradient-start: #302d41;
+    /* Xanh đậm nhẹ */
+    --color-eval-gradient-end: #57546e;
+    /* Tím xám nhẹ */
 
     --color-user-gradient: linear-gradient(90deg,
-        #8ab4f8, /* Xanh nhạt */
-        #f48fb1, /* Hồng/Tím nhạt */
-        #fdd663, /* Vàng nhạt */
-        #81c995  /* Xanh lá nhạt */
-    );
+            #8ab4f8,
+            /* Xanh nhạt */
+            #f48fb1,
+            /* Hồng/Tím nhạt */
+            #fdd663,
+            /* Vàng nhạt */
+            #81c995
+            /* Xanh lá nhạt */
+        );
 
     /*Sizing Tokens    */
     --spacing-unit: 10px;
-    --spacing-sm: calc(var(--spacing-unit) * 1.5);   /* 15px */
-    --spacing-md: calc(var(--spacing-unit) * 2.5);   /* 25px */
-    --spacing-lg: calc(var(--spacing-unit) * 4);     /* 40px */
+    --spacing-sm: calc(var(--spacing-unit) * 1.5);
+    /* 15px */
+    --spacing-md: calc(var(--spacing-unit) * 2.5);
+    /* 25px */
+    --spacing-lg: calc(var(--spacing-unit) * 4);
+    /* 40px */
 
     --radius-default: 8px;
     --radius-container: 15px;
@@ -75,18 +95,22 @@ body {
 
 
 .welcome-container {
-    background: transparent; /* 1. Đặt nền trong suốt */
+    background: transparent;
+    /* 1. Đặt nền trong suốt */
     padding: var(--spacing-lg) var(--spacing-md);
     border-radius: var(--radius-container);
-    box-shadow: none; /* 2. Xóa bóng */
+    box-shadow: none;
+    /* 2. Xóa bóng */
     text-align: center;
     max-width: 450px;
     width: 90%;
-     border: none; /* 3. Xóa viền */
+    border: none;
+    /* 3. Xóa viền */
 }
 
 .welcome-title {
-    font-size: var(--font-size-title);;
+    font-size: var(--font-size-title);
+    ;
     margin-bottom: 10px;
     color: var(--color-text-light);
 }
@@ -104,7 +128,8 @@ body {
     margin-bottom: var(--spacing-md);
     border: 2px solid rgba(255, 255, 255, 0.7);
     border-radius: var(--radius-default);
-    background: #1e1e3f; /* Nền input tối */
+    background: #1e1e3f;
+    /* Nền input tối */
     color: var(--color-text-light);
     font-size: 1em;
     box-sizing: border-box;
@@ -170,9 +195,9 @@ body {
     /* Đặt padding ngang cho các liên kết để có không gian cho hiệu ứng nền */
     padding-left: 1rem !important;
     padding-right: 1rem !important;
-    border-radius: 8px; /* Bo tròn góc */
+    border-radius: 8px;
     transition: background-color 0.3s, color 0.3s;
-    var(--color-text-secondary);
+    color: var(--color-text-secondary);
     font-weight: 500;
 }
 
@@ -236,15 +261,17 @@ body {
     scrollbar-width: thin;
     scrollbar-color: #555 #1e1e3f;
 }
+
 #chatbot-messages::-webkit-scrollbar {
     width: 6px;
 }
+
 #chatbot-messages::-webkit-scrollbar-thumb {
     background-color: var(--color-element-background);
     border-radius: 3px;
 }
 
-#chatbot-messages > div {
+#chatbot-messages>div {
     max-width: 80%;
     padding: 10px 15px;
     border-radius: var(--radius-container);
@@ -267,11 +294,13 @@ body {
         height: 500px;
         margin-top: 20px;
     }
+
     .button-group-container {
         display: flex;
         flex-wrap: nowrap;
         gap: 4px;
     }
+
     .button-group-container .btn {
         flex-grow: 1;
         flex-basis: 0;
@@ -293,30 +322,36 @@ body {
 }
 
 .user-message {
-    background-color: var(--color-element-background); /* Màu xanh dương Bootstrap */
+    background-color: var(--color-element-background);
+    /* Màu xanh dương Bootstrap */
     color: var(--color-text-light, #ffffff);
     width: fit-content;
     margin-left: auto !important;
     margin-right: 0 !important;
     text-align: right;
-    border-bottom-right-radius: 2px; /* Tạo "đuôi" nhỏ */
+    border-bottom-right-radius: 2px;
+    /* Tạo "đuôi" nhỏ */
 }
 
 /* Tin nhắn của ALICE (Đặt bên trái) */
 .alice-message {
-    background-color: var(--color-element-background); /* Màu nền tối hơn, thân thiện với AI */
+    background-color: var(--color-element-background);
+    /* Màu nền tối hơn, thân thiện với AI */
     color: var(--color-text-light);
     margin-right: auto;
     margin-left: 0;
     text-align: left;
-    border-bottom-left-radius: 2px; /* Tạo "đuôi" nhỏ */
+    border-bottom-left-radius: 2px;
+    /* Tạo "đuôi" nhỏ */
 }
 
 /* Tinh chỉnh Icon (Giả sử bạn có icon/tên Alice) */
 .alice-message::before {
-    content: "Alice: "; /* Hoặc sử dụng hình ảnh/icon nếu có */
+    content: "Alice: ";
+    /* Hoặc sử dụng hình ảnh/icon nếu có */
     font-weight: bold;
-    color: #a4c639; /* Màu xanh lá nổi bật */
+    color: #a4c639;
+    /* Màu xanh lá nổi bật */
 }
 
 #chatbot-form {
@@ -328,18 +363,22 @@ body {
 
     /* Style cho thanh chat */
     background: var(--color-input-background);
-    border-radius: 25px; /* Bo tròn 4 góc (kiểu "pill") */
+    border-radius: 25px;
+    /* Bo tròn 4 góc (kiểu "pill") */
     display: flex;
     align-items: center;
-    padding: 5px; /* Thêm 1 chút padding cho đẹp */
+    padding: 5px;
+    /* Thêm 1 chút padding cho đẹp */
 }
 
 .message-bubble {
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 8px;
-    white-space: pre-wrap; /* QUAN TRỌNG: Cho phép ngắt dòng và giữ định dạng */
-    word-wrap: break-word; /* Đảm bảo từ dài cũng bị ngắt */
+    white-space: pre-wrap;
+    /* QUAN TRỌNG: Cho phép ngắt dòng và giữ định dạng */
+    word-wrap: break-word;
+    /* Đảm bảo từ dài cũng bị ngắt */
     max-width: 90%;
 }
 
@@ -356,7 +395,8 @@ body {
 
     /* Style chữ */
     color: var(--color-text-light);
-    padding: 0.75rem 1rem; /* Padding bên trong */
+    padding: 0.75rem 1rem;
+    /* Padding bên trong */
 
     /* QUAN TRỌNG: Tạo khoảng trống bên phải cho nút bấm */
     padding-right: 45px;
@@ -370,12 +410,15 @@ body {
 #send-chat-button {
     /* 1. Reset màu nền và viền */
     position: absolute;
-    right: 5px; /* Cách lề phải 5px */
+    right: 5px;
+    /* Cách lề phải 5px */
     top: 50%;
-    transform: translateY(-50%); /* Căn giữa dọc */
+    transform: translateY(-50%);
+    /* Căn giữa dọc */
     background-color: transparent !important;
     border-color: transparent !important;
-    box-shadow: none !important; /* Xóa hiệu ứng focus của Bootstrap */
+    box-shadow: none !important;
+    /* Xóa hiệu ứng focus của Bootstrap */
 
     /* 2. Đặt màu cho icon bên trong */
     color: var(--color-text-secondary);
@@ -384,21 +427,25 @@ body {
     border-radius: 50% !important;
 
     /* 4. Đảm bảo kích thước vuông (cho hình tròn) */
-    width: 40px;  /* (Bạn có thể tùy chỉnh kích thước) */
-    height: 40px; /* (Phải bằng width) */
+    width: 40px;
+    /* (Bạn có thể tùy chỉnh kích thước) */
+    height: 40px;
+    /* (Phải bằng width) */
 
     /* 5. Căn giữa icon */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Xóa padding cũ của .btn */
+    padding: 0;
+    /* Xóa padding cũ của .btn */
 
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* 6. Thêm hiệu ứng hover xám tròn */
 #send-chat-button:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important; /* Màu xám mờ */
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    /* Màu xám mờ */
     color: var(--color-text-light);
 }
 
@@ -409,7 +456,7 @@ body {
     margin: 0;
 }
 
-.col-lg-6{
+.col-lg-6 {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -452,14 +499,16 @@ body {
 }
 
 #myBoard {
-    width: 100% !important; /* Ghi đè mọi inline style do JS đặt */
-    height: auto !important; /* Cho phép chiều cao tự động co theo chiều rộng */
+    width: 100% !important;
+    /* Ghi đè mọi inline style do JS đặt */
+    height: auto !important;
+    /* Cho phép chiều cao tự động co theo chiều rộng */
     box-sizing: border-box;
     aspect-ratio: 1 / 1;
     touch-action: none;
 }
 
-#myBoard > div {
+#myBoard>div {
     width: 100% !important;
     box-sizing: border-box;
 }
@@ -480,6 +529,7 @@ body {
     transition: opacity 0.3s, background-color 0.3s;
     position: absolute;
 }
+
 .timer-box.active {
     background-color: #4CAF50;
     opacity: 1.0;
@@ -568,8 +618,10 @@ body {
     margin-right: 8px;
     /* Đảm bảo căn chỉnh tốt hơn */
     display: inline-block;
-    min-width: 20px; /* Chiều rộng tối thiểu cho số lượt 1-9 */
-    text-align: right; /* Căn phải cho số lượt */
+    min-width: 20px;
+    /* Chiều rộng tối thiểu cho số lượt 1-9 */
+    text-align: right;
+    /* Căn phải cho số lượt */
 }
 
 #pgn-history-list .move-text {
@@ -588,16 +640,24 @@ body {
     color: var(--color-text-light);
     font-weight: bold;
 }
+
 /*=== CÁC NÚT ĐIỀU HƯỚNG ===*/
 .button-group-container {
-    display: flex; /* Dùng Flexbox */
-    flex-wrap: wrap; /* Cho phép rớt hàng */
-    justify-content: center; /* Căn giữa các nút */
-    gap: 5px; /* Thêm khoảng cách nhỏ giữa các nút */
+    display: flex;
+    /* Dùng Flexbox */
+    flex-wrap: wrap;
+    /* Cho phép rớt hàng */
+    justify-content: center;
+    /* Căn giữa các nút */
+    gap: 5px;
+    /* Thêm khoảng cách nhỏ giữa các nút */
 }
+
 .button-group-container .btn {
-     flex-grow: 1; /* Cho phép các nút lớn lên 1 chút */
-     flex-basis: 100px; /* Chiều rộng cơ bản (tùy chỉnh) */
+    flex-grow: 1;
+    /* Cho phép các nút lớn lên 1 chút */
+    flex-basis: 100px;
+    /* Chiều rộng cơ bản (tùy chỉnh) */
 }
 
 /* ========================================= */
@@ -633,8 +693,8 @@ body {
 #evaluation-bar {
     width: 20px;
     background: linear-gradient(to top,
-                                var(--color-eval-gradient-start) 0%,
-                                var(--color-eval-gradient-end) 100%);
+            var(--color-eval-gradient-start) 0%,
+            var(--color-eval-gradient-end) 100%);
     border-radius: 8px;
     overflow: hidden;
     position: relative;
@@ -685,6 +745,7 @@ body {
 .square-selected {
     box-shadow: inset 0 0 0 2000px var(--color-highlight-squared) !important;
 }
+
 .highlight-check {
     box-shadow: inset 0 0 0 2000px var(--color-highlight-check);
 }
@@ -715,7 +776,8 @@ body {
     width: 100%;
 }
 
-.promotion-piece, .promotion-cancel {
+.promotion-piece,
+.promotion-cancel {
     cursor: pointer;
     padding: 5px;
     border-radius: 4px;
@@ -723,19 +785,25 @@ body {
     text-align: center;
 }
 
-.promotion-piece:hover, .promotion-cancel:hover {
+.promotion-piece:hover,
+.promotion-cancel:hover {
     background-color: #f0f0f0;
 }
 
-.promotion-piece img, .promotion-cancel img {
-    width: 50px; /* Kích thước icon quân cờ */
+.promotion-piece img,
+.promotion-cancel img {
+    width: 50px;
+    /* Kích thước icon quân cờ */
     height: 50px;
-    display: block; /* Loại bỏ khoảng trắng thừa */
-    margin: 0 auto; /* Căn giữa ảnh */
+    display: block;
+    /* Loại bỏ khoảng trắng thừa */
+    margin: 0 auto;
+    /* Căn giữa ảnh */
 }
 
 .promotion-cancel img {
-    width: 25px; /* Icon hủy nhỏ hơn */
+    width: 25px;
+    /* Icon hủy nhỏ hơn */
     height: 25px;
     opacity: 0.7;
 }
@@ -798,6 +866,32 @@ body {
 }
 
 /* Nhóm cài đặt (Màu quân cờ, Thời gian) */
+
+
+.modal-body .form-control {
+    background-color: var(--color-input-background);
+    color: var(--color-text-light);
+    border: 1px solid var(--color-border-subtle);
+}
+
+.modal-body .form-control:focus {
+    background-color: var(--color-input-background);
+    color: var(--color-text-light);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+}
+
+.modal-body .form-label {
+    color: var(--color-text-dark);
+    font-weight: 500;
+}
+
+.modal-body .form-control::placeholder {
+    color: var(--color-text-placeholder);
+    opacity: 1;
+    /* Firefox */
+}
+
 .setting-group {
     margin-bottom: var(--spacing-md);
     display: flex;
@@ -810,7 +904,7 @@ body {
     color: var(--color-text-light);
 }
 
-.setting-group > div {
+.setting-group>div {
     display: flex;
     gap: var(--spacing-unit);
 }
@@ -875,7 +969,8 @@ body {
 .typing-indicator span {
     height: 8px;
     width: 8px;
-    background-color: #9E9E9E; /* Màu xám nhạt */
+    background-color: #9E9E9E;
+    /* Màu xám nhạt */
     border-radius: 50%;
     display: inline-block;
     margin: 0 2px;
@@ -901,9 +996,13 @@ body {
 
 /* Định nghĩa animation "bounce" */
 @keyframes bounce {
-    0%, 60%, 100% {
+
+    0%,
+    60%,
+    100% {
         transform: translateY(0);
     }
+
     30% {
         transform: translateY(-5px);
     }

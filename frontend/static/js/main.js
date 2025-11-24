@@ -1,24 +1,24 @@
 
-    let board = null;
-    let game = null;
-    let moveHistory = [];
-    let currentFenIndex = 0;
-    const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let playerColor = null;
-    let isPlayerTurn = true;
-    let selectedBotColor = 'w';
-    let selectedBotTime = '5';
-    let whiteTime = 0;
-    let blackTime = 0;
-    let timerInterval = null;
-    let isTimedGame = false;
-    const JS_MATE_SCORE_BASE = 1000000;
-    const JS_MATE_DEPTH_ADJUSTMENT = 500;
-    let gameOverModalInstance = null;
-    let loadDataModalInstance = null;
-    let currentWebcamStream = null;
-    let timerWhiteEl = null;
-    let timerBlackEl = null;
+let board = null;
+let game = null;
+let moveHistory = [];
+let currentFenIndex = 0;
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+let playerColor = null;
+let isPlayerTurn = true;
+let selectedBotColor = 'w';
+let selectedBotTime = '5';
+let whiteTime = 0;
+let blackTime = 0;
+let timerInterval = null;
+let isTimedGame = false;
+const JS_MATE_SCORE_BASE = 1000000;
+const JS_MATE_DEPTH_ADJUSTMENT = 500;
+let gameOverModalInstance = null;
+let loadDataModalInstance = null;
+let currentWebcamStream = null;
+let timerWhiteEl = null;
+let timerBlackEl = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const welcomeScreen = document.getElementById('welcome-screen');
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUI(STARTING_FEN);
         handleScoreUpdate("0.00");
     }
-      // Gắn sự kiện cho nút "Chơi với Bot" trên Navbar
+    // Gắn sự kiện cho nút "Chơi với Bot" trên Navbar
     setupModalBehavior('bot-settings-modal', '#nav-play-bot');
 
 
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const timeButtons = document.querySelectorAll('.time-select');
 
     timeButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             timeButtons.forEach(btn => btn.classList.remove('selected'));
 
             this.classList.add('selected');
@@ -265,11 +265,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // ==========================================
 
         // 2. XỬ LÝ ĐIỂM SỐ (NẾU GAME CHƯA KẾT THÚC)
-        if (typeof score === 'string' && score.startsWith('#')) {
-            // Xử lý điểm mate "#+1" từ engine (nếu có)
-            formattedScore = score.replace("#+", "M+").replace("#-", "M-");
-            percentAdvantage = (score.includes('+')) ? 100 : 0;
+        if (typeof score === 'string' && (score.includes('M') || score.includes('#'))) {
 
+            // Chuẩn hóa về dạng hiển thị (Backend đã gửi +M2 rồi nên cứ thế hiển thị)
+            formattedScore = score.replace("#", "M");
+
+            // Xác định ai đang thắng để tô màu thanh bar
+            // Nếu chuỗi chứa '+' (VD: +M2) -> Trắng thắng (100%)
+            // Nếu chuỗi chứa '-' (VD: -M3) -> Đen thắng (0%)
+            if (score.includes('+')) {
+                percentAdvantage = 100;
+            } else if (score.includes('-')) {
+                percentAdvantage = 0;
+            } else {
+                // Trường hợp hy hữu không có dấu, mặc định 50
+                percentAdvantage = 50;
+            }
         } else if (typeof score === 'number') {
             // Xử lý điểm số Centipawn (ví dụ: 48 hoặc 999996)
 
@@ -317,10 +328,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (board) {
             board.destroy();
         }
-         game = new Chess(STARTING_FEN);
-         moveHistory = [];
-         currentFenIndex = 0;
-         moveHistory.push({ fen: STARTING_FEN, score: "0.00" });
+        game = new Chess(STARTING_FEN);
+        moveHistory = [];
+        currentFenIndex = 0;
+        moveHistory.push({ fen: STARTING_FEN, score: "0.00" });
         const config = {
 
             draggable: true,
@@ -365,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetBarContainerHeight = totalBoardAreaHeight - scoreHeight - verticalSpacing;
 
         scoreBarContainer.style.height = `${targetBarContainerHeight}px`;
-        }
+    }
 
 
     // Hàm kiểm soát nước đi
@@ -403,11 +414,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Lỗi Backend (make_move):', data.error);
                 return false;
             }
-            } catch (error) {
-                console.error('Lỗi mạng/server:', error);
-                return false;
-            }
+        } catch (error) {
+            console.error('Lỗi mạng/server:', error);
+            return false;
         }
+    }
 
     // Xử lý sự kiện kéo thả
     async function onDrop(source, target) {
@@ -450,60 +461,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function onSnapEnd() {
-         if (board.fen() !== game.fen()) {
+        if (board.fen() !== game.fen()) {
             board.position(game.fen());
         }
     }
 
-function updateAllHighlights() {
-    // 1. Xóa tất cả highlight cũ
-    document.querySelectorAll('#myBoard .square-55d63').forEach(square => {
-        square.classList.remove('square-selected'); // Vàng
-        square.classList.remove('highlight-move');  // Chấm xanh
-        square.classList.remove('highlight-check'); // Đỏ
-    });
+    function updateAllHighlights() {
+        // 1. Xóa tất cả highlight cũ
+        document.querySelectorAll('#myBoard .square-55d63').forEach(square => {
+            square.classList.remove('square-selected'); // Vàng
+            square.classList.remove('highlight-move');  // Chấm xanh
+            square.classList.remove('highlight-check'); // Đỏ
+        });
 
-    // 2. Highlight Vua bị chiếu (Ô Đỏ)
-    // (Chúng ta cần đảm bảo 'game' đã được load đúng FEN)
-    if (game.in_check()) {
-        const kingSquare = findKingSquare(game.turn());
-        if (kingSquare) {
-            document.querySelector(`#myBoard .square-${kingSquare}`).classList.add('highlight-check');
+        // 2. Highlight Vua bị chiếu (Ô Đỏ)
+        // (Chúng ta cần đảm bảo 'game' đã được load đúng FEN)
+        if (game.in_check()) {
+            const kingSquare = findKingSquare(game.turn());
+            if (kingSquare) {
+                document.querySelector(`#myBoard .square-${kingSquare}`).classList.add('highlight-check');
+            }
+        }
+
+        // 3. Highlight Nước đi Cuối cùng (Ô Vàng)
+        const history = game.history({ verbose: true });
+        if (history.length > 0) {
+            const lastMove = history[history.length - 1];
+            // Chỉ highlight nếu FEN hiện tại là FEN cuối cùng
+            if (currentFenIndex === moveHistory.length - 1) {
+                document.querySelector(`#myBoard .square-${lastMove.from}`).classList.add('square-selected');
+                document.querySelector(`#myBoard .square-${lastMove.to}`).classList.add('square-selected');
+            }
         }
     }
-
-    // 3. Highlight Nước đi Cuối cùng (Ô Vàng)
-    const history = game.history({ verbose: true });
-    if (history.length > 0) {
-        const lastMove = history[history.length - 1];
-        // Chỉ highlight nếu FEN hiện tại là FEN cuối cùng
-        if (currentFenIndex === moveHistory.length - 1) {
-            document.querySelector(`#myBoard .square-${lastMove.from}`).classList.add('square-selected');
-            document.querySelector(`#myBoard .square-${lastMove.to}`).classList.add('square-selected');
-        }
-    }
-}
 
     /**
  * Tìm Vua (Helper function, cần 'game' toàn cục)
  * @param {string} color Màu 'w' hoặc 'b'
  */
-function findKingSquare(color) {
-    // Tạo một mảng 64 ô
-    const squares = [
-        'a1','b1','c1','d1','e1','f1','g1','h1', 'a2','b2','c2','d2','e2','f2','g2','h2',
-        'a3','b3','c3','d3','e3','f3','g3','h3', 'a4','b4','c4','d4','e4','f4','g4','h4',
-        'a5','b5','c5','d5','e5','f5','g5','h5', 'a6','b6','c6','d6','e6','f6','g6','h6',
-        'a7','b7','c7','d7','e7','f7','g7','h7', 'a8','b8','c8','d8','e8','f8','g8','h8'
-    ];
-    for (const square of squares) {
-        const piece = game.get(square); // game.get() là hàm đúng
-        if (piece && piece.type === 'k' && piece.color === color) {
-            return square;
+    function findKingSquare(color) {
+        // Tạo một mảng 64 ô
+        const squares = [
+            'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2',
+            'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3', 'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4',
+            'a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5', 'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6',
+            'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7', 'a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'
+        ];
+        for (const square of squares) {
+            const piece = game.get(square); // game.get() là hàm đúng
+            if (piece && piece.type === 'k' && piece.color === color) {
+                return square;
+            }
         }
+        return null;
     }
-    return null;
-}
 
 
     /**
@@ -517,7 +528,7 @@ function findKingSquare(color) {
      * @param {string} fen FEN của thế cờ, dùng để truyền xuống updateEvaluationBar.
      */
     function handleScoreUpdate(scoreText, fen) {
-        if (typeof scoreText === 'string' && scoreText.startsWith('#')) {
+        if (typeof scoreText === 'string' && (scoreText.includes('M') || scoreText.includes('#'))) {
             updateEvaluationBar(scoreText, fen);
         } else {
             const scoreInCentipawns = parseFloat(scoreText);
@@ -586,74 +597,74 @@ function findKingSquare(color) {
     }
 
     async function handleBotTurn() {
-    isPlayerTurn = false;
-    try {
-        const response = await fetch('/api/game/bot_move', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fen: game.fen(), time_limit: selectedBotTime})
-        });
+        isPlayerTurn = false;
+        try {
+            const response = await fetch('/api/game/bot_move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fen: game.fen(), time_limit: selectedBotTime })
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        // Dừng đồng hồ của Bot NGAY KHI có kết quả
-        if (isTimedGame) clearInterval(timerInterval);
+            // Dừng đồng hồ của Bot NGAY KHI có kết quả
+            if (isTimedGame) clearInterval(timerInterval);
 
-         if (data.success && data.move_uci) {
-            const botMoveUci = data.move_uci;
-            const newFen = data.fen;
-            const evalScoreText = data.evaluation;
+            if (data.success && data.move_uci) {
+                const botMoveUci = data.move_uci;
+                const newFen = data.fen;
+                const evalScoreText = data.evaluation;
 
-            // --- XỬ LÝ NƯỚC ĐI CỦA BOT ---
-            // (Cập nhật cache, game.move, board.position, updateUI, handleScoreUpdate...)
-            if (currentFenIndex < moveHistory.length - 1) {
-                moveHistory = moveHistory.slice(0, currentFenIndex + 1);
-            }
-            moveHistory.push({ fen: newFen, score: evalScoreText });
-            currentFenIndex = moveHistory.length - 1;
-
-            game.move(botMoveUci, { sloppy: true });
-            board.position(game.fen());
-            updateAllHighlights();
-
-            updateUI(newFen);
-            handleScoreUpdate(evalScoreText, newFen);
-            console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
-            // ---------------------------
-
-            if (game.game_over()) {
-                if (isTimedGame) clearInterval(timerInterval);
-                updateEvaluationBar(0, newFen);
-
-                // === GỌI HÀM PHỤ CỦA BẠN ===
-                let title = "Ván đấu kết thúc";
-                let body = "Ván cờ hòa!";
-                if (game.in_checkmate()) {
-                    const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-                    body = `Chiếu hết! ${winner} thắng cuộc.`;
+                // --- XỬ LÝ NƯỚC ĐI CỦA BOT ---
+                // (Cập nhật cache, game.move, board.position, updateUI, handleScoreUpdate...)
+                if (currentFenIndex < moveHistory.length - 1) {
+                    moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 }
-                setTimeout(() => {
-                    showGameOverModal(title, body);
-                }, 200);
+                moveHistory.push({ fen: newFen, score: evalScoreText });
+                currentFenIndex = moveHistory.length - 1;
+
+                game.move(botMoveUci, { sloppy: true });
+                board.position(game.fen());
+                updateAllHighlights();
+
+                updateUI(newFen);
+                handleScoreUpdate(evalScoreText, newFen);
+                console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
+                // ---------------------------
+
+                if (game.game_over()) {
+                    if (isTimedGame) clearInterval(timerInterval);
+                    updateEvaluationBar(0, newFen);
+
+                    // === GỌI HÀM PHỤ CỦA BẠN ===
+                    let title = "Ván đấu kết thúc";
+                    let body = "Ván cờ hòa!";
+                    if (game.in_checkmate()) {
+                        const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
+                        body = `Chiếu hết! ${winner} thắng cuộc.`;
+                    }
+                    setTimeout(() => {
+                        showGameOverModal(title, body);
+                    }, 200);
+
+                } else {
+                    // Nếu game chưa kết thúc -> BẬT ĐỒNG HỒ CHO NGƯỜI CHƠI
+                    if (isTimedGame) {
+                        startTimer(game.turn());
+                    }
+                }
 
             } else {
-                // Nếu game chưa kết thúc -> BẬT ĐỒNG HỒ CHO NGƯỜI CHƠI
-                if (isTimedGame) {
-                    startTimer(game.turn());
-                }
+                console.error('Bot Error:', data.error);
+                // Nếu lỗi, trả lại lượt cho người chơi
+                if (isTimedGame) startTimer(game.turn());
             }
-
-        } else {
-             console.error('Bot Error:', data.error);
-             // Nếu lỗi, trả lại lượt cho người chơi
-             if (isTimedGame) startTimer(game.turn());
+        } catch (error) {
+            console.error('Lỗi kết nối Bot:', error);
+            if (isTimedGame) startTimer(game.turn());
         }
-    } catch (error) {
-        console.error('Lỗi kết nối Bot:', error);
-        if (isTimedGame) startTimer(game.turn());
+        isPlayerTurn = true; // Mở khóa bàn cờ cho người chơi
     }
-    isPlayerTurn = true; // Mở khóa bàn cờ cho người chơi
-}
 
 
     /**
@@ -661,39 +672,39 @@ function findKingSquare(color) {
 
      */
     function onDragStart(source, piece, position, orientation) {
-    // 1. CHẶN NẾU KHÔNG PHẢI LƯỢT CỦA NGƯỜI CHƠI
-    if (!isPlayerTurn) {
-        return false;
+        // 1. CHẶN NẾU KHÔNG PHẢI LƯỢT CỦA NGƯỜI CHƠI
+        if (!isPlayerTurn) {
+            return false;
+        }
+
+        // 2. CHẶN NẾU KHÔNG PHẢI QUÂN CỜ CỦA LƯỢT HIỆN TẠI
+        if (game.turn() !== piece[0]) {
+            return false;
+        }
+
+        // === BẮT ĐẦU SỬA LỖI ===
+        updateAllHighlights();
+
+        // 4. Lấy danh sách nước đi hợp lệ cho quân cờ này
+        const moves = game.moves({
+            square: source,
+            verbose: true // Cần 'verbose' để lấy ô 'to'
+        });
+
+        // Nếu không có nước nào, không cho kéo
+        if (moves.length === 0) {
+            return false;
+        }
+
+        // 5. Hiển thị các chấm xanh (highlight-move)
+        for (const move of moves) {
+            // Thêm class 'highlight-move' vào ô 'to'
+            document.querySelector(`#myBoard .square-${move.to}`).classList.add('highlight-move');
+        }
+        // === KẾT THÚC SỬA LỖI ===
+
+        return true; // Cho phép kéo
     }
-
-    // 2. CHẶN NẾU KHÔNG PHẢI QUÂN CỜ CỦA LƯỢT HIỆN TẠI
-    if (game.turn() !== piece[0]) {
-        return false;
-    }
-
-    // === BẮT ĐẦU SỬA LỖI ===
-    updateAllHighlights();
-
-    // 4. Lấy danh sách nước đi hợp lệ cho quân cờ này
-    const moves = game.moves({
-        square: source,
-        verbose: true // Cần 'verbose' để lấy ô 'to'
-    });
-
-    // Nếu không có nước nào, không cho kéo
-    if (moves.length === 0) {
-        return false;
-    }
-
-    // 5. Hiển thị các chấm xanh (highlight-move)
-    for (const move of moves) {
-        // Thêm class 'highlight-move' vào ô 'to'
-        document.querySelector(`#myBoard .square-${move.to}`).classList.add('highlight-move');
-    }
-    // === KẾT THÚC SỬA LỖI ===
-
-    return true; // Cho phép kéo
-}
 
     /**
      *  Hàm cập nhật lịch sử pgn
@@ -721,12 +732,12 @@ function findKingSquare(color) {
             }
 
             let highlightClass = '';
-            if (i+1 === currentFenIndex) {
+            if (i + 1 === currentFenIndex) {
                 highlightClass = 'current-move-highlight';
             }
 
             // 3. Thêm nước đi với class tương ứng
-            pgnHtml += `<span class="move-text me-2 ${highlightClass}" data-index="${i+1}">${move.san}</span>`;
+            pgnHtml += `<span class="move-text me-2 ${highlightClass}" data-index="${i + 1}">${move.san}</span>`;
         }
 
         historyList.innerHTML = pgnHtml;
@@ -804,9 +815,9 @@ function findKingSquare(color) {
     }
 
     // Các nút điều chỉnh Fen hiện tại
-    $(document).ready(function() {
+    $(document).ready(function () {
 
-        $('.button-group-container button').on('click', function() {
+        $('.button-group-container button').on('click', function () {
             const action = $(this).data('action');
 
             switch (action) {
@@ -836,7 +847,7 @@ function findKingSquare(color) {
         });
 
         // Xử lý click vào danh sách PGN (Event Delegation)
-        $('#pgn-history-list').on('click', '.move-text', function() {
+        $('#pgn-history-list').on('click', '.move-text', function () {
             const index = parseInt($(this).data('index'));
             if (!isNaN(index)) {
                 loadFen(index);
@@ -1206,8 +1217,8 @@ function findKingSquare(color) {
                 fenToLoad = data.fen;
                 statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
             } else {
-                statusEl.textContent = `Lỗi: ${data.error}`;
-                return; // Dừng lại nếu lỗi
+                statusEl.textContent = `Lỗi: ${data.error} `;
+                return;
             }
         }
         else if (activeTabId === 'live-scan-pane') {
@@ -1246,7 +1257,7 @@ function findKingSquare(color) {
                 statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
                 stopWebcam(); // Tắt camera sau khi thành công
             } else {
-                statusEl.textContent = `Lỗi: ${data.error}`;
+                statusEl.textContent = `Lỗi: ${data.error} `;
                 return;
             }
         }
@@ -1270,6 +1281,92 @@ function findKingSquare(color) {
             alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ. Vui lòng kiểm tra lại.");
         }
     });
+
+    // =======================================================
+    // LOGIC UPLOAD ẢNH (Drag & Drop + Preview)
+    // =======================================================
+    const uploadArea = document.getElementById('upload-area');
+    const imageInput = document.getElementById('image-upload-input');
+    const previewContainer = document.getElementById('image-preview-container');
+    const previewImage = document.getElementById('image-preview');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+
+    if (uploadArea && imageInput) {
+        // 1. Click để mở file dialog
+        uploadArea.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        // 2. Xử lý Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            uploadArea.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            uploadArea.classList.remove('dragover');
+        }
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                handleFiles(files);
+            }
+        }
+
+        // 3. Xử lý khi chọn file qua dialog
+        imageInput.addEventListener('change', function () {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewImage.src = e.target.result;
+                        previewContainer.classList.remove('d-none');
+                        uploadArea.classList.add('d-none'); // Ẩn vùng upload
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    alert("Vui lòng chọn file ảnh hợp lệ.");
+                }
+            }
+        }
+
+        // 4. Xử lý nút Xóa ảnh
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+                imageInput.value = ''; // Reset input
+                previewImage.src = '';
+                previewContainer.classList.add('d-none');
+                uploadArea.classList.remove('d-none'); // Hiện lại vùng upload
+            });
+        }
+    }
 
 
     /**
@@ -1310,7 +1407,7 @@ function findKingSquare(color) {
     // Hàm chung để xử lý việc chọn nút trong Modal
     function setupModalButtonSelection(selector) {
         document.querySelectorAll(selector).forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const group = this.parentElement.querySelectorAll('button');
 
                 group.forEach(btn => btn.classList.remove('selected'));
