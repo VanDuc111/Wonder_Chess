@@ -45,17 +45,27 @@
                     </div>
 
                     <div class="tab-pane fade" id="image-pane" role="tabpanel" aria-labelledby="image-tab">
-                        <label for="image-upload-input" class="form-label">Chọn ảnh bàn cờ (2D):</label>
+                        <label for="image-upload-input" class="form-label">Chọn ảnh bàn cờ:</label>
                         <input class="form-control" type="file" id="image-upload-input" accept="image/png, image/jpeg">
                         <div id="image-upload-status" class="form-text text-white-50 mt-2"></div>
                     </div>
-                    <div class="tab-pane fade" id="live-scan-pane" role="tabpanel" aria-labelledby="live-scan-tab"
-                        tabindex="0">
-                        <label for="webcam-feed" class="form-label">Hướng camera vào bàn cờ:</label>
-                        <video id="webcam-feed" autoplay playsinline
-                            style="width: 100%; border-radius: 5px; background-color: #000;"></video>
-                        <div id="scan-status" class="form-text text-white-50 mt-2"></div>
-                    </div>
+                    <div class="tab-pane fade" id="live-scan-pane" role="tabpanel">
+                        <div class="d-flex justify-content-center align-items-center gap-3 my-3">
+                            <button id="capture-btn" class="btn btn-primary">
+                                <i class="fas fa-camera"></i> Chụp & Phân tích ngay
+                            </button>
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto-scan-toggle">
+                                <label class="form-check-label" for="auto-scan-toggle">Auto Scan (5s)</label>
+                            </div>
+                        </div>
+                        <div class="ratio ratio-4x3 mb-3 border bg-dark">
+                            <video id="webcam-feed" autoplay playsinline muted></video>
+                        </div>
+
+                        <div id="scan-status" class="text-muted mt-2">Sẵn sàng...</div>
+                        </div>
                 </div>
             </div>
 

@@ -1503,5 +1503,106 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fen-tab').addEventListener('shown.bs.tab', stopWebcam);
     document.getElementById('image-tab').addEventListener('shown.bs.tab', stopWebcam);
 
+    // --- LOGIC AUTO SCAN ---
+    let autoScanInterval = null;
+    const AUTO_SCAN_DELAY = 5000; // 5 giây quét 1 lần (để kịp API trả về)
+
+    const autoScanToggle = document.getElementById('auto-scan-toggle');
+    const captureBtn = document.getElementById('capture-btn'); // Đặt ID này cho nút chụp cũ của bạn
+
+    // Hàm thực hiện quy trình chụp và gửi (Tách từ code cũ ra)
+    async function performScan() {
+        const statusEl = document.getElementById('scan-status');
+
+        if (!currentWebcamStream) {
+            statusEl.textContent = '⚠️ Camera chưa bật!';
+            if(autoScanToggle) autoScanToggle.checked = false;
+            return;
+        }
+
+        statusEl.textContent = '🔄 Đang tự động quét...';
+
+        try {
+            // 1. Chụp từ video ra canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            // 2. Chuyển sang Blob
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+
+            // 3. Gửi lên Server
+            const formData = new FormData();
+            formData.append('file', blob, 'autocapture.jpg');
+
+            const response = await fetch('/api/image/analyze_image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                statusEl.textContent = '✅ Đã cập nhật thế cờ!';
+                statusEl.style.color = 'green';
+
+                // Cập nhật bàn cờ (Code cũ của bạn)
+                const newFen = data.fen;
+                // Chỉ cập nhật nếu FEN thay đổi để tránh giật lag
+                try {
+                    if (game.fen().split(' ')[0] !== newFen.split(' ')[0]) {
+                        game.load(newFen);
+                        board.position(newFen);
+                        fetchDeepEvaluation(newFen); // Gọi Alice/Engine đánh giá luôn
+
+                        // Phát âm thanh nhẹ nhàng báo hiệu đã nhận
+                        // (Optional) new Audio('/static/sounds/move.mp3').play();
+                    }
+                } catch (e) {
+                    console.warn("Bỏ qua FEN lỗi từ Camera:", e.message);
+                    statusEl.textContent = '⚠️ Ảnh mờ hoặc thiếu quân Vua.';
+                }
+            } else {
+                console.warn("Scan lỗi:", data.error);
+                statusEl.textContent = '⚠️ Không nhận diện được quân cờ.';
+            }
+
+        } catch (err) {
+            console.error("Lỗi Auto Scan:", err);
+        }
+
+        // Nếu vẫn đang bật Auto, gọi lần quét tiếp theo sau delay
+        // Dùng setTimeout thay vì setInterval để tránh chồng chéo request
+        if (autoScanToggle.checked) {
+            autoScanInterval = setTimeout(performScan, AUTO_SCAN_DELAY);
+        }
+    }
+
+    // Sự kiện bật/tắt công tắc
+    if (autoScanToggle) {
+        autoScanToggle.addEventListener('change', function() {
+            if (this.checked) {
+                // Bắt đầu quét
+                document.getElementById('scan-status').textContent = '🟢 Chế độ rảnh tay đã bật.';
+                performScan();
+            } else {
+                // Tắt quét
+                clearTimeout(autoScanInterval);
+                document.getElementById('scan-status').textContent = '🔴 Đã dừng quét tự động.';
+            }
+        });
+    }
+
+    // Gắn sự kiện cho nút chụp thủ công (Code cũ của bạn có thể gọi performScan luôn)
+    if (captureBtn) {
+        captureBtn.addEventListener('click', async () => {
+            // Tắt auto nếu đang bật để tránh xung đột
+            if(autoScanToggle) autoScanToggle.checked = false;
+            clearTimeout(autoScanInterval);
+            await performScan();
+        });
+    }
 
 });
