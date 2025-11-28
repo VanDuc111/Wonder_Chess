@@ -4,11 +4,10 @@ from roboflow import Roboflow
 import os
 from dotenv import load_dotenv
 
-# Import module xử lý thị giác máy tính cốt lõi (File bạn vừa tạo)
+
 try:
     from backend.services.vision_core import find_board_corners, get_board_mapping_matrix, map_point_to_grid
 except ImportError:
-    # Fallback nếu chạy script lẻ bên ngoài mà không qua module backend
     from vision_core import find_board_corners, get_board_mapping_matrix, map_point_to_grid
 
 load_dotenv()
@@ -16,13 +15,12 @@ load_dotenv()
 # --- CẤU HÌNH ---
 API_KEY = os.getenv("ROBOFLOW_API_KEY")
 MODEL_ID = os.getenv("ROBOFLOW_PROJECT_ID")
-# Xử lý lỗi nếu version không phải số
+
 try:
     MODEL_VERSION = int(os.getenv("ROBOFLOW_VERSION", 1))
 except:
     MODEL_VERSION = 1
 
-# Bảng ánh xạ linh hoạt (Chấp nhận cả tên ngắn và tên dài từ Roboflow)
 CLASS_TO_FEN = {
     # Quân Đen
     "bp": "p", "br": "r", "bn": "n", "bb": "b", "bq": "q", "bk": "k",
@@ -64,8 +62,7 @@ def analyze_image_to_fen(image_path):
         rf = Roboflow(api_key=API_KEY)
         project = rf.workspace().project(MODEL_ID)
         model = project.version(MODEL_VERSION).model
-        
-        # Confidence thấp một chút (30%) để bắt được các quân ở xa/mờ
+
         prediction = model.predict(image_path, confidence=30, overlap=30).json()
         predictions = prediction.get("predictions", [])
         

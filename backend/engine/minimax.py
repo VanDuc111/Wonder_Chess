@@ -1,5 +1,5 @@
 import chess
-import chess.polyglot  # BẮT BUỘC: Để tối ưu tốc độ Hash
+import chess.polyglot
 import time
 
 # --- CẤU HÌNH ENGINE ---
