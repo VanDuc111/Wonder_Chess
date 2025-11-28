@@ -1,5 +1,11 @@
 # WONDER CHESS - INTELLIGENT CHESS ASSISTANT SYSTEM
 
+# Live Demo: [https://wonder-chess.onrender.com](https://wonder-chess.onrender.com/)
+
+> ** NOTE: ** > Since it uses a free Server (Render Free Tier), the site will go into "hibernation" mode if there is no access.
+
+> **The first load may take about 50 seconds to start.** Hope you get the expected display, the next will be very fast!
+
 ## GRADUATION THESIS PROJECT
 
 This project represents a comprehensive software engineering effort to design and implement an advanced chess application. The primary objective is to demonstrate proficiency in algorithm design, system architecture optimization, and the integration of heterogeneous AI components (Custom Heuristic Engine, Computer Vision, and Large Language Models).
