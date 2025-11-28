@@ -2,70 +2,75 @@ import os
 import time
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
+# 1. CẤU HÌNH API KEY (Theo đúng tên biến bạn đặt trên Render)
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if API_KEY:
     try:
         genai.configure(api_key=API_KEY)
-        print("DEBUG: Gemini Client (genai) khởi tạo thành công.")
     except Exception as e:
         print(f"Lỗi khởi tạo Gemini Client: {e}")
-        API_KEY = None  # Vô hiệu hóa nếu cấu hình lỗi
+        API_KEY = None
 else:
-    print("CẢNH BÁO: Không tìm thấy GEMINI_API_KEY trong biến môi trường!")
+    print("CẢNH BÁO: Không tìm thấy GEMINI_API_KEY!")
+
+# 2. CẤU HÌNH AN TOÀN (Để tránh bị lọc chat vô lý)
+# Tắt bớt các bộ lọc để Alice nói chuyện tự nhiên hơn
+SAFETY_SETTINGS = {
+    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+}
 
 
 def stream_gemini_response(prompt_context):
     """
-    Gửi prompt đến Gemini, hỗ trợ stream và tự động thử lại (retry) khi bị quá tải (503).
+    Gửi prompt đến Gemini, hỗ trợ stream an toàn và tự động thử lại.
     """
 
     if not API_KEY:
-        yield "[Lỗi: Alice chưa được cấu hình (Thiếu API Key).]"
-        return  # Dừng hàm generator
+        yield "Thiếu API Key trên Server."
+        return
 
-    # Cấu hình logic thử lại
     max_retries = 3
-    delay_seconds = 2  # Bắt đầu với 2 giây
+    delay_seconds = 2
 
     for i in range(max_retries):
         try:
-            # 1. Khởi tạo model (KHÔNG CÓ safety_settings)
             model = genai.GenerativeModel('gemini-2.5-flash')
 
-            # 2. Gọi API để stream
             response_generator = model.generate_content(
                 prompt_context,
-                stream=True
+                stream=True,
+                safety_settings=SAFETY_SETTINGS
             )
 
-            # 3. Stream (yield) từng chunk về cho Flask
+            # 3. VÒNG LẶP XỬ LÝ STREAM
             for chunk in response_generator:
-                if chunk.text:
-                    yield chunk.text
+                try:
 
-            # 4. Nếu stream thành công, thoát khỏi vòng lặp và kết thúc
+                    if chunk.text:
+                        yield chunk.text
+                except ValueError:
+                    continue
+
             return
 
         except (google_exceptions.ResourceExhausted,
                 google_exceptions.ServiceUnavailable,
                 google_exceptions.DeadlineExceeded) as e:
-            # 5. XỬ LÝ LỖI 503 (Overloaded / Quá tải)
 
-            print(f"LỖI 503 (Overloaded) từ Gemini. Đang thử lại lần {i + 1}/{max_retries}...")
-
+            print(f"Gemini quá tải. Thử lại lần {i + 1}...")
             if i < max_retries - 1:
-                # Nếu chưa phải lần thử cuối, chờ và thử lại
                 time.sleep(delay_seconds)
-                delay_seconds *= 2  # Gấp đôi thời gian chờ
+                delay_seconds *= 2
             else:
-                # Nếu là lần thử cuối cùng, báo lỗi
-                print("Hết số lần thử. Báo lỗi.")
-                yield "[Lỗi AI: Máy chủ Gemini hiện đang quá tải. Vui lòng thử lại sau ít phút.]"
+                yield "Máy chủ Google đang quá tải. Vui lòng thử lại sau."
 
         except Exception as e:
-            # 6. Bắt tất cả các lỗi khác (bao gồm cả 'dangerous_content' nếu nó vẫn xảy ra)
-            print(f"LỖI KHÔNG XÁC ĐỊNH TRONG AI SERVICE: {e}")
-            yield f"[Lỗi AI: {e}]"
+            print(f"Lỗi không xác định: {e}")
+            yield f"Alice gặp lỗi kỹ thuật: {str(e)}"
             return

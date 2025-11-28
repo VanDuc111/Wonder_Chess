@@ -28,31 +28,41 @@ def chat_analysis():
 
     # 3. LUÔN LUÔN lấy dữ liệu engine (cho ngữ cảnh)
     engine_results = {'search_score': '0', 'best_move': 'N/A', 'pv': 'N/A'}
-    try:
-        engine_results_from_find = find_best_move(fen)
-        engine_results.update(engine_results_from_find)
-    except Exception as e:
-        print(f"LỖI ENGINE (find_best_move): {e}")
+    engine_error_message = None
+    if fen:
+        try:
+            board = chess.Board(fen)
+            if not board.is_valid():
+                engine_error_message = "Thế cờ không hợp lệ (Invalid FEN)."
+            else:
+                # Gọi Engine (Code Engine mới đã tối ưu, chạy nhanh)
+                engine_results_from_find = find_best_move(fen)
+                engine_results.update(engine_results_from_find)
 
-        def error_stream():
-            yield f"Rất tiếc, engine cờ vua của tôi đã gặp lỗi khi phân tích thế cờ này. (Lỗi: {e})"
+        except ValueError:
+            engine_error_message = "Thế cờ bị lỗi cấu trúc (Vua bị thiếu hoặc sai vị trí)."
+        except Exception as e:
+            print(f"Engine Error: {e}")
+            engine_error_message = f"Lỗi tính toán engine: {str(e)}"
+    else:
+        engine_error_message = "Không tìm thấy dữ liệu bàn cờ (FEN rỗng)."
 
-        return Response(stream_with_context(error_stream()), content_type='text/event-stream')
-
-    # 4. LUÔN LUÔN định dạng điểm số
+    # 4.Định dạng điểm số
     raw_score = engine_results.get('search_score', '0')
-    formatted_score = 'N/A'
-    try:
-        score_cp = int(raw_score)
-        score_pawn = score_cp / 100.0
-        formatted_score = f"{score_pawn:+.2f}"
-    except ValueError:
-        formatted_score = raw_score  # Giữ nguyên nếu là "#+1"
+    formatted_score = raw_score
+
+    if raw_score != 'N/A' and 'M' not in str(raw_score):
+        try:
+            # Thử chuyển sang float để format lại cho đẹp (+ dấu)
+            float_score = float(raw_score)
+            formatted_score = f"{float_score:+.2f}"
+        except:
+            formatted_score = raw_score
 
     # 5. LUÔN LUÔN chuyển đổi UCI sang SAN
     best_move_san = "N/A"
     best_move_uci = engine_results.get('best_move')
-    if best_move_uci and best_move_uci != "N/A":
+    if best_move_uci and best_move_uci != "N/A" and fen and not engine_error_message:
         try:
             board = chess.Board(fen)
             move = board.parse_uci(best_move_uci)
@@ -61,7 +71,18 @@ def chat_analysis():
             print(f"Lỗi chuyển đổi UCI sang SAN: {e}")
             best_move_san = best_move_uci
 
-    # 6. LUÔN LUÔN xây dựng PROMPT ĐẦY ĐỦ
+    # 6. Xây dựng PROMPT ĐẦY ĐỦ
+    error_instruction = ""
+    if engine_error_message:
+        error_instruction = f"""
+            ⚠️ **CẢNH BÁO TỪ HỆ THỐNG:** Hiện tại Engine đang gặp lỗi: "{engine_error_message}".
+            -> **NHIỆM VỤ CỦA BẠN:** Hãy thông báo khéo léo cho người dùng biết rằng hình ảnh bàn cờ có thể bị mờ, thiếu quân hoặc sai luật. Khuyên họ kiểm tra lại hoặc chụp ảnh khác.
+            -> Đừng cố phân tích sâu thế cờ nếu nó bị lỗi, hãy trả lời dựa trên kiến thức chung nếu có thể.
+            """
+    else:
+        # Nếu không lỗi, để trống (hoặc có thể thêm hướng dẫn phân tích sâu nếu muốn)
+        error_instruction = "Dữ liệu Engine hợp lệ. Hãy phân tích chi tiết dựa trên Điểm số và Nước đi tốt nhất."
+
     prompt_context = f"""
     Bạn là **Alice**, một **Trợ lý Cờ vua Cấp độ Đại kiện tướng (GM)**, với giọng điệu phân tích sắc sảo, chuyên nghiệp và "người" hơn.
     {greeting_instruction}
@@ -84,6 +105,7 @@ def chat_analysis():
     - Đánh giá thế cờ (Score): **{formatted_score}**
     - Nước đi TỐT NHẤT tiếp theo (SAN): **{best_move_san}**
     - Chuỗi nước đi chính (PV - có thể là UCI): {engine_results.get('pv', 'N/A')}
+    {error_instruction}
 
     ---
     **HƯỚG DẪN TRẢ LỜI:**
