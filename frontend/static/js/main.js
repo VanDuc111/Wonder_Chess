@@ -1547,6 +1547,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 statusEl.textContent = '✅ Đã cập nhật thế cờ!';
                 statusEl.style.color = 'green';
+                const debugOverlay = document.getElementById('debug-overlay');
+                if (data.debug_image && debugOverlay) {
+                    debugOverlay.src = 'data:image/jpeg;base64,' + data.debug_image;
+                    debugOverlay.style.display = 'block';
+
+                    // Hiện ảnh debug trong 1.5 giây rồi ẩn đi để tiếp tục soi camera
+                    setTimeout(() => {
+                        debugOverlay.style.display = 'none';
+                    }, 1500);
+                }
 
                 // Cập nhật bàn cờ (Code cũ của bạn)
                 const newFen = data.fen;

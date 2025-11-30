@@ -3,6 +3,7 @@ import numpy as np
 from roboflow import Roboflow
 import os
 from dotenv import load_dotenv
+import base64
 
 
 try:
@@ -33,6 +34,7 @@ CLASS_TO_FEN = {
     "wP": "P", "wR": "R", "wN": "N", "wB": "B", "wQ": "Q", "wK": "K"
 }
 
+
 def analyze_image_to_fen(image_path):
     """
     Hàm chính: Nhận diện bàn cờ 3D và trả về FEN.
@@ -50,7 +52,6 @@ def analyze_image_to_fen(image_path):
         scale = max_dim / max(h, w)
         new_w, new_h = int(w * scale), int(h * scale)
         img = cv2.resize(img, (new_w, new_h))
-        # Ghi đè ảnh tạm để gửi lên Roboflow
         cv2.imwrite(image_path, img)
         h, w = new_h, new_w
 
@@ -63,7 +64,7 @@ def analyze_image_to_fen(image_path):
         project = rf.workspace().project(MODEL_ID)
         model = project.version(MODEL_VERSION).model
 
-        prediction = model.predict(image_path, confidence=30, overlap=30).json()
+        prediction = model.predict(image_path, confidence=10, overlap=30).json()
         predictions = prediction.get("predictions", [])
         
         if not predictions:
@@ -71,6 +72,58 @@ def analyze_image_to_fen(image_path):
 
     except Exception as e:
         return None, f"Lỗi kết nối Roboflow: {str(e)}"
+
+    # Tách riêng quân cờ và bàn cờ
+    piece_preds = []
+    board_box = None
+
+    for p in predictions:
+        cls = p['class'].lower()
+        if cls == 'chessboard' or cls == 'board':
+            # Nếu tìm thấy nhiều bàn cờ, lấy cái có confidence cao nhất hoặc to nhất
+            if board_box is None or p['confidence'] > board_box['confidence']:
+                board_box = p
+        else:
+            piece_preds.append(p)
+
+    # Biến lưu tọa độ cắt (Offset)
+    offset_x = 0
+    offset_y = 0
+
+    if board_box:
+        print(f"✅ Phát hiện bàn cờ (Confidence: {board_box['confidence']:.2f}) -> Đang cắt ảnh...")
+
+        # Tính tọa độ cắt (Bounding Box của class chessboard)
+        bx, by = board_box['x'], board_box['y']
+        bw, bh = board_box['width'], board_box['height']
+
+        x1 = int(bx - bw / 2)
+        y1 = int(by - bh / 2)
+        x2 = int(bx + bw / 2)
+        y2 = int(by + bh / 2)
+
+        # Giới hạn trong khung hình
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(w, x2), min(h, y2)
+
+        # Cập nhật ảnh img thành ảnh đã cắt
+        img = img[y1:y2, x1:x2]
+
+        # Cập nhật offset để tính lại tọa độ quân cờ
+        offset_x = x1
+        offset_y = y1
+
+        # Cập nhật lại kích thước ảnh sau khi cắt
+        h, w = img.shape[:2]
+
+        # ĐIỀU CHỈNH TỌA ĐỘ CÁC QUÂN CỜ (Shift Coordinates)
+        # Vì ảnh đã bị cắt, gốc tọa độ (0,0) thay đổi, nên quân cờ cũng phải dịch theo
+        for p in piece_preds:
+            p['x'] -= offset_x
+            p['y'] -= offset_y
+
+    else:
+        print("⚠️ Không tìm thấy class 'chessboard'. Dùng toàn bộ ảnh.")
 
     # 3. Xử lý hình học
 
@@ -82,42 +135,40 @@ def analyze_image_to_fen(image_path):
     
     if corners is not None:
         detected_width = np.linalg.norm(corners[0] - corners[1])
-        if detected_width < w *0.4:
-            corners = None
-        else:
+        # Bàn cờ tìm được phải to (chiếm > 50% ảnh đã cắt)
+        if detected_width > w * 0.5:
+            print("✅ OpenCV tìm thấy góc bàn cờ.")
             use_perspective = True
             M, side_len = get_board_mapping_matrix(corners, w, h)
 
     if not use_perspective:
 
-        all_x = [p['x'] for p in predictions]
-        all_y = [p['y'] for p in predictions]
-        margin = 60
-        min_x, max_x = min(all_x), max(all_x)
-        min_y, max_y = min(all_y), max(all_y)
-        board_w = (max_x - min_x) + (margin * 2)
-
-
-        board_size = board_w
-
-        board_x1 = max(0, min_x - margin)
-        board_y1 = max(0, min_y - margin)
-
-        board_h = board_size
-
-        sq_w = board_size / 8
-        sq_h = board_size / 8
-
+        if piece_preds:
+            all_x = [p['x'] for p in piece_preds]
+            all_y = [p['y'] for p in piece_preds]
+            margin = w * 0.05  # Margin nhỏ thôi vì đã crop rồi
+            board_x1 = max(0, min(all_x) - margin)
+            board_y1 = max(0, min(all_y) - margin)
+            board_size = (max(all_x) + margin) - board_x1  # Ép vuông
+            board_h = board_size
+            sq_w = board_size / 8
+            sq_h = board_size / 8
+        else:
+            return None, None, "Không có quân cờ để tính toán."
         # 4. MAPPING
     board_grid = [["1" for _ in range(8)] for _ in range(8)]
+    debug_img = img.copy()
+
+    if corners is not None:
+        cv2.polylines(debug_img, [corners.astype(int)], True, (0, 255, 0), 2)
     
-    for p in predictions:
+    for p in piece_preds:
         class_name = p["class"]
         
         # Lấy điểm CHÂN (Bottom Center) của quân cờ
         # Vì trong ảnh 3D, chân quân cờ mới là vị trí thực tế trên bàn cờ
         foot_x = p["x"]
-        foot_y = p["y"] + (p["height"] / 2) 
+        foot_y = p["y"] + (p["height"] / 2) * 0.9  # Dịch xuống gần đáy hơn một chút
 
         row, col = -1, -1
 
@@ -143,6 +194,20 @@ def analyze_image_to_fen(image_path):
         
         if fen_char != '?':
             board_grid[row][col] = fen_char
+        x, y = int(p['x']), int(p['y'])
+        w, h = int(p['width']), int(p['height'])
+
+        # Vẽ Box đỏ
+        top_left = (int(x - w / 2), int(y - h / 2))
+        bottom_right = (int(x + w / 2), int(y + h / 2))
+        cv2.rectangle(debug_img, top_left, bottom_right, (0, 0, 255), 2)
+
+        # Vẽ tâm vàng
+        cv2.circle(debug_img, (x, y), 3, (0, 255, 255), -1)
+
+        # 4. Mã hóa ảnh thành Base64 để gửi qua JSON
+    _, buffer = cv2.imencode('.jpg', debug_img)
+    debug_base64 = base64.b64encode(buffer).decode('utf-8')
 
     # 5. Tạo chuỗi FEN cuối cùng
     fen_rows = []
@@ -159,4 +224,4 @@ def analyze_image_to_fen(image_path):
         
     final_fen = "/".join(fen_rows) + " w KQkq - 0 1"
     
-    return final_fen, None
+    return final_fen, debug_base64, None

@@ -22,9 +22,8 @@ def analyze_image():
         filename = f"scan_{int(time.time())}.jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
-        
-        # SỬA 2: Hứng 2 giá trị trả về (fen, error) thay vì 1
-        detected_fen, error = analyze_image_to_fen(filepath)
+
+        detected_fen, debug_image_b64, error = analyze_image_to_fen(filepath)
         
         try:
             if os.path.exists(filepath):
@@ -33,6 +32,11 @@ def analyze_image():
             pass
 
         if detected_fen:
-            return jsonify({'success': True, 'fen': detected_fen, 'message': 'Thành công!'})
+            return jsonify({
+                'success': True,
+                'fen': detected_fen,
+                'debug_image': debug_image_b64,
+                'message': 'Thành công!'
+            })
         else:
             return jsonify({'success': False, 'error': error})
