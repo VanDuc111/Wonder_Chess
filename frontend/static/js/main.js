@@ -1274,6 +1274,9 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchDeepEvaluation(fenToLoad);
             updateUI(fenToLoad);
             if (loadDataModalInstance) {
+                if (document.activeElement) {
+                    document.activeElement.blur();
+                }
                 loadDataModalInstance.hide();
             }
 

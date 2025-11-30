@@ -102,25 +102,38 @@ def analyze_image_to_fen(image_path):
         x2 = int(bx + bw / 2)
         y2 = int(by + bh / 2)
 
-        # Giới hạn trong khung hình
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w, x2), min(h, y2)
+        # --- SỬA LỖI AN TOÀN (SAFE CROP) ---
+        # 1. Giới hạn tọa độ trong khung hình (Clamp)
+        x1 = max(0, min(x1, w - 1))
+        y1 = max(0, min(y1, h - 1))
+        x2 = max(x1 + 1, min(x2, w))  # Đảm bảo x2 luôn lớn hơn x1 ít nhất 1px
+        y2 = max(y1 + 1, min(y2, h))  # Đảm bảo y2 luôn lớn hơn y1 ít nhất 1px
 
-        # Cập nhật ảnh img thành ảnh đã cắt
-        img = img[y1:y2, x1:x2]
+        # 2. Kiểm tra kích thước vùng cắt hợp lệ
+        crop_w = x2 - x1
+        crop_h = y2 - y1
 
-        # Cập nhật offset để tính lại tọa độ quân cờ
-        offset_x = x1
-        offset_y = y1
+        if crop_w > 10 and crop_h > 10:  # Chỉ cắt nếu vùng bàn cờ đủ lớn (>10px)
+            try:
+                img_crop = img[y1:y2, x1:x2]  # Thử cắt
 
-        # Cập nhật lại kích thước ảnh sau khi cắt
-        h, w = img.shape[:2]
+                if img_crop.size == 0:
+                    print("⚠️ Lỗi: Ảnh sau khi cắt bị rỗng. Dùng ảnh gốc.")
+                else:
+                    img = img_crop  # Cập nhật ảnh chính
+                    offset_x = x1
+                    offset_y = y1
+                    h, w = img.shape[:2]  # Cập nhật kích thước mới
 
-        # ĐIỀU CHỈNH TỌA ĐỘ CÁC QUÂN CỜ (Shift Coordinates)
-        # Vì ảnh đã bị cắt, gốc tọa độ (0,0) thay đổi, nên quân cờ cũng phải dịch theo
-        for p in piece_preds:
-            p['x'] -= offset_x
-            p['y'] -= offset_y
+                    # Dịch chuyển tọa độ quân cờ
+                    for p in piece_preds:
+                        p['x'] -= offset_x
+                        p['y'] -= offset_y
+
+            except Exception as e:
+                print(f"⚠️ Lỗi khi cắt ảnh (OpenCV): {e}. Dùng ảnh gốc.")
+        else:
+            print(f"⚠️ Vùng bàn cờ quá nhỏ ({crop_w}x{crop_h}). Dùng ảnh gốc.")
 
     else:
         print("⚠️ Không tìm thấy class 'chessboard'. Dùng toàn bộ ảnh.")
