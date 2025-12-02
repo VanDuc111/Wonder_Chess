@@ -93,7 +93,6 @@ def bot_move():
     try:
         engine_results = find_best_move(fen)
         if engine_results.get('best_move'):
-            # (Bạn cần tạo một đối tượng board để thực hiện nước đi và lấy FEN mới)
             temp_board = chess.Board(fen)
             temp_board.push_uci(engine_results['best_move'])
             new_fen = temp_board.fen()
@@ -121,33 +120,54 @@ def get_engine_score():
     if not fen:
         return jsonify({'success': False, 'error': 'Thiếu tham số fen.'}), 400
 
-    # Khởi tạo kết quả mặc định
-    engine_results = {
-        'search_score': '0.00',
-        'best_move': 'N/A',
-        'pv': 'Engine Failed'
-    }
-
     try:
-        # GỌI HÀM TRỰC TIẾP
-        results = find_best_move(fen)
+        board = chess.Board(fen)
 
-        # Cập nhật kết quả
-        engine_results.update(results)
+        # --- CÁCH MỚI: Đánh giá tĩnh (Static Evaluation) ---
+        # Tốc độ: ~0.00s. Phản hồi tức thì khi người chơi vừa đi xong.
+        raw_score = evaluate_board(board)
+
+        # Xử lý Logic Negamax -> Logic UI (Trắng dương, Đen âm)
+        # Hàm evaluate_board của bạn trả về điểm từ góc nhìn người chơi hiện tại.
+        # Nhưng UI thường cần điểm tuyệt đối (Trắng ưu là dương).
+
+        # Nếu lượt đi là Đen, và điểm trả về dương (tức là tốt cho Đen)
+        # -> Thì quy đổi sang hệ quy chiếu Trắng phải là số ÂM.
+        final_score = raw_score
+        if board.turn == chess.BLACK:
+            final_score = -raw_score
+
+        # Format điểm số (giống format trong find_best_move)
+        if abs(final_score) > MATE_SCORE - 1000:
+            # Xử lý Mate
+            score_adjustment = MATE_SCORE - abs(final_score)
+            real_mate_in_plies = 100 - score_adjustment  # Giả định max depth 100
+            mate_in_moves = (real_mate_in_plies + 1) // 2
+            if mate_in_moves < 1: mate_in_moves = 1
+
+            if final_score > 0:
+                score_str = f"+M{mate_in_moves}"
+            else:
+                score_str = f"-M{mate_in_moves}"
+        else:
+            # Xử lý điểm thường (Centipawn -> Pawn Unit)
+            score_str = f"{final_score / 100.0:.2f}"
 
         return jsonify({
             'success': True,
-            # Trả về toàn bộ kết quả đã được thống nhất
-            'engine_results': engine_results
+            'engine_results': {
+                'search_score': score_str,
+                'best_move': 'N/A',  # Đánh giá nhanh không cần gợi ý nước đi
+                'pv': ''
+            }
         })
 
     except Exception as e:
-        # Nếu FEN không hợp lệ hoặc lỗi engine
-        print(f"LỖI ENGINE SERVER TẠI get_engine_score: {e}")
+        print(f"LỖI EVALUATE: {e}")
         return jsonify({
             'success': False,
-            'error': f'Lỗi Engine Server: {e}',
-            'engine_results': engine_results
+            'error': str(e),
+            'engine_results': {'search_score': '0.00'}
         }), 500
 
 @game_bp.route('/clear_cache', methods=['POST'])

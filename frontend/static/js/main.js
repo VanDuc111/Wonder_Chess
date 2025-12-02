@@ -96,8 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Lấy chế độ (mode)
             const selectedMode = event.currentTarget.getAttribute('data-mode');
             console.log(`Chế độ đã chọn: ${selectedMode}`);
-
-            // === THÊM LOGIC MỚI VÀO ĐÂY ===
+            // 3. Xử lý chuyển đổi chế độ
             if (selectedMode === 'analyze') {
                 setAnalyzeMode();
             }
@@ -108,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function setAnalyzeMode() {
+
         // 1. Dừng và reset đồng hồ
         resetTimers();
 
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (defaultColorBtn) {
         defaultColorBtn.classList.add('selected');
     }
-    // 3. LOGIC BẮT ĐẦU GAME BOT (Nút "Bắt đầu" trong Modal)
+    // 3. LOGIC BẮT ĐẦU GAME BOT
     const startBotGameBtn = document.getElementById('start-bot-game-btn');
     if (startBotGameBtn) {
         startBotGameBtn.addEventListener('click', () => {
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. XỬ LÝ ĐIỂM SỐ (NẾU GAME CHƯA KẾT THÚC)
         if (typeof score === 'string' && (score.includes('M') || score.includes('#'))) {
 
-            // Chuẩn hóa về dạng hiển thị (Backend đã gửi +M2 rồi nên cứ thế hiển thị)
+
             formattedScore = score.replace("#", "M");
 
             // Xác định ai đang thắng để tô màu thanh bar
@@ -278,16 +278,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (score.includes('-')) {
                 percentAdvantage = 0;
             } else {
-                // Trường hợp hy hữu không có dấu, mặc định 50
                 percentAdvantage = 50;
             }
         } else if (typeof score === 'number') {
             // Xử lý điểm số Centipawn (ví dụ: 48 hoặc 999996)
 
-            // Đặt ngưỡng MATE (lấy từ hằng số global của bạn)
+            // Đặt ngưỡng MATE
             const MATE_THRESHOLD = JS_MATE_SCORE_BASE - JS_MATE_DEPTH_ADJUSTMENT;
 
-            // 2a. XỬ LÝ MATE-IN-X (Vấn đề 3)
+            // 2a. XỬ LÝ MATE-IN-X
             if (Math.abs(score) > MATE_THRESHOLD) {
                 // Tính số nước đi (ví dụ: 1000000 - 999997 = 3 nước)
                 const movesToMate = JS_MATE_SCORE_BASE - Math.abs(score);
@@ -424,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function onDrop(source, target) {
         let moveUci = source + target;
 
-        // --- BƯỚC 1: KIỂM TRA PHONG CẤP (KHÔNG KIỂM TRA TÍNH HỢP LỆ) ---
+        // --- 1: KIỂM TRA PHONG CẤP (KHÔNG KIỂM TRA TÍNH HỢP LỆ) ---
         const pieceObj = game.get(source);
         let isPawnPromotion = false;
 
@@ -441,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // --- BƯỚC 2: MẶC ĐỊNH PHONG HẬU VÀ THỰC HIỆN NƯỚC ĐI ---
+        // --- 2: MẶC ĐỊNH PHONG HẬU VÀ THỰC HIỆN NƯỚC ĐI ---
 
         if (isPawnPromotion) {
             // Auto promote Queen
@@ -449,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const success = await makeMove(moveUci);
 
-        // --- BƯỚC 3: XỬ LÝ KẾT QUẢ ---
+        // --- 3: XỬ LÝ KẾT QUẢ ---
         if (success) {
             await handleTurnEnd(game.fen());
         }
@@ -475,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 2. Highlight Vua bị chiếu (Ô Đỏ)
-        // (Chúng ta cần đảm bảo 'game' đã được load đúng FEN)
         if (game.in_check()) {
             const kingSquare = findKingSquare(game.turn());
             if (kingSquare) {
@@ -500,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * @param {string} color Màu 'w' hoặc 'b'
  */
     function findKingSquare(color) {
-        // Tạo một mảng 64 ô
+
         const squares = [
             'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2',
             'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3', 'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4',
@@ -518,8 +516,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /**
-     * Tiền xử lý (pre-processes) điểm số thô từ engine trước khi gửi đến thanh điểm.
-     * Hàm này đóng vai trò "điều phối" (dispatcher):
+     * Tiền xử lý  điểm số thô từ engine trước khi gửi đến thanh điểm.
+     * Hàm này đóng vai trò "điều phối":
      * - Nếu là chuỗi Mate ("#+1"), nó sẽ gửi thẳng chuỗi đó.
      * - Nếu là chuỗi số ("98"), nó chuyển sang số (98) và gửi đi.
      * - Nếu lỗi, nó gửi 0.0.
@@ -636,7 +634,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (isTimedGame) clearInterval(timerInterval);
                     updateEvaluationBar(0, newFen);
 
-                    // === GỌI HÀM PHỤ CỦA BẠN ===
                     let title = "Ván đấu kết thúc";
                     let body = "Ván cờ hòa!";
                     if (game.in_checkmate()) {
@@ -667,43 +664,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    /**
-     *
-
-     */
     function onDragStart(source, piece, position, orientation) {
-        // 1. CHẶN NẾU KHÔNG PHẢI LƯỢT CỦA NGƯỜI CHƠI
+
         if (!isPlayerTurn) {
             return false;
         }
 
-        // 2. CHẶN NẾU KHÔNG PHẢI QUÂN CỜ CỦA LƯỢT HIỆN TẠI
         if (game.turn() !== piece[0]) {
             return false;
         }
 
-        // === BẮT ĐẦU SỬA LỖI ===
         updateAllHighlights();
 
-        // 4. Lấy danh sách nước đi hợp lệ cho quân cờ này
         const moves = game.moves({
             square: source,
-            verbose: true // Cần 'verbose' để lấy ô 'to'
+            verbose: true
         });
 
-        // Nếu không có nước nào, không cho kéo
+
         if (moves.length === 0) {
             return false;
         }
 
-        // 5. Hiển thị các chấm xanh (highlight-move)
+
         for (const move of moves) {
-            // Thêm class 'highlight-move' vào ô 'to'
             document.querySelector(`#myBoard .square-${move.to}`).classList.add('highlight-move');
         }
-        // === KẾT THÚC SỬA LỖI ===
 
-        return true; // Cho phép kéo
+
+        return true;
     }
 
     /**
@@ -724,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < history.length; i++) {
             const move = history[i];
 
-            // Nước đi là của Trắng (Bắt đầu lượt mới)
+            // Nước đi là của Trắng
             if (i % 2 === 0) {
                 const moveNumber = (i / 2) + 1;
                 // Thêm số lượt (ví dụ: 1.)
@@ -736,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 highlightClass = 'current-move-highlight';
             }
 
-            // 3. Thêm nước đi với class tương ứng
+            // Thêm nước đi với class tương ứng
             pgnHtml += `<span class="move-text me-2 ${highlightClass}" data-index="${i + 1}">${move.san}</span>`;
         }
 
@@ -758,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success && data.engine_results && data.engine_results.search_score !== undefined) {
 
-                // Lấy điểm Search Score (điểm Minimax) để phản ánh lợi thế thực tế
+                // Lấy điểm Search Score để phản ánh lợi thế thực tế
                 const searchScoreText = data.engine_results.search_score;
 
                 handleScoreUpdate(searchScoreText, fen); // Thêm fen
@@ -782,6 +771,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ==== Các button điều hướng nước đi =====
 
+    /**
+     * Tải trạng thái bàn cờ từ lịch sử dựa trên chỉ số (index).
+     * Đồng bộ hóa cả giao diện (board), logic game (chess.js) và điểm số.
+     *
+     * @param {number} index - Chỉ số của nước đi trong mảng moveHistory cần tải.
+     * @returns {void}
+     */
     function loadFen(index) {
         if (index < 0 || index >= moveHistory.length) {
             return;
@@ -799,11 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (scoreToLoad) {
             handleScoreUpdate(scoreToLoad, fenToLoad);
-        } else {
-            // Nếu lỡ điểm bị null, hiển thị 0.00 (tránh gọi API)
-            // updateEvaluationBar(0.0, fenToLoad);
         }
-
         // 5. Cập nhật PGN và các nút
         updateUI(fenToLoad);
     }
@@ -880,7 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. TÁI KHỞI TẠO BÀN CỜ VÀ LỊCH SỬ MỚI
         initChessboard(currentOrientation);
 
-        // 3. ĐỒNG BỘ HÓA THANH ĐIỂM (score bar)
+        // 3. ĐỒNG BỘ HÓA THANH ĐIỂM
         const scoreWrapper = document.querySelector('.score-alignment-wrapper');
         if (scoreWrapper) {
             if (playerColor === 'b') {
@@ -947,23 +939,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const message = chatbotInput.value.trim();
 
-        // 2. Kiểm tra khóa (Dùng biến toàn cục)
+        // 2. Kiểm tra khóa
         if (!message || chatbotInput.disabled) {
             return;
         }
 
-        // 3. Khóa input (Dùng biến toàn cục)
+        // 3. Khóa input
         chatbotInput.disabled = true;
         chatbotSendButton.disabled = true;
 
-        // 4. Kiểm tra tin nhắn đầu tiên (DÙNG BIẾN TOÀN CỤC 'chatbotMessages')
+        // 4. Kiểm tra tin nhắn đầu tiên
         const isFirstUserMessage = (chatbotMessages.children.length === 1);
 
         appendMessage('user', message);
-        chatbotInput.value = ''; // (Dùng biến toàn cục)
+        chatbotInput.value = ''; //
         const aliceMessageElement = createNewMessageElement('Alice');
 
-        // 5. Lấy FEN và lịch sử (Code này giữ nguyên)
+        // 5. Lấy FEN và lịch sử
         const currentFen = game.fen();
         const pgnHistory = game.pgn();
         const history = game.history({ verbose: true });
@@ -972,7 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lastMoveSan = history[history.length - 1]?.san;
         }
 
-        // 6. Gửi yêu cầu (Code này giữ nguyên)
+        // 6. Gửi yêu cầu
         try {
             const response = await fetch('/api/analysis/chat_analysis', {
                 method: 'POST',
@@ -1022,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
             aliceMessageElement.textContent += ` [Lỗi: Không thể nhận phản hồi. ${error.message}]`;
             console.error('Lỗi trong Fetch API hoặc JSON:', error);
         } finally {
-            // 8. Mở khóa (Dùng biến toàn cục)
+            // 8. Mở khóa
             chatbotInput.disabled = false;
             chatbotSendButton.disabled = false;
             chatbotInput.focus();
@@ -1036,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = text;
 
         // 1. Chuyển đổi **Bold** (kể cả khi có dấu : ! ? bên trong)
-        // [^\s] = Bất kỳ ký tự nào KHÔNG phải khoảng trắng (để tránh lỗi greedy)
+        // [^\s] = Bất kỳ ký tự nào KHÔNG phải khoảng trắng
         html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
         // 2. Chuyển đổi * Bullet Points *
@@ -1045,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', () => {
         html = html.replace(/^(\s*)\* (.*?)$/gm, '<li style="margin-left: 20px;">$2</li>');
 
         // 3. Chuyển đổi \n (xuống dòng) sang <br>
-        // (Phải chạy sau cùng để không làm hỏng logic bullet point ở trên)
+
         html = html.replace(/\n/g, '<br>');
 
         // 4. Sửa lỗi <br> thừa nếu nó đứng ngay trước <li>
@@ -1071,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =======================================================
-    // HÀM HELPER: RESET/ẨN ĐỒNG HỒ (Được gọi khi chọn "Vô hạn")
+    // HÀM HELPER: RESET/ẨN ĐỒNG HỒ
     // =======================================================
     function resetTimers() {
         if (timerInterval) {
@@ -1105,7 +1097,6 @@ document.addEventListener('DOMContentLoaded', () => {
         blackTime = initialTimeSeconds;
         isTimedGame = true;
 
-        // Dùng biến toàn cục
         if (timerWhiteEl) timerWhiteEl.style.display = 'block';
         if (timerBlackEl) timerBlackEl.style.display = 'block';
 
@@ -1241,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 2. Chuyển ảnh từ canvas sang file (Blob)
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
 
-            // 3. Gửi file (Blob) đến API (giống hệt code Tải ảnh)
+            // 3. Gửi file (Blob) đến API
             const formData = new FormData();
             formData.append('file', blob, 'webcam-scan.jpg');
 
@@ -1511,9 +1502,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const AUTO_SCAN_DELAY = 5000; // 5 giây quét 1 lần (để kịp API trả về)
 
     const autoScanToggle = document.getElementById('auto-scan-toggle');
-    const captureBtn = document.getElementById('capture-btn'); // Đặt ID này cho nút chụp cũ của bạn
+    const captureBtn = document.getElementById('capture-btn');
 
-    // Hàm thực hiện quy trình chụp và gửi (Tách từ code cũ ra)
+    // Hàm thực hiện quy trình chụp và gửi
     async function performScan() {
         const statusEl = document.getElementById('scan-status');
 
@@ -1561,9 +1552,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 1500);
                 }
 
-                // Cập nhật bàn cờ (Code cũ của bạn)
+                // Cập nhật bàn cờ
                 const newFen = data.fen;
-                // Chỉ cập nhật nếu FEN thay đổi để tránh giật lag
                 try {
                     if (game.fen().split(' ')[0] !== newFen.split(' ')[0]) {
                         game.load(newFen);
@@ -1608,7 +1598,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Gắn sự kiện cho nút chụp thủ công (Code cũ của bạn có thể gọi performScan luôn)
+    // Gắn sự kiện cho nút chụp thủ công
     if (captureBtn) {
         captureBtn.addEventListener('click', async () => {
             // Tắt auto nếu đang bật để tránh xung đột

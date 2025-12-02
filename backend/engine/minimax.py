@@ -1,7 +1,7 @@
 import chess
 import chess.polyglot
+import os
 import time
-
 # --- CẤU HÌNH ENGINE ---
 ENGINE_DEPTH = 3
 MATE_SCORE = 100000
@@ -164,7 +164,7 @@ def get_move_score(board, move):
         if move.promotion == chess.QUEEN: return 2000
         return 1000
 
-    # 2. Ăn quân (MVVLVA)
+    # 2. Ăn quân
     if board.is_capture(move):
         victim = board.piece_at(move.to_square)
         victim_val = 0
@@ -179,7 +179,7 @@ def get_move_score(board, move):
     if board.gives_check(move):
         score += 500
 
-    # 4. Cải thiện vị trí (Quan trọng để e4, d4 được ưu tiên)
+    # 4. Cải thiện vị trí
     table = None
     if piece.piece_type == chess.PAWN:
         table = PAWN_TABLE
@@ -202,7 +202,7 @@ def clear_transposition_table():
     print("--- Transposition Table Cleared ---")
 
 
-# --- QUAN TRỌNG: Quiescence Search Tối Ưu ---
+# ---Quiescence Search ---
 def quiescence_search(board, alpha, beta):
     # Đánh giá tĩnh
     stand_pat = evaluate_board(board)
@@ -213,7 +213,6 @@ def quiescence_search(board, alpha, beta):
         alpha = stand_pat
 
     # Chỉ xét nước ĂN QUÂN hoặc PHONG CẤP.
-    # BỎ 'gives_check' để tránh bùng nổ tìm kiếm (đây là lý do chính gây lag)
     noisy_moves = [
         m for m in board.legal_moves
         if board.is_capture(m) or m.promotion
@@ -235,9 +234,8 @@ def quiescence_search(board, alpha, beta):
     return alpha
 
 
-# --- QUAN TRỌNG: Negamax thay vì Alpha-Beta ---
+# --- NEGAMAX ALGORITHM ---
 def negamax(board, depth, alpha, beta):
-    # Dùng Zobrist Hash thay vì FEN string (Tăng tốc cực lớn)
     board_hash = chess.polyglot.zobrist_hash(board)
 
     tt_entry = TRANS_TABLE.get(board_hash)
@@ -273,7 +271,7 @@ def negamax(board, depth, alpha, beta):
     best_value = -float('inf')
     best_move = None
 
-    if not legal_moves:  # Trường hợp stalemate đã xử lý ở is_game_over, nhưng check lại cho chắc
+    if not legal_moves:
         return evaluate_board(board)
 
     for move in legal_moves:
@@ -303,6 +301,29 @@ def negamax(board, depth, alpha, beta):
 def find_best_move(fen, depth=ENGINE_DEPTH):
     board = chess.Board(fen)
     legal_moves = list(board.legal_moves)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    book_path = os.path.join(base_dir, "bin", "gm2001.bin")
+    if os.path.exists(book_path):
+        try:
+            with chess.polyglot.open_reader(book_path) as reader:
+                # weighted_choice: Chọn ngẫu nhiên có trọng số (để máy không đánh 1 kiểu)
+                # find: Chọn nước đi phổ biến nhất
+                entry = reader.weighted_choice(board)
+                print(f"--- Book Move Found: {entry.move.uci()} ---")
+                time.sleep(0.5)
+                book_score_cp = 25
+                return {
+                    'best_move': entry.move.uci(),
+                    'search_score': f"{book_score_cp/100:.2f}",
+                    'pv': 'Opening Theory'
+                }
+        except IndexError:
+            # Không tìm thấy nước đi trong sách (Hết khai cuộc) -> Chuyển sang tính toán
+            pass
+        except Exception as e:
+            print(f"Book Error: {e}")
+            pass
 
     if len(legal_moves) == 0:
         return {'best_move': None, 'search_score': 'Game Over', 'pv': ''}
@@ -345,18 +366,12 @@ def find_best_move(fen, depth=ENGINE_DEPTH):
 
     # Xử lý hiển thị Mate
     if abs(best_val) > MATE_SCORE - 1000:
-        # 1. Tính "Delta": Đây chính là cái số 98, 99... (Do 100 - depth tạo ra)
         score_adjustment = MATE_SCORE - abs(best_val)
 
-        # 2. Tính lại số Ply (số nửa nước đi) thực tế
-        # Vì trong negamax ta dùng (100 - depth), nên giờ ta lấy (100 - adjustment)
         real_mate_in_plies = 100 - score_adjustment
 
-        # 3. Chuyển từ Ply sang Move (1 Move = 2 Ply)
-        # Ví dụ: Mate in 1 (Ply) -> M1. Mate in 2 (Ply) -> M1. Mate in 3 (Ply) -> M2.
         mate_in_moves = (real_mate_in_plies + 1) // 2
 
-        # Phòng trường hợp tính ra 0 hoặc âm do độ sâu quá lớn (hiếm gặp)
         if mate_in_moves < 1: mate_in_moves = 1
 
         if final_score_visual > 0:
