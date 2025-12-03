@@ -10,7 +10,7 @@ API_KEY = os.getenv("ROBOFLOW_API_KEY")
 MODEL_ID = os.getenv("ROBOFLOW_PROJECT_ID")
 MODEL_VERSION = os.getenv("ROBOFLOW_VERSION")
 
-# Map tên class sang FEN (Bạn cần kiểm tra lại cho đúng với model của bạn)
+# Map tên class sang FEN
 CLASS_TO_FEN = {
     "bp": "p", "br": "r", "bn": "n", "bb": "b", "bq": "q", "bk": "k",
     "BP": "p", "BR": "r", "BN": "n", "BB": "b", "BQ": "q", "BK": "k",
@@ -30,7 +30,6 @@ def resize_image_if_needed(image_path, max_size=1024):
 
     height, width = img.shape[:2]
 
-    # Nếu ảnh nhỏ hơn giới hạn thì dùng luôn, không cần resize
     if max(height, width) <= max_size:
         return image_path, img
 
@@ -55,7 +54,7 @@ def debug_image(image_path):
 
     try:
         # 1. XỬ LÝ ẢNH TRƯỚC (RESIZE)
-        # File ảnh thực tế gửi đi có thể là file tạm đã resize
+
         path_to_send, img_to_draw = resize_image_if_needed(image_path)
 
         # 2. GỬI ẢNH LÊN ROBOFLOW
@@ -65,11 +64,11 @@ def debug_image(image_path):
         model = project.version(MODEL_VERSION).model
 
         print("Đang gửi request lên API...")
-        # Gửi file ảnh (đã resize nếu cần)
+        # Gửi file ảnh
         response = model.predict(path_to_send, confidence=40, overlap=30).json()
         predictions = response['predictions']
 
-        # 3. VẼ LƯỚI VÀ KẾT QUẢ LÊN ẢNH (img_to_draw)
+        # 3. VẼ LƯỚI VÀ KẾT QUẢ LÊN ẢNH
         height, width, _ = img_to_draw.shape
         sq_w = width / 8
         sq_h = height / 8

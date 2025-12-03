@@ -3,7 +3,7 @@ import chess.polyglot
 import os
 import time
 # --- CẤU HÌNH ENGINE ---
-ENGINE_DEPTH = 3
+ENGINE_DEPTH = 10
 MATE_SCORE = 100000
 TRANS_TABLE = {}  # Key: Zobrist Hash (Int), Value: (Depth, Score, Flag, BestMove)
 
@@ -298,80 +298,107 @@ def negamax(board, depth, alpha, beta):
     return best_value
 
 
-def find_best_move(fen, depth=ENGINE_DEPTH):
+
+def find_best_move(fen, max_depth=ENGINE_DEPTH, time_limit=3.0):
+    """
+    Tìm nước đi tốt nhất.
+    1. Tra cứu Opening Book.
+    2. Nếu hết sách -> Chạy Iterative Deepening Negamax.
+    """
     board = chess.Board(fen)
     legal_moves = list(board.legal_moves)
 
+    # --- 1. OPENING BOOK ---
     base_dir = os.path.dirname(os.path.abspath(__file__))
     book_path = os.path.join(base_dir, "bin", "gm2001.bin")
+
     if os.path.exists(book_path):
         try:
             with chess.polyglot.open_reader(book_path) as reader:
-                # weighted_choice: Chọn ngẫu nhiên có trọng số (để máy không đánh 1 kiểu)
-                # find: Chọn nước đi phổ biến nhất
                 entry = reader.weighted_choice(board)
                 print(f"--- Book Move Found: {entry.move.uci()} ---")
                 time.sleep(0.5)
                 book_score_cp = 25
                 return {
                     'best_move': entry.move.uci(),
-                    'search_score': f"{book_score_cp/100:.2f}",
+                    'search_score': f"{book_score_cp / 100:.2f}",
                     'pv': 'Opening Theory'
                 }
         except IndexError:
-            # Không tìm thấy nước đi trong sách (Hết khai cuộc) -> Chuyển sang tính toán
             pass
         except Exception as e:
             print(f"Book Error: {e}")
-            pass
 
+    # --- 2. XỬ LÝ CƠ BẢN ---
     if len(legal_moves) == 0:
         return {'best_move': None, 'search_score': 'Game Over', 'pv': ''}
-
-
     if len(legal_moves) == 1:
-        return {
-            'best_move': legal_moves[0].uci(),
-            'search_score': 'Forced',
-            'pv': legal_moves[0].uci()
-        }
+        return {'best_move': legal_moves[0].uci(), 'search_score': 'Forced', 'pv': legal_moves[0].uci()}
 
+    # --- 3. ITERATIVE DEEPENING SEARCH ---
+    start_time = time.time()
+    best_move_global = None
+    best_score_global = -float('inf')
+    completed_depth = 0
 
-    best_move = None
-    best_val = -float('inf')
-    alpha = -float('inf')
-    beta = float('inf')
+    # Chạy từ depth 1 -> max_depth
+    for current_depth in range(1, max_depth + 1):
 
-    # Sắp xếp nước đi
-    legal_moves.sort(key=lambda m: get_move_score(board, m), reverse=True)
+        # Kiểm tra hết giờ trước khi bắt đầu độ sâu mới
+        if time.time() - start_time > time_limit:
+            break
 
-    print(f"--- Thinking depth {depth} (Side: {'White' if board.turn == chess.WHITE else 'Black'}) ---")
+        print(f"--- Thinking depth {current_depth} ---")
 
-    for move in legal_moves:
-        board.push(move)
-        val = -negamax(board, depth - 1, -beta, -alpha)
-        board.pop()
+        alpha = -float('inf')
+        beta = float('inf')
+        best_val_current = -float('inf')
+        best_move_current = None
 
-        if val > best_val:
-            best_val = val
-            best_move = move
-        alpha = max(alpha, val)
+        # Move Ordering: Ưu tiên nước đi tốt nhất từ depth trước
+        if best_move_global:
+            if best_move_global in legal_moves:
+                legal_moves.remove(best_move_global)
+                legal_moves.insert(0, best_move_global)
+            else:
+                # Fallback sắp xếp thường
+                legal_moves.sort(key=lambda m: get_move_score(board, m), reverse=True)
+        else:
+            legal_moves.sort(key=lambda m: get_move_score(board, m), reverse=True)
 
+        # Root Search Loop
+        for move in legal_moves:
+            if time.time() - start_time > time_limit: break  # Ngắt ngay lập tức
 
-    final_score_visual = best_val
+            board.push(move)
+            val = -negamax(board, current_depth - 1, -beta, -alpha)
+            board.pop()
+
+            if val > best_val_current:
+                best_val_current = val
+                best_move_current = move
+
+            alpha = max(alpha, val)
+
+        # Chỉ cập nhật kết quả nếu hoàn thành trọn vẹn depth này
+        if time.time() - start_time <= time_limit:
+            best_move_global = best_move_current
+            best_score_global = best_val_current
+            completed_depth = current_depth
+            # Nếu tìm thấy chiếu hết, dừng ngay lập tức (không cần đào sâu thêm)
+            if abs(best_score_global) > MATE_SCORE - 1000:
+                break
+
+    # --- 4. FORMAT KẾT QUẢ ---
+    final_score_visual = best_score_global
     if board.turn == chess.BLACK:
-        final_score_visual = -best_val
+        final_score_visual = -best_score_global
 
     score_str = f"{final_score_visual / 100:.2f}"
-
-    # Xử lý hiển thị Mate
-    if abs(best_val) > MATE_SCORE - 1000:
-        score_adjustment = MATE_SCORE - abs(best_val)
-
+    if abs(best_score_global) > MATE_SCORE - 1000:
+        score_adjustment = MATE_SCORE - abs(best_score_global)
         real_mate_in_plies = 100 - score_adjustment
-
         mate_in_moves = (real_mate_in_plies + 1) // 2
-
         if mate_in_moves < 1: mate_in_moves = 1
 
         if final_score_visual > 0:
@@ -379,8 +406,12 @@ def find_best_move(fen, depth=ENGINE_DEPTH):
         else:
             score_str = f"-M{mate_in_moves}"
 
+    duration = time.time() - start_time
+    if duration > 0.5:
+        print(f"=== Search Finished: Depth {completed_depth} reached in {duration:.2f}s ===")
+
     return {
-        'best_move': best_move.uci() if best_move else None,
+        'best_move': best_move_global.uci() if best_move_global else None,
         'search_score': score_str,
-        'pv': best_move.uci() if best_move else ""
+        'pv': best_move_global.uci() if best_move_global else ""
     }

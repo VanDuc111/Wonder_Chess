@@ -114,6 +114,10 @@ def bot_move():
 
 @game_bp.route('/evaluate', methods=['POST'])
 def get_engine_score():
+    """
+    Đánh giá thế cờ hiện tại từ FEN.
+    :return: JSON với điểm số đánh giá.
+    """
     data = request.get_json()
     fen = data.get('fen')
 
@@ -121,44 +125,15 @@ def get_engine_score():
         return jsonify({'success': False, 'error': 'Thiếu tham số fen.'}), 400
 
     try:
-        board = chess.Board(fen)
+        results = find_best_move(fen, max_depth = 10, time_limit=0.1)
 
-        # --- CÁCH MỚI: Đánh giá tĩnh (Static Evaluation) ---
-        # Tốc độ: ~0.00s. Phản hồi tức thì khi người chơi vừa đi xong.
-        raw_score = evaluate_board(board)
-
-        # Xử lý Logic Negamax -> Logic UI (Trắng dương, Đen âm)
-        # Hàm evaluate_board của bạn trả về điểm từ góc nhìn người chơi hiện tại.
-        # Nhưng UI thường cần điểm tuyệt đối (Trắng ưu là dương).
-
-        # Nếu lượt đi là Đen, và điểm trả về dương (tức là tốt cho Đen)
-        # -> Thì quy đổi sang hệ quy chiếu Trắng phải là số ÂM.
-        final_score = raw_score
-        if board.turn == chess.BLACK:
-            final_score = -raw_score
-
-        # Format điểm số (giống format trong find_best_move)
-        if abs(final_score) > MATE_SCORE - 1000:
-            # Xử lý Mate
-            score_adjustment = MATE_SCORE - abs(final_score)
-            real_mate_in_plies = 100 - score_adjustment  # Giả định max depth 100
-            mate_in_moves = (real_mate_in_plies + 1) // 2
-            if mate_in_moves < 1: mate_in_moves = 1
-
-            if final_score > 0:
-                score_str = f"+M{mate_in_moves}"
-            else:
-                score_str = f"-M{mate_in_moves}"
-        else:
-            # Xử lý điểm thường (Centipawn -> Pawn Unit)
-            score_str = f"{final_score / 100.0:.2f}"
 
         return jsonify({
             'success': True,
             'engine_results': {
-                'search_score': score_str,
-                'best_move': 'N/A',  # Đánh giá nhanh không cần gợi ý nước đi
-                'pv': ''
+                'search_score': results['search_score'],  # Lấy luôn string đã format (+0.25, -M1...)
+                'best_move': results['best_move'],  # Có thể dùng để gợi ý nhẹ nếu muốn
+                'pv': results['pv']
             }
         })
 
