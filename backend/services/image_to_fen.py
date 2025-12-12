@@ -1,10 +1,12 @@
+"""
+Module chuyển ảnh bàn cờ 3D thành chuỗi FEN sử dụng Roboflow và OpenCV.
+"""
 import cv2
 import numpy as np
 from roboflow import Roboflow
 import os
 from dotenv import load_dotenv
 import base64
-
 
 try:
     from backend.services.vision_core import find_board_corners, get_board_mapping_matrix, map_point_to_grid
@@ -25,12 +27,14 @@ except:
 CLASS_TO_FEN = {
     # Quân Đen
     "bp": "p", "br": "r", "bn": "n", "bb": "b", "bq": "q", "bk": "k",
-    "black-pawn": "p", "black-rook": "r", "black-knight": "n", "black-bishop": "b", "black-queen": "q", "black-king": "k",
+    "black-pawn": "p", "black-rook": "r", "black-knight": "n", "black-bishop": "b", "black-queen": "q",
+    "black-king": "k",
     "bP": "p", "bR": "r", "bN": "n", "bB": "b", "bQ": "q", "bK": "k",
-    
+
     # Quân Trắng
     "wp": "P", "wr": "R", "wn": "N", "wb": "B", "wq": "Q", "wk": "K",
-    "white-pawn": "P", "white-rook": "R", "white-knight": "N", "white-bishop": "B", "white-queen": "Q", "white-king": "K",
+    "white-pawn": "P", "white-rook": "R", "white-knight": "N", "white-bishop": "B", "white-queen": "Q",
+    "white-king": "K",
     "wP": "P", "wR": "R", "wN": "N", "wB": "B", "wQ": "Q", "wK": "K"
 }
 
@@ -45,7 +49,7 @@ def analyze_image_to_fen(image_path):
     img = cv2.imread(image_path)
     if img is None:
         return None, "Lỗi đọc ảnh."
-    
+
     h, w = img.shape[:2]
     max_dim = 1024
     if max(h, w) > max_dim:
@@ -66,7 +70,7 @@ def analyze_image_to_fen(image_path):
 
         prediction = model.predict(image_path, confidence=10, overlap=30).json()
         predictions = prediction.get("predictions", [])
-        
+
         if not predictions:
             return None, "AI không tìm thấy quân cờ."
 
@@ -141,11 +145,11 @@ def analyze_image_to_fen(image_path):
     # 3. Xử lý hình học
 
     corners = find_board_corners(img)
-    
+
     use_perspective = False
     M = None
     side_len = 0
-    
+
     if corners is not None:
         detected_width = np.linalg.norm(corners[0] - corners[1])
         # Bàn cờ tìm được phải to (chiếm > 50% ảnh đã cắt)
@@ -174,10 +178,10 @@ def analyze_image_to_fen(image_path):
 
     if corners is not None:
         cv2.polylines(debug_img, [corners.astype(int)], True, (0, 255, 0), 2)
-    
+
     for p in piece_preds:
         class_name = p["class"]
-        
+
         # Lấy điểm CHÂN (Bottom Center) của quân cờ
         # Vì trong ảnh 3D, chân quân cờ mới là vị trí thực tế trên bàn cờ
         foot_x = p["x"]
@@ -204,7 +208,7 @@ def analyze_image_to_fen(image_path):
             if k.lower() == class_name.lower():
                 fen_char = v
                 break
-        
+
         if fen_char != '?':
             board_grid[row][col] = fen_char
         x, y = int(p['x']), int(p['y'])
@@ -228,13 +232,14 @@ def analyze_image_to_fen(image_path):
         empty = 0
         line = ""
         for cell in row:
-            if cell == "1": empty += 1
+            if cell == "1":
+                empty += 1
             else:
                 if empty > 0: line += str(empty); empty = 0
                 line += cell
         if empty > 0: line += str(empty)
         fen_rows.append(line)
-        
+
     final_fen = "/".join(fen_rows) + " w KQkq - 0 1"
-    
+
     return final_fen, debug_base64, None

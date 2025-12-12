@@ -1,3 +1,11 @@
+"""
+Module: minimax.py
+Module cung cấp chức năng engine cờ vua sử dụng thuật toán Negamax với bảng băm (Transposition Table),
+tìm kiếm yên tĩnh (Quiescence Search) và sắp xếp nước đi (Move Ordering).
+Nó bao gồm các hàm để đánh giá bàn cờ, tìm nước đi tốt nhất dựa trên FEN,
+và quản lý bảng băm để tối ưu hóa hiệu suất tìm kiếm.
+"""
+
 import chess
 import chess.polyglot
 import os
@@ -12,6 +20,7 @@ TRANS_TABLE = {}  # Key: Zobrist Hash (Int), Value: (Depth, Score, Flag, BestMov
 HASH_EXACT = 0
 HASH_ALPHA = 1
 HASH_BETA = 2
+NODES_VISITED = 0
 
 # Điểm lợi thế đi trước
 TEMPO_BONUS = 20
@@ -89,6 +98,10 @@ KING_TABLE = [
 
 
 def get_square_value(sq, color, table):
+    """
+    Lấy giá trị vị trí ô cờ từ bảng điểm.
+    Đảo bảng nếu là quân đen.
+    """
     if color == chess.WHITE:
         return table[sq]
     else:
@@ -97,7 +110,7 @@ def get_square_value(sq, color, table):
 
 def evaluate_board(board):
     """
-    Hàm đánh giá đã sửa:
+    Hàm đánh giá:
     1. Tính tổng điểm (Trắng - Đen).
     2. Cộng Tempo.
     3. Đảo dấu theo Negamax.
@@ -200,12 +213,14 @@ def get_move_score(board, move):
 def clear_transposition_table():
     global TRANS_TABLE
     TRANS_TABLE.clear()
-    print("--- Transposition Table Cleared ---")
 
 
 # ---Quiescence Search ---
 def quiescence_search(board, alpha, beta):
-    # Đánh giá tĩnh
+    """
+    Tìm kiếm yên tĩnh để tránh hiệu ứng "horizon effect".
+    Chỉ xét các nước ĂN QUÂN hoặc PHONG CẤP.
+    """
     stand_pat = evaluate_board(board)
 
     if stand_pat >= beta:
@@ -218,7 +233,6 @@ def quiescence_search(board, alpha, beta):
         m for m in board.legal_moves
         if board.is_capture(m) or m.promotion
     ]
-
     # Sắp xếp
     noisy_moves.sort(key=lambda m: get_move_score(board, m), reverse=True)
 
@@ -237,20 +251,27 @@ def quiescence_search(board, alpha, beta):
 
 # --- NEGAMAX ALGORITHM ---
 def negamax(board, depth, alpha, beta):
-    board_hash = chess.polyglot.zobrist_hash(board)
+    """
+    Thuật toán Negamax với Alpha-Beta Pruning và Transposition Table.
+    """
+    global NODES_VISITED
+    NODES_VISITED += 1
 
+    alpha_orig = alpha
+
+    board_hash = chess.polyglot.zobrist_hash(board)
     tt_entry = TRANS_TABLE.get(board_hash)
     tt_best_move = None
-
+    # --- 1. TRANSPOSITION TABLE LOOKUP ---
     if tt_entry and tt_entry[0] >= depth:
         tt_depth, tt_score, tt_flag, tt_move = tt_entry
         tt_best_move = tt_move
         if tt_flag == HASH_EXACT:
             return tt_score
         elif tt_flag == HASH_ALPHA:
-            alpha = max(alpha, tt_score)
-        elif tt_flag == HASH_BETA:
             beta = min(beta, tt_score)
+        elif tt_flag == HASH_BETA:
+            alpha = max(alpha, tt_score)
         if alpha >= beta: return tt_score
 
     if board.is_game_over():
@@ -261,6 +282,7 @@ def negamax(board, depth, alpha, beta):
     if depth == 0:
         return quiescence_search(board, alpha, beta)
 
+    # --- 2. MOVE ORDERING ---
     legal_moves = list(board.legal_moves)
     legal_moves.sort(key=lambda m: get_move_score(board, m), reverse=True)
 
@@ -275,6 +297,7 @@ def negamax(board, depth, alpha, beta):
     if not legal_moves:
         return evaluate_board(board)
 
+    # --- 3. MAIN SEARCH LOOP ---
     for move in legal_moves:
         board.push(move)
         # Negamax: Đổi dấu và đổi vị trí alpha/beta
@@ -290,7 +313,7 @@ def negamax(board, depth, alpha, beta):
             break
 
     tt_flag = HASH_EXACT
-    if best_value <= alpha:
+    if best_value <= alpha_orig:
         tt_flag = HASH_ALPHA
     elif best_value >= beta:
         tt_flag = HASH_BETA
@@ -305,6 +328,8 @@ def find_best_move(fen, max_depth=ENGINE_DEPTH, time_limit=3.0):
     1. Tra cứu Opening Book.
     2. Nếu hết sách -> Chạy Iterative Deepening Negamax.
     """
+    global NODES_VISITED
+    NODES_VISITED = 0
     board = chess.Board(fen)
     legal_moves = list(board.legal_moves)
 
@@ -409,6 +434,7 @@ def find_best_move(fen, max_depth=ENGINE_DEPTH, time_limit=3.0):
     duration = time.time() - start_time
     if duration > 0.5:
         print(f"=== Search Finished: Depth {completed_depth} reached in {duration:.2f}s ===")
+        print(f"Số Nodes đã duyệt: {NODES_VISITED}")
 
     return {
         'best_move': best_move_global.uci() if best_move_global else None,

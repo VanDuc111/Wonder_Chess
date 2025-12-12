@@ -1,3 +1,7 @@
+"""
+script để debug nhận diện quân cờ trên ảnh sử dụng Roboflow API.
+Nó sẽ vẽ lưới bàn cờ và bounding box của các quân cờ lên ảnh, sau đó lưu ảnh kết quả.
+"""
 import os
 import cv2
 import numpy as np

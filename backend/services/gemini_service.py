@@ -1,22 +1,23 @@
+"""Dịch vụ tương tác với Google Gemini API."""
 import os
 import time
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-# 1. CẤU HÌNH API KEY (Theo đúng tên biến bạn đặt trên Render)
+# 1. CẤU HÌNH API KEY
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if API_KEY:
     try:
         genai.configure(api_key=API_KEY)
     except Exception as e:
-        print(f"Lỗi khởi tạo Gemini Client: {e}")
+        print(f"Client initialization error :{e}")
         API_KEY = None
 else:
-    print("CẢNH BÁO: Không tìm thấy GEMINI_API_KEY!")
+    print("Warning: Missing GEMINI_API_KEY environment variable.")
 
-# 2. CẤU HÌNH AN TOÀN (Để tránh bị lọc chat vô lý)
+# 2. CẤU HÌNH AN TOÀN
 # Tắt bớt các bộ lọc để Alice nói chuyện tự nhiên hơn
 SAFETY_SETTINGS = {
     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -32,9 +33,8 @@ def stream_gemini_response(prompt_context):
     """
 
     if not API_KEY:
-        yield "Thiếu API Key trên Server."
+        yield "Gemini API Key missing."
         return
-
     max_retries = 3
     delay_seconds = 2
 
@@ -68,9 +68,9 @@ def stream_gemini_response(prompt_context):
                 time.sleep(delay_seconds)
                 delay_seconds *= 2
             else:
-                yield "Máy chủ Google đang quá tải. Vui lòng thử lại sau."
+                yield "Google server is currently busy. Please try again later."
 
         except Exception as e:
             print(f"Lỗi không xác định: {e}")
-            yield f"Alice gặp lỗi kỹ thuật: {str(e)}"
+            yield f"Alice is experiencing technical difficulties. {str(e)}"
             return

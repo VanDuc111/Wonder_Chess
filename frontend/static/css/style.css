@@ -1,24 +1,18 @@
 /* style.css */
 
 /* ========================================= */
-/* BIẾN TOÀN CỤC (CSS VARIABLES) */
+/* VARIABLES & THEME CONFIGURATION */
 /* ========================================= */
 :root {
     /* Màu nền & Nền tối (Dark Theme) */
     --color-background-start: #1A1A2E;
-    /* Màu tím than đậm */
     --color-background-end: #0F0F1A;
-    /* Màu đen nhạt */
     --color-element-background: rgba(255, 255, 255, 0.05);
     --color-glass-background: rgba(255, 255, 255, 0.1);
     --color-input-background: #1e1e3f;
-    /* Nền cho ô input*/
 
-    /* Màu chủ đạo */
     --color-primary: #4CAF50;
-    /* Màu xanh lá chính */
     --color-primary-hover: #45a049;
-    /* Màu xanh lá khi hover */
     --color-danger: #dc3545;
     --color-success: #3cb371;
 
@@ -26,34 +20,28 @@
     --color-text-light: #E0E0E0;
 
     --color-text-dark: #1e1e3f;
-    /* Màu chữ sáng */
     --color-text-placeholder: rgba(224, 224, 224, 0.5);
-    /* Màu placeholder */
     --color-text-secondary: rgba(255, 255, 255, 0.7);
     /* Các giá trị khác (Border, Shadow) */
     --color-border-subtle: rgba(255, 255, 255, 0.1);
     --shadow-deep: 0 10px 30px rgba(0, 0, 0, 0.5);
     --color-chess-white: #e9e9e9;
-    /* Màu trắng cho quân/ô/ưu thế */
     --color-chess-black: #000000;
-    /* Màu đen cho quân/ô/ưu thế */
     --color-highlight-squared: rgba(245, 235, 114, 0.6);
-    /* Màu ô di chuyển */
+
     --color-highlight-check: rgba(220, 53, 69, 0.5);
 
     --color-eval-gradient-start: #302d41;
-    /* Xanh đậm nhẹ */
     --color-eval-gradient-end: #57546e;
-    /* Tím xám nhẹ */
 
     --color-user-gradient: linear-gradient(90deg,
     #8ab4f8,
-        /* Xanh nhạt */ #f48fb1,
-        /* Hồng/Tím nhạt */ #fdd663,
-        /* Vàng nhạt */ #81c995 /* Xanh lá nhạt */
+    #f48fb1,
+    #fdd663,
+    #81c995
     );
 
-    /*Sizing Tokens    */
+    /*Sizing Tokens*/
     --spacing-unit: 10px;
     --spacing-sm: calc(var(--spacing-unit) * 1.5);
     /* 15px */
@@ -65,12 +53,15 @@
     --radius-default: 8px;
     --radius-container: 15px;
 
-    /* FONT SIZE (Typography Tokens) */
+    /* FONT SIZE  */
     --font-size-base: 1em;
     --font-size-title: 2em;
     --font-size-question: 1.2em;
 }
 
+/* ========================================= */
+/* GLOBAL STYLES & SCROLLBAR              */
+/* ========================================= */
 body {
     font-family: 'Roboto', sans-serif;
     margin: 0;
@@ -85,24 +76,18 @@ body {
 
 /* Container chính cho nội dung chào mừng */
 #welcome-screen {
-    /* Đảm bảo màn hình chào mừng chiếm toàn bộ */
-
-    /*position: fixed;*/
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: 1000;
-    /*background: linear-gradient(135deg, var(--color-background-start) 0%, var(--color-background-end) 100%);*/
     background-image: url('../img/background.png');
     background-position: center center;
     background-repeat: no-repeat;
-    background-size: cover; /* QUAN TRỌNG: Giúp ảnh phủ kín mọi thiết bị mà không vỡ */
-    background-attachment: fixed; /* Tạo hiệu ứng Parallax nhẹ khi cuộn (trên PC) */
-
+    background-size: cover;
+    background-attachment: fixed;
     position: relative;
     min-height: 100vh;
-    /*z-index: 1;*/
 }
 
 #welcome-screen::before {
@@ -117,15 +102,11 @@ body {
 }
 
 .welcome-container {
-    /* 1. Đặt nền trong suốt */
     padding: var(--spacing-lg) var(--spacing-md);
     border-radius: var(--radius-container);
-    /*box-shadow: none;*/
-    /* 2. Xóa bóng */
     text-align: center;
     max-width: 500px;
     width: 90%;
-    /*border: none;*/
     background: var(--color-glass-background);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
@@ -157,15 +138,9 @@ body {
     border: 2px solid rgba(255, 255, 255, 0.7);
     border-radius: var(--radius-default);
     background: #1e1e3f;
-    /* Nền input tối */
     color: var(--color-text-light);
     font-size: 1em;
     box-sizing: border-box;
-}
-
-#nickname-input:focus {
-    background: rgba(0, 0, 0, 0.6);
-    border-color: #ffc107; /* Màu vàng điểm nhấn */
 }
 
 #nickname-input::placeholder {
@@ -214,8 +189,10 @@ body {
 .main-content-row {
     height: calc(100vh - 100px);
     overflow-y: hidden;
+    padding-bottom: 10px;
 }
 
+/* ========================================= */
 /*-----NAVBAR------*/
 /* ========================================= */
 
@@ -233,13 +210,11 @@ body {
     font-weight: 500;
 }
 
-/* Hiệu ứng khi HOVER  */
 .nav-mode-link:hover {
     background-color: rgba(60, 179, 113, 0.2);
     color: var(--color-text-light) !important;
 }
 
-/* Hiệu ứng cho mục đang được CHỌN  */
 .nav-mode-link.active {
     background-color: var(--color-primary);
     color: white !important;
@@ -247,22 +222,15 @@ body {
 }
 
 #user-display {
-    /* Làm chữ "đầy đặn" hơn */
     font-weight: 700;
     font-size: 1.1rem;
     background-image: var(--color-user-gradient);
-
-
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-
-    /* Đảm bảo gradient bao phủ toàn bộ chữ */
     background-size: 100%;
 }
 
-/* 2. Tách biệt lời chào trên Mobile (khi menu thu gọn) */
-/* 991.98px là breakpoint 'lg' của Bootstrap (khi navbar chuyển sang hamburger) */
 @media (max-width: 991.98px) {
     #navbar-user-section {
         justify-content: center !important;
@@ -272,6 +240,7 @@ body {
     }
 }
 
+/* ========================================= */
 /*-----CHATBOT------*/
 /* ========================================= */
 
@@ -326,81 +295,42 @@ body {
         height: 500px;
         margin-top: 20px;
     }
-
-    .button-group-container {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 4px;
-    }
-
-    .button-group-container .btn {
-        flex-grow: 1;
-        flex-basis: 0;
-        padding: .35rem .25rem;
-        font-size: 0.8rem;
-        white-space: nowrap;
-    }
-
-
-    .timer-bottom-right {
-        bottom: 120px;
-        right: 15px;
-    }
-
-    .chess-board-area.rotated-board .timer-top-right {
-        bottom: 120px;
-        top: auto;
-    }
 }
 
 .user-message {
     background-color: var(--color-element-background);
-    /* Màu xanh dương Bootstrap */
     color: var(--color-text-light, #ffffff);
     width: fit-content;
     margin-left: auto !important;
     margin-right: 0 !important;
     text-align: right;
     border-bottom-right-radius: 2px;
-    /* Tạo "đuôi" nhỏ */
 }
 
-/* Tin nhắn của ALICE (Đặt bên trái) */
 .alice-message {
     background-color: var(--color-element-background);
-    /* Màu nền tối hơn, thân thiện với AI */
     color: var(--color-text-light);
     margin-right: auto;
     margin-left: 0;
     text-align: left;
     border-bottom-left-radius: 2px;
-    /* Tạo "đuôi" nhỏ */
 }
 
-/* Tinh chỉnh Icon (Giả sử bạn có icon/tên Alice) */
 .alice-message::before {
     content: "Alice: ";
-    /* Hoặc sử dụng hình ảnh/icon nếu có */
     font-weight: bold;
     color: #a4c639;
-    /* Màu xanh lá nổi bật */
 }
 
 #chatbot-form {
     flex-shrink: 0;
     margin-top: auto !important;
-
-    /* Đặt làm container vị trí */
     position: relative;
-
-    /* Style cho thanh chat */
     background: var(--color-input-background);
     border-radius: 25px;
-    /* Bo tròn 4 góc (kiểu "pill") */
     display: flex;
     align-items: center;
     padding: 5px;
-    /* Thêm 1 chút padding cho đẹp */
 }
 
 .message-bubble {
@@ -413,22 +343,14 @@ body {
 }
 
 #chatbot-input {
-    /* Reset (Bỏ viền, bỏ nền) */
     background: transparent;
     border: none;
     box-shadow: none !important;
     outline: none !important;
-
-    /* Lấp đầy không gian */
     flex-grow: 1;
     width: 100%;
-
-    /* Style chữ */
     color: var(--color-text-light);
     padding: 0.75rem 1rem;
-    /* Padding bên trong */
-
-    /* QUAN TRỌNG: Tạo khoảng trống bên phải cho nút bấm */
     padding-right: 45px;
 }
 
@@ -438,47 +360,29 @@ body {
 
 
 #send-chat-button {
-    /* 1. Reset màu nền và viền */
     position: absolute;
     right: 5px;
-    /* Cách lề phải 5px */
     top: 50%;
     transform: translateY(-50%);
-    /* Căn giữa dọc */
-    background-color: transparent !important;
+    background-color: transparent;
     border-color: transparent !important;
     box-shadow: none !important;
-    /* Xóa hiệu ứng focus của Bootstrap */
-
-    /* 2. Đặt màu cho icon bên trong */
     color: var(--color-text-secondary);
-
-    /* 3. Tạo hình tròn */
     border-radius: 50% !important;
-
-    /* 4. Đảm bảo kích thước vuông (cho hình tròn) */
     width: 40px;
-    /* (Bạn có thể tùy chỉnh kích thước) */
     height: 40px;
-    /* (Phải bằng width) */
-
-    /* 5. Căn giữa icon */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    /* Xóa padding cũ của .btn */
-
+    flex-shrink: 0;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* 6. Thêm hiệu ứng hover xám tròn */
 #send-chat-button:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    /* Màu xám mờ */
+    background-color: var(--color-element-background);
     color: var(--color-text-light);
 }
-
 
 #send-chat-button i {
     font-size: 1.2rem;
@@ -492,7 +396,9 @@ body {
     height: 100%;
 }
 
-/*==== Game View ======*/
+/* ========================================= */
+/*-----CHESS BOARD------*/
+/* ========================================= */
 
 #game-view-container {
     align-items: stretch;
@@ -514,12 +420,20 @@ body {
     max-width: 500px;
     margin: 0 auto;
     box-sizing: border-box;
-    padding: 16px;
+    padding: 15px;
+    position: relative;
+    padding-right: 80px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .load-area {
     max-height: 25%;
     min-height: 150px;
+}
+
+.board-relative-wrapper {
+    position: relative;
+    width: 100%;
 }
 
 #chessboard-main-container {
@@ -547,45 +461,49 @@ body {
 }
 
 .timer-box {
-    background-color: #3b3e4f;
+    background-color: var(--color-element-background);
     color: var(--color-text-light, #ffffff);
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 1.1rem;
+    padding: 6px 0;
+    border-radius: 6px;
+    width: 60px;
+    font-size: 0.95rem;
     font-weight: bold;
-    opacity: 0.7;
+    font-family: monospace;
+    opacity: 0.8;
     transition: opacity 0.3s, background-color 0.3s;
     position: absolute;
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .timer-box.active {
     background-color: #4CAF50;
+    border-color: #4CAF50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
     opacity: 1.0;
 }
 
-
 .timer-top-right {
-    top: 15px;
-    right: 15px;
+    top: 0;
+    right: -70px;
 }
-
 
 .timer-bottom-right {
 
-    bottom: 120px;
-    right: 15px;
+    bottom: 0;
+    right: -70px;
 }
 
 .chess-board-area.rotated-board .timer-top-right {
     top: auto;
-    bottom: 106px;
-    right: 15px;
+    bottom: 0;
 }
 
 .chess-board-area.rotated-board .timer-bottom-right {
     bottom: auto;
-    top: 15px;
-    right: 15px;
+    top: 0;
 }
 
 .time-select.selected,
@@ -595,6 +513,27 @@ body {
     font-weight: bold;
     border-color: #4CAF50;
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+@media (max-width: 768px) {
+    .chess-board-area {
+        padding-right: 15px !important;
+    }
+
+    .timer-top-right {
+        top: -40px;
+        right: 0;
+    }
+
+    .timer-bottom-right {
+        bottom: -40px;
+        right: 0;
+    }
+
+    .chess-board-area.rotated-board .timer-top-right {
+        bottom: -40px;
+        top: auto;
+    }
 }
 
 #pgn-history-container {
@@ -642,21 +581,15 @@ body {
 #pgn-history-list .move-number {
     font-weight: bold;
     color: var(--color-text-secondary);
-    /* Tăng khoảng cách sau số lượt */
     margin-right: 8px;
-    /* Đảm bảo căn chỉnh tốt hơn */
     display: inline-block;
     min-width: 20px;
-    /* Chiều rộng tối thiểu cho số lượt 1-9 */
     text-align: right;
-    /* Căn phải cho số lượt */
 }
 
 #pgn-history-list .move-text {
     display: inline-block;
-    /* Khoảng cách giữa các nước đi (giảm từ 10px xuống) */
     margin-right: 5px;
-    /* Padding làm nền nổi bật khi highlight */
     padding: 2px 4px;
     border-radius: 4px;
     cursor: pointer;
@@ -669,23 +602,35 @@ body {
     font-weight: bold;
 }
 
-/*=== CÁC NÚT ĐIỀU HƯỚNG ===*/
+/* ========================================= */
+/* NHÓM NÚT CHỨC NĂNG TRÊN BẢNG CỜ */
+/* ========================================= */
 .button-group-container {
     display: flex;
-    /* Dùng Flexbox */
     flex-wrap: wrap;
-    /* Cho phép rớt hàng */
     justify-content: center;
-    /* Căn giữa các nút */
     gap: 5px;
-    /* Thêm khoảng cách nhỏ giữa các nút */
 }
 
 .button-group-container .btn {
     flex-grow: 1;
-    /* Cho phép các nút lớn lên 1 chút */
     flex-basis: 100px;
-    /* Chiều rộng cơ bản (tùy chỉnh) */
+}
+
+@media (max-width: 767.98px) {
+    .button-group-container {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px;
+    }
+
+    .button-group-container .btn {
+        flex-grow: 1;
+        flex-basis: 0;
+        padding: .35rem .25rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
 }
 
 /* ========================================= */
@@ -748,6 +693,7 @@ body {
     bottom: 20px;
 }
 
+/* ========================================= */
 /* HIGHLIGHT NƯỚC ĐI HỢP LỆ */
 /* ========================================= */
 
@@ -769,71 +715,12 @@ body {
     background-color: rgba(60, 179, 113, 0.5);
 }
 
-
 .square-selected {
     box-shadow: inset 0 0 0 2000px var(--color-highlight-squared) !important;
 }
 
 .highlight-check {
     box-shadow: inset 0 0 0 2000px var(--color-highlight-check);
-}
-
-/* POPUP PHONG CẤP (PROMOTION MODAL) */
-/* ========================================= */
-
-.promotion-modal {
-    position: absolute;
-    z-index: 1000;
-    background-color: var(--color-text-secondary);
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    padding: 5px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    width: 60px;
-}
-
-.promotion-choices {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    width: 100%;
-}
-
-.promotion-piece,
-.promotion-cancel {
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
-    text-align: center;
-}
-
-.promotion-piece:hover,
-.promotion-cancel:hover {
-    background-color: #f0f0f0;
-}
-
-.promotion-piece img,
-.promotion-cancel img {
-    width: 50px;
-    /* Kích thước icon quân cờ */
-    height: 50px;
-    display: block;
-    /* Loại bỏ khoảng trắng thừa */
-    margin: 0 auto;
-    /* Căn giữa ảnh */
-}
-
-.promotion-cancel img {
-    width: 25px;
-    /* Icon hủy nhỏ hơn */
-    height: 25px;
-    opacity: 0.7;
 }
 
 /* ========================================= */
@@ -875,7 +762,6 @@ body {
     font-size: var(--font-size-question);
 }
 
-/* Nút đóng (close button) */
 .modal-content .close-btn {
     color: var(--color-text-secondary);
     float: right;
@@ -917,7 +803,6 @@ body {
 .modal-body .form-control::placeholder {
     color: var(--color-text-placeholder);
     opacity: 1;
-    /* Firefox */
 }
 
 .setting-group {
@@ -937,7 +822,6 @@ body {
     gap: var(--spacing-unit);
 }
 
-/* Định kiểu cho các nút lựa chọn (Trắng, Đen, 5p, 10p...) */
 .setting-group button {
     flex-grow: 1;
     padding: var(--spacing-unit) 0;
@@ -956,7 +840,6 @@ body {
     color: white;
 }
 
-/* Trạng thái lựa chọn (Active/Selected) */
 .setting-group button.active {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
@@ -965,7 +848,6 @@ body {
     box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
 }
 
-/* Nút Bắt đầu */
 #start-bot-game-btn {
     width: 100%;
     padding: var(--spacing-unit);
@@ -1000,18 +882,16 @@ body {
     border-radius: 50%;
     display: inline-block;
     margin: 0 2px;
-
-    /* Tên animation */
     animation-name: bounce;
-    /* Thời gian chạy */
     animation-duration: 1.2s;
-    /* Lặp lại vô hạn */
     animation-iteration-count: infinite;
-    /* Chạy mượt */
     animation-timing-function: ease-in-out;
 }
 
-/* Thêm delay cho các chấm tiếp theo */
+.typing-indicator span:nth-of-type(1) {
+    animation-delay: 0s;
+}
+
 .typing-indicator span:nth-of-type(2) {
     animation-delay: 0.2s;
 }
