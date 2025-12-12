@@ -1,3 +1,8 @@
+/* style.css */
+
+/* ========================================= */
+/* BIẾN TOÀN CỤC (CSS VARIABLES) */
+/* ========================================= */
 :root {
     /* Màu nền & Nền tối (Dark Theme) */
     --color-background-start: #1A1A2E;
@@ -5,6 +10,7 @@
     --color-background-end: #0F0F1A;
     /* Màu đen nhạt */
     --color-element-background: rgba(255, 255, 255, 0.05);
+    --color-glass-background: rgba(255, 255, 255, 0.1);
     --color-input-background: #1e1e3f;
     /* Nền cho ô input*/
 
@@ -41,15 +47,11 @@
     /* Tím xám nhẹ */
 
     --color-user-gradient: linear-gradient(90deg,
-            #8ab4f8,
-            /* Xanh nhạt */
-            #f48fb1,
-            /* Hồng/Tím nhạt */
-            #fdd663,
-            /* Vàng nhạt */
-            #81c995
-            /* Xanh lá nhạt */
-        );
+    #8ab4f8,
+        /* Xanh nhạt */ #f48fb1,
+        /* Hồng/Tím nhạt */ #fdd663,
+        /* Vàng nhạt */ #81c995 /* Xanh lá nhạt */
+    );
 
     /*Sizing Tokens    */
     --spacing-unit: 10px;
@@ -84,35 +86,61 @@ body {
 /* Container chính cho nội dung chào mừng */
 #welcome-screen {
     /* Đảm bảo màn hình chào mừng chiếm toàn bộ */
-    position: fixed;
+
+    /*position: fixed;*/
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: 1000;
-    background: linear-gradient(135deg, var(--color-background-start) 0%, var(--color-background-end) 100%);
+    /*background: linear-gradient(135deg, var(--color-background-start) 0%, var(--color-background-end) 100%);*/
+    background-image: url('../img/background.png');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover; /* QUAN TRỌNG: Giúp ảnh phủ kín mọi thiết bị mà không vỡ */
+    background-attachment: fixed; /* Tạo hiệu ứng Parallax nhẹ khi cuộn (trên PC) */
+
+    position: relative;
+    min-height: 100vh;
+    /*z-index: 1;*/
 }
 
+#welcome-screen::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: -1;
+}
 
 .welcome-container {
-    background: transparent;
     /* 1. Đặt nền trong suốt */
     padding: var(--spacing-lg) var(--spacing-md);
     border-radius: var(--radius-container);
-    box-shadow: none;
+    /*box-shadow: none;*/
     /* 2. Xóa bóng */
     text-align: center;
-    max-width: 450px;
+    max-width: 500px;
     width: 90%;
-    border: none;
-    /* 3. Xóa viền */
+    /*border: none;*/
+    background: var(--color-glass-background);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 .welcome-title {
     font-size: var(--font-size-title);
-    ;
-    margin-bottom: 10px;
+    font-weight: 700;
     color: var(--color-text-light);
+    margin-bottom: 15px;
+    border-radius: var(--radius-container);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+
 }
 
 .welcome-question {
@@ -133,6 +161,11 @@ body {
     color: var(--color-text-light);
     font-size: 1em;
     box-sizing: border-box;
+}
+
+#nickname-input:focus {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: #ffc107; /* Màu vàng điểm nhấn */
 }
 
 #nickname-input::placeholder {
@@ -192,7 +225,6 @@ body {
 }
 
 .nav-mode-link {
-    /* Đặt padding ngang cho các liên kết để có không gian cho hiệu ứng nền */
     padding-left: 1rem !important;
     padding-right: 1rem !important;
     border-radius: 8px;
@@ -201,13 +233,13 @@ body {
     font-weight: 500;
 }
 
-/* Hiệu ứng khi HOVER (Di chuột qua) */
+/* Hiệu ứng khi HOVER  */
 .nav-mode-link:hover {
     background-color: rgba(60, 179, 113, 0.2);
     color: var(--color-text-light) !important;
 }
 
-/* Hiệu ứng cho mục đang được CHỌN (class .active) */
+/* Hiệu ứng cho mục đang được CHỌN  */
 .nav-mode-link.active {
     background-color: var(--color-primary);
     color: white !important;
@@ -271,7 +303,7 @@ body {
     border-radius: 3px;
 }
 
-#chatbot-messages>div {
+#chatbot-messages > div {
     max-width: 80%;
     padding: 10px 15px;
     border-radius: var(--radius-container);
@@ -376,9 +408,7 @@ body {
     margin-bottom: 10px;
     border-radius: 8px;
     white-space: pre-wrap;
-    /* QUAN TRỌNG: Cho phép ngắt dòng và giữ định dạng */
     word-wrap: break-word;
-    /* Đảm bảo từ dài cũng bị ngắt */
     max-width: 90%;
 }
 
@@ -500,15 +530,13 @@ body {
 
 #myBoard {
     width: 100% !important;
-    /* Ghi đè mọi inline style do JS đặt */
     height: auto !important;
-    /* Cho phép chiều cao tự động co theo chiều rộng */
     box-sizing: border-box;
     aspect-ratio: 1 / 1;
     touch-action: none;
 }
 
-#myBoard>div {
+#myBoard > div {
     width: 100% !important;
     box-sizing: border-box;
 }
@@ -693,8 +721,8 @@ body {
 #evaluation-bar {
     width: 20px;
     background: linear-gradient(to top,
-            var(--color-eval-gradient-start) 0%,
-            var(--color-eval-gradient-end) 100%);
+    var(--color-eval-gradient-start) 0%,
+    var(--color-eval-gradient-end) 100%);
     border-radius: 8px;
     overflow: hidden;
     position: relative;
@@ -904,7 +932,7 @@ body {
     color: var(--color-text-light);
 }
 
-.setting-group>div {
+.setting-group > div {
     display: flex;
     gap: var(--spacing-unit);
 }
@@ -934,7 +962,6 @@ body {
     border-color: var(--color-primary);
     color: white;
     font-weight: bold;
-    /* Sử dụng shadow để nổi bật */
     box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
 }
 
@@ -970,7 +997,6 @@ body {
     height: 8px;
     width: 8px;
     background-color: #9E9E9E;
-    /* Màu xám nhạt */
     border-radius: 50%;
     display: inline-block;
     margin: 0 2px;
