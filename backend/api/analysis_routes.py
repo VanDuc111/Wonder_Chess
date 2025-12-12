@@ -1,3 +1,10 @@
+"""
+Module: analysis_routes.py
+Mô tả: Xử lý các yêu cầu phân tích trận đấu sử dụng AI (Gemini).
+Chức năng chính: Nhận câu hỏi từ người dùng, kết hợp với dữ liệu Engine (FEN, Score, Best Move)
+để tạo ra prompt và gửi đến Gemini, sau đó stream câu trả lời về frontend.
+"""
+
 from flask import Blueprint, jsonify, request, Response, stream_with_context
 from backend.services.gemini_service import stream_gemini_response
 from backend.engine.minimax import find_best_move
@@ -7,8 +14,13 @@ analysis_bp = Blueprint('analysis', __name__)
 
 
 @analysis_bp.route('/chat_analysis', methods=['POST'])
-def chat_analysis():
-    # 1. Lấy tất cả dữ liệu từ frontend
+def chat_analysis() -> Response:
+    """
+        API phân tích bàn cờ và trò chuyện với Alice (Gemini).
+        Input: JSON chứa câu hỏi người dùng, FEN, PGN, nước đi cuối.
+        Output: Stream text câu trả lời từ Gemini.
+        """
+    # 1. Lấy tất cả dữ liệu đầu vào
     data = request.get_json()
     user_question = data.get('user_question')
     fen = data.get('fen')
@@ -20,7 +32,6 @@ def chat_analysis():
         return jsonify({'success': False, 'error': 'Thiếu FEN hoặc câu hỏi người dùng.'}), 400
 
     # 2. Xây dựng chỉ dẫn chào hỏi
-    greeting_instruction = ""
     if is_first_message:
         greeting_instruction = "Hãy bắt đầu câu trả lời của bạn bằng một lời chào thân thiện (ví dụ: 'Chào bạn!')."
     else:
@@ -33,19 +44,19 @@ def chat_analysis():
         try:
             board = chess.Board(fen)
             if not board.is_valid():
-                engine_error_message = "Thế cờ không hợp lệ (Invalid FEN)."
+                engine_error_message = "Invalid FEN: Board state is illegal.."
             else:
-                # Gọi Engine (Code Engine mới đã tối ưu, chạy nhanh)
+                # Gọi Engine
                 engine_results_from_find = find_best_move(fen)
                 engine_results.update(engine_results_from_find)
 
         except ValueError:
-            engine_error_message = "Thế cờ bị lỗi cấu trúc (Vua bị thiếu hoặc sai vị trí)."
+            engine_error_message = "Invalid FEN structure."
         except Exception as e:
             print(f"Engine Error: {e}")
-            engine_error_message = f"Lỗi tính toán engine: {str(e)}"
+            engine_error_message = f"Engine calculation error: {str(e)}"
     else:
-        engine_error_message = "Không tìm thấy dữ liệu bàn cờ (FEN rỗng)."
+        engine_error_message = "FEN is empty."
 
     # 4.Định dạng điểm số
     raw_score = engine_results.get('search_score', '0')
@@ -53,13 +64,12 @@ def chat_analysis():
 
     if raw_score != 'N/A' and 'M' not in str(raw_score):
         try:
-            # Thử chuyển sang float để format lại cho đẹp (+ dấu)
             float_score = float(raw_score)
             formatted_score = f"{float_score:+.2f}"
         except:
             formatted_score = raw_score
 
-    # 5. LUÔN LUÔN chuyển đổi UCI sang SAN
+    # 5. Chuyển đổi nước đi tốt nhất sang SAN (UCI -> SAN)
     best_move_san = "N/A"
     best_move_uci = engine_results.get('best_move')
     if best_move_uci and best_move_uci != "N/A" and fen and not engine_error_message:
@@ -68,11 +78,10 @@ def chat_analysis():
             move = board.parse_uci(best_move_uci)
             best_move_san = board.san(move)
         except Exception as e:
-            print(f"Lỗi chuyển đổi UCI sang SAN: {e}")
+            print(f"SAN Conversion Error: {e}")
             best_move_san = best_move_uci
 
-    # 6. Xây dựng PROMPT ĐẦY ĐỦ
-    error_instruction = ""
+    # 6. Xây dựng Prompt
     if engine_error_message:
         error_instruction = f"""
             ⚠️ **CẢNH BÁO TỪ HỆ THỐNG:** Hiện tại Engine đang gặp lỗi: "{engine_error_message}".
@@ -128,14 +137,14 @@ def chat_analysis():
     **Câu hỏi của người dùng:** "{user_question}"
     """
 
-    # 7. Gọi Gemini
+    # 7. Gọi Gemini và stream phản hồi
     def generate_response():
         try:
             for chunk in stream_gemini_response(prompt_context):
                 yield chunk
         except Exception as e:
-            print(f"Lỗi Streaming từ Gemini: {e}")
-            yield f"\n[Lỗi: Không thể nhận phản hồi từ Alice.]"
+            print(f"Gemini Streaming Error: {e}")
+            yield f"\n[System Error: Alice is not responding. Details: {str(e)}]"
 
     return Response(stream_with_context(generate_response()),
                     content_type='text/event-stream')

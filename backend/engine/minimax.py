@@ -2,6 +2,7 @@ import chess
 import chess.polyglot
 import os
 import time
+
 # --- CẤU HÌNH ENGINE ---
 ENGINE_DEPTH = 10
 MATE_SCORE = 100000
@@ -24,7 +25,7 @@ PIECE_VALUES = {
     chess.KING: 20000
 }
 
-# --- BẢNG ĐIỂM (Giữ nguyên của bạn) ---
+# --- BẢNG ĐIỂM ---
 PAWN_TABLE = [
     0, 0, 0, 0, 0, 0, 0, 0,
     4, 4, -24, -30, -30, 8, 8, 8,
@@ -298,7 +299,6 @@ def negamax(board, depth, alpha, beta):
     return best_value
 
 
-
 def find_best_move(fen, max_depth=ENGINE_DEPTH, time_limit=3.0):
     """
     Tìm nước đi tốt nhất.
@@ -385,7 +385,7 @@ def find_best_move(fen, max_depth=ENGINE_DEPTH, time_limit=3.0):
             best_move_global = best_move_current
             best_score_global = best_val_current
             completed_depth = current_depth
-            # Nếu tìm thấy chiếu hết, dừng ngay lập tức (không cần đào sâu thêm)
+            # Nếu tìm thấy chiếu hết, dừng ngay lập tức
             if abs(best_score_global) > MATE_SCORE - 1000:
                 break
 

@@ -1,4 +1,9 @@
-from flask import Blueprint, jsonify, request
+"""Module: game_routes.py
+API routes liên quan đến trò chơi cờ vua.
+Bao gồm nhận diện nước đi hợp lệ, thực hiện nước đi, yêu cầu bot chơi, đánh giá thế cờ và xóa bộ nhớ đệm của engine.
+"""
+
+from flask import Blueprint, jsonify, request, Response
 import chess
 import chess.engine
 
@@ -10,80 +15,75 @@ from backend.engine.minimax import (
 )
 
 game_bp = Blueprint('game', __name__)
-# FEN thế cờ ban đầu
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
+
 @game_bp.route('/valid_moves', methods=['POST'])
-def get_valid_moves():
+def get_valid_moves() -> Response:
     """
-        Nhận FEN và ô cờ nguồn (source square), trả về các ô đích hợp lệ.
-        """
+    Nhận FEN và ô cờ nguồn (source square), trả về danh sách các ô đích hợp lệ.
+    API này giúp Frontend hiển thị các chấm gợi ý nước đi.
+    """
     data = request.json
-    source_square = data.get('square')  # Ví dụ: 'e2'
+    source_square = data.get('square')
     fen = data.get('fen', STARTING_FEN)
 
-    # Kiểm tra dữ liệu đầu vào
     if not source_square or not fen:
-        return jsonify({'success': False, 'error': 'Thiếu tham số square hoặc fen.'}), 400
+        return jsonify({'success': False, 'error': 'Missing square or fen parameter.'}), 400
 
     try:
-        # 1. Khởi tạo đối tượng Board từ FEN
         board = chess.Board(fen)
-
-        # 2. Chuyển đổi tên ô cờ ('e2') sang chỉ số cờ vua (Square: 12)
         source_square_index = chess.parse_square(source_square)
-
-        # 3. Lọc ra các nước đi hợp lệ bắt đầu từ ô nguồn
         target_squares = []
+
         for move in board.legal_moves:
             if move.from_square == source_square_index:
-                # Thêm ô đích (target square) vào danh sách (ví dụ: 'e4')
                 target_squares.append(chess.square_name(move.to_square))
 
         return jsonify({'success': True, 'moves': target_squares})
 
-    except ValueError as e:
-        # Xử lý FEN không hợp lệ
-        return jsonify({'success': False, 'error': f'FEN không hợp lệ: {e}'}), 400
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid FEN or Square format.'}), 400
     except Exception as e:
-        return jsonify({'success': False, 'error': f'Lỗi server: {e}'}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @game_bp.route('/make_move', methods=['POST'])
-def make_move():
+def make_move() -> Response:
     """
-    Nhận FEN và nước đi (ví dụ: 'e2e4'), trả về FEN mới sau nước đi.
+    Thực hiện một nước đi của người chơi.
+    Input: FEN hiện tại và nước đi (ví dụ 'e2e4').
+    Output: Chuỗi FEN mới sau khi đi.
     """
     data = request.json
-    move_uci = data.get('move')  # Nước đi ở định dạng UCI (ví dụ: 'e2e4', 'g1f3')
+    move_uci = data.get('move')
     fen = data.get('fen', STARTING_FEN)
 
     if not move_uci or not fen:
-        return jsonify({'success': False, 'error': 'Thiếu tham số move hoặc fen.'}), 400
+        return jsonify({'success': False, 'error': 'Missing move or fen parameter.'}), 400
 
     try:
         board = chess.Board(fen)
-
-        # 1. Chuyển đổi nước đi UCI thành đối tượng Move và kiểm tra tính hợp lệ
         move = board.parse_uci(move_uci)
 
         if move not in board.legal_moves:
-            return jsonify({'success': False, 'error': 'Nước đi không hợp lệ.'}), 400
+            return jsonify({'success': False, 'error': 'Illegal move.'}), 400
 
-        # 2. Thực hiện nước đi và lấy FEN mới
         board.push(move)
-        new_fen = board.fen()
-
-        return jsonify({'success': True, 'fen': new_fen})
+        return jsonify({'success': True, 'fen': board.fen()})
 
     except ValueError:
-        return jsonify({'success': False, 'error': 'Nước đi hoặc FEN không hợp lệ.'}), 400
+        return jsonify({'success': False, 'error': 'Invalid UCI move or FEN.'}), 400
     except Exception as e:
-        return jsonify({'success': False, 'error': f'Lỗi server: {e}'}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @game_bp.route('/bot_move', methods=['POST'])
-def bot_move():
+def bot_move() -> Response:
+    """
+    Yêu cầu Engine tính toán và thực hiện nước đi tốt nhất.
+    Sử dụng thuật toán Minimax/Negamax với độ sâu mặc định (hoặc từ config).
+    """
     data = request.get_json()
     fen = data.get('fen')
 
@@ -91,8 +91,11 @@ def bot_move():
         return jsonify({'success': False, 'error': 'FEN is required'}), 400
 
     try:
+        # Gọi Engine
         engine_results = find_best_move(fen)
+
         if engine_results.get('best_move'):
+            # Thực hiện nước đi trên bàn cờ ảo để lấy FEN mới
             temp_board = chess.Board(fen)
             temp_board.push_uci(engine_results['best_move'])
             new_fen = temp_board.fen()
@@ -104,51 +107,54 @@ def bot_move():
                 'evaluation': engine_results['search_score']
             })
         else:
-            return jsonify({'success': False, 'error': engine_results.get('pv', 'Bot could not find a move')}), 500
+            return jsonify({
+                'success': False,
+                'error': engine_results.get('pv', 'Bot could not find a move (Game Over?)')
+            }), 500
 
-    except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid time_limit format'}), 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @game_bp.route('/evaluate', methods=['POST'])
-def get_engine_score():
+def get_engine_score() -> Response:
     """
-    Đánh giá thế cờ hiện tại từ FEN.
-    :return: JSON với điểm số đánh giá.
+    Đánh giá nhanh thế cờ hiện tại (dùng cho thanh Bar lợi thế).
+    Sử dụng Time-boxed Search (0.1s) để phản hồi tức thì mà vẫn đảm bảo độ chính xác tương đối.
     """
     data = request.get_json()
     fen = data.get('fen')
 
     if not fen:
-        return jsonify({'success': False, 'error': 'Thiếu tham số fen.'}), 400
+        return jsonify({'success': False, 'error': 'FEN is required.'}), 400
 
     try:
-        results = find_best_move(fen, max_depth = 10, time_limit=0.1)
-
+        # Giới hạn 0.1s để không làm lag UI
+        results = find_best_move(fen, max_depth=10, time_limit=0.1)
 
         return jsonify({
             'success': True,
             'engine_results': {
-                'search_score': results['search_score'],  # Lấy luôn string đã format (+0.25, -M1...)
-                'best_move': results['best_move'],  # Có thể dùng để gợi ý nhẹ nếu muốn
+                'search_score': results['search_score'],
+                'best_move': results['best_move'],
                 'pv': results['pv']
             }
         })
 
     except Exception as e:
-        print(f"LỖI EVALUATE: {e}")
+        print(f"EVALUATE ERROR: {e}")
         return jsonify({
             'success': False,
             'error': str(e),
             'engine_results': {'search_score': '0.00'}
         }), 500
 
+
 @game_bp.route('/clear_cache', methods=['POST'])
-def api_clear_cache():
+def api_clear_cache() -> Response:
     """
-    Endpoint này được gọi từ frontend khi một ván cờ MỚI bắt đầu.
+    Xóa bộ nhớ đệm (Transposition Table) của Engine.
+    Thường gọi khi bắt đầu ván mới để tránh nước đi cũ ảnh hưởng.
     """
     try:
         clear_transposition_table()

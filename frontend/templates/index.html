@@ -14,116 +14,120 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="welcome-screen" class="d-flex justify-content-center align-items-center vh-100">
-        <div class="welcome-container">
-            <h1 class="welcome-title">Chào Mừng Đến Với WonderChess</h1>
-            <p class="welcome-question">Tôi có thể gọi bạn là gì?</p>
-            <form id="nickname-form">
-                <input type="text" id="nickname-input" placeholder="Nhập nickname của bạn..." required>
-                <button type="submit" class="start-button">Bắt Đầu!</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="main-app-screen" class="container-fluid py-3 d-none">
-        <header class="row mb-3">
-            <nav class="navbar navbar-expand-lg navbar-dark bg-transparent">
-                <div class="container-fluid">
-                    <a class="navbar-brand text-white fw-bold" href="#">
-                        <span style="color: var(--color-primary);">WonderChess</span>
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-
-                    <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
-                        <ul class="navbar-nav justify-content-center flex-grow-1">
-                            <li class="nav-item" id="nav-analyze">
-                                <a class="nav-link nav-mode-link active" href="#" data-mode="analyze">Phân tích</a>
-                            </li>
-                            <li class="nav-item" id="nav-play-bot">
-                                <a class="nav-link nav-mode-link" href="#" data-mode="play">Chơi với Bot</a>
-                            </li>
-<!--                            <li class="nav-item" id="nav-opening">-->
-<!--                                <a class="nav-link nav-mode-link" href="#" data-mode="opening">Khai cuộc</a>-->
-<!--                            </li>-->
-                        </ul>
-                        <div class="d-flex align-items-center" id="navbar-user-section">
-                            <span id="user-display" class="d-none me-3 align-self-center text-white-50">Chào, Khách!</span>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-        </header>
-        <div class="row main-content-row">
-
-<div class="col-12 col-md-6 col-lg-6">
-    <div id="game-view-container" class="d-flex justify-content-center align-items-stretch">
-
-        <div class="score-alignment-wrapper me-3">
-            <div class="score-bar-container">
-                <div id="evaluation-bar" class="evaluation-bar p-2 rounded-3">
-                    <div id="eval-white-advantage" class="eval-advantage-bar"></div>
-                </div>
-            </div>
-            <div id="evaluation-score" class="text-center mt-2 fw-bold" style="color: var(--color-text-light);">0.00</div>
-        </div>
-
-        <div id="chessboard-main-container">
-            <div class="chess-board-area rounded-3" style="background: var(--color-element-background);">
-                <div id="timer-black" class="timer-box timer-top-right">0:00</div>
-                <div id="myBoard" style="width: 100%;"></div>
-
-                <div id="timer-white" class="timer-box timer-bottom-right">0:00</div>
-                <div id="pgn-history-container" class="mt-3">
-                    <div id="pgn-history-list">
-                        </div>
-                </div>
-
-                <div class="button-group-container text-center mt-3">
-                    <button class="btn btn-sm btn-outline-light me-1" data-action="first">⟪ First</button>
-                    <button class="btn btn-sm btn-outline-light me-1" data-action="prev">⟪ Prev</button>
-                    <button id="load-pgn-btn" class="btn btn-sm btn-success me-1" data-action="load"
-                            data-bs-toggle="modal"
-                            data-bs-target="#loadDataModal">Load</button>
-                    <button class="btn btn-sm btn-outline-light me-1" data-action="next">Next ⟫</button>
-                    <button class="btn btn-sm btn-outline-light me-1" data-action="last">Last ⟫</button>
-                    <button class="btn btn-sm btn-outline-danger" data-action="clear">Clear 🗑️</button>
-                </div>
-            </div>
-        </div>
-
+<div id="welcome-screen" class="d-flex justify-content-center align-items-center vh-100">
+    <div class="welcome-container">
+        <h1 class="welcome-title">Chào Mừng Đến Với WonderChess</h1>
+        <p class="welcome-question">Tôi có thể gọi bạn là gì?</p>
+        <form id="nickname-form">
+            <input type="text" id="nickname-input" placeholder="Nhập nickname của bạn..." required>
+            <button type="submit" class="start-button">Bắt Đầu!</button>
+        </form>
     </div>
 </div>
 
-            <div class="col-12 col-md-6 col-lg-6">
-                <div class="chatbot-container p-3 rounded-3" style="background: var(--color-element-background);">
-                    <h5 class="text-center text-white mb-3">Cuộc trò chuyện với Alice</h5>
-                    <div id="chatbot-messages" style="overflow-y: auto;">
-                    </div>
-                    <form id="chatbot-form" class="mt-3">
-                         <input type="text" id="chatbot-input"
-                                placeholder="Hỏi Alice về cờ vua...">
+<div id="main-app-screen" class="container-fluid py-3 d-none">
+    <header class="row mb-3">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-transparent">
+            <div class="container-fluid">
+                <a class="navbar-brand text-white fw-bold" href="#">
+                    <span style="color: var(--color-primary);">WonderChess</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-                                <button class="btn" type="submit" id="send-chat-button">
-                                <i class="bi bi-arrow-up"></i>
-                                </button>
-                        </form>
+                <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                    <ul class="navbar-nav justify-content-center flex-grow-1">
+                        <li class="nav-item" id="nav-analyze">
+                            <a class="nav-link nav-mode-link active" href="#" data-mode="analyze">Phân tích</a>
+                        </li>
+                        <li class="nav-item" id="nav-play-bot">
+                            <a class="nav-link nav-mode-link" href="#" data-mode="play">Chơi với Bot</a>
+                        </li>
+                        <!--                            <li class="nav-item" id="nav-opening">-->
+                        <!--                                <a class="nav-link nav-mode-link" href="#" data-mode="opening">Khai cuộc</a>-->
+                        <!--                            </li>-->
+                    </ul>
+                    <div class="d-flex align-items-center" id="navbar-user-section">
+                        <span id="user-display" class="d-none me-3 align-self-center text-white-50">Chào, Khách!</span>
                     </div>
                 </div>
             </div>
+        </nav>
+    </header>
+    <div class="row main-content-row">
+
+        <div class="col-12 col-md-6 col-lg-6">
+            <div id="game-view-container" class="d-flex justify-content-center align-items-stretch">
+
+                <div class="score-alignment-wrapper me-3">
+                    <div class="score-bar-container">
+                        <div id="evaluation-bar" class="evaluation-bar p-2 rounded-3">
+                            <div id="eval-white-advantage" class="eval-advantage-bar"></div>
+                        </div>
+                    </div>
+                    <div id="evaluation-score" class="text-center mt-2 fw-bold" style="color: var(--color-text-light);">
+                        0.00
+                    </div>
+                </div>
+
+                <div id="chessboard-main-container">
+                    <div class="chess-board-area rounded-3" style="background: var(--color-element-background);">
+                        <div id="timer-black" class="timer-box timer-top-right">0:00</div>
+                        <div id="myBoard" style="width: 100%;"></div>
+
+                        <div id="timer-white" class="timer-box timer-bottom-right">0:00</div>
+                        <div id="pgn-history-container" class="mt-3">
+                            <div id="pgn-history-list">
+                            </div>
+                        </div>
+
+                        <div class="button-group-container text-center mt-3">
+                            <button class="btn btn-sm btn-outline-light me-1" data-action="first">⟪ First</button>
+                            <button class="btn btn-sm btn-outline-light me-1" data-action="prev">⟪ Prev</button>
+                            <button id="load-pgn-btn" class="btn btn-sm btn-success me-1" data-action="load"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#loadDataModal">Load
+                            </button>
+                            <button class="btn btn-sm btn-outline-light me-1" data-action="next">Next ⟫</button>
+                            <button class="btn btn-sm btn-outline-light me-1" data-action="last">Last ⟫</button>
+                            <button class="btn btn-sm btn-outline-danger" data-action="clear">Clear 🗑️</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-6">
+            <div class="chatbot-container p-3 rounded-3" style="background: var(--color-element-background);">
+                <h5 class="text-center text-white mb-3">Chat with Alice</h5>
+                <div id="chatbot-messages" style="overflow-y: auto;">
+                </div>
+                <form id="chatbot-form" class="mt-3">
+                    <input type="text" id="chatbot-input"
+                           placeholder="Hỏi Alice về cờ vua...">
+
+                    <button class="btn" type="submit" id="send-chat-button">
+                        <i class="bi bi-arrow-up"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
+</div>
 
 
 <!--    Script      -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/chessboard.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/chessboard.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
-    {% include 'bot_settings_modal.html' %}
-    {% include 'load_data_modal.html' %}
-    {% include 'game_over_modal.html' %}
+{% include 'bot_settings_modal.html' %}
+{% include 'load_data_modal.html' %}
+{% include 'game_over_modal.html' %}
 </body>
 </html>
