@@ -269,9 +269,9 @@ def negamax(board, depth, alpha, beta):
         if tt_flag == HASH_EXACT:
             return tt_score
         elif tt_flag == HASH_ALPHA:
-            beta = min(beta, tt_score)
-        elif tt_flag == HASH_BETA:
             alpha = max(alpha, tt_score)
+        elif tt_flag == HASH_BETA:
+            beta = min(beta, tt_score)
         if alpha >= beta: return tt_score
 
     if board.is_game_over():
@@ -313,7 +313,7 @@ def negamax(board, depth, alpha, beta):
             break
 
     tt_flag = HASH_EXACT
-    if best_value <= alpha_orig:
+    if best_value <= alpha:
         tt_flag = HASH_ALPHA
     elif best_value >= beta:
         tt_flag = HASH_BETA

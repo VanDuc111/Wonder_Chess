@@ -1,4 +1,3 @@
-
 let board = null;
 let game = null;
 let moveHistory = [];
@@ -39,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
         loadDataModalEl.addEventListener('hidden.bs.modal', stopWebcam);
     }
+
     // Hàm chào mừng và chuyển hướng
     function startApp(nickname) {
         // 1. Lưu Nickname
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const welcomeMessage = `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
         displayChatbotMessage(welcomeMessage);
 
-        fetch('/api/game/clear_cache', { method: 'POST' });
+        fetch('/api/game/clear_cache', {method: 'POST'});
 
         document.title = `WonderChess - Chào mừng ${nickname}`;
 
@@ -105,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-
     function setAnalyzeMode() {
 
         // 1. Dừng và reset đồng hồ
@@ -132,9 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUI(STARTING_FEN);
         handleScoreUpdate("0.00");
     }
+
     // Gắn sự kiện cho nút "Chơi với Bot" trên Navbar
     setupModalBehavior('bot-settings-modal', '#nav-play-bot');
-
 
 
     const timeButtons = document.querySelectorAll('.time-select');
@@ -191,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             //create new chessboard
             initChessboard(boardOrientation);
-            fetch('/api/game/clear_cache', { method: 'POST' });
+            fetch('/api/game/clear_cache', {method: 'POST'});
 
             const boardContainer = document.querySelector('.chess-board-area');
 
@@ -330,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         game = new Chess(STARTING_FEN);
         moveHistory = [];
         currentFenIndex = 0;
-        moveHistory.push({ fen: STARTING_FEN, score: "0.00" });
+        moveHistory.push({fen: STARTING_FEN, score: "0.00"});
         const config = {
 
             draggable: true,
@@ -381,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hàm kiểm soát nước đi
     async function makeMove(moveUci) {
         const currentFen = game.fen();
-        const move = game.move(moveUci, { sloppy: true });
+        const move = game.move(moveUci, {sloppy: true});
         if (move === null) {
             return false;
         }
@@ -389,8 +388,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/game/make_move', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ move: moveUci, fen: currentFen })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({move: moveUci, fen: currentFen})
             });
             const data = await response.json();
 
@@ -401,10 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 }
 
-                moveHistory.push({ fen: newFen, score: null });
+                moveHistory.push({fen: newFen, score: null});
 
                 currentFenIndex = moveHistory.length - 1;
-                game.move(moveUci, { sloppy: true });
+                game.move(moveUci, {sloppy: true});
                 board.position(game.fen());
 
                 return true;
@@ -482,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 3. Highlight Nước đi Cuối cùng (Ô Vàng)
-        const history = game.history({ verbose: true });
+        const history = game.history({verbose: true});
         if (history.length > 0) {
             const lastMove = history[history.length - 1];
             // Chỉ highlight nếu FEN hiện tại là FEN cuối cùng
@@ -494,9 +493,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
- * Tìm Vua (Helper function, cần 'game' toàn cục)
- * @param {string} color Màu 'w' hoặc 'b'
- */
+     * Tìm Vua (Helper function, cần 'game' toàn cục)
+     * @param {string} color Màu 'w' hoặc 'b'
+     */
     function findKingSquare(color) {
 
         const squares = [
@@ -563,7 +562,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body = `Chiếu hết! ${winner} thắng cuộc.`;
             }
 
-            setTimeout(() => { showGameOverModal(title, body); }, 200);
+            setTimeout(() => {
+                showGameOverModal(title, body);
+            }, 200);
             isPlayerTurn = true;
             return; // Dừng mọi thứ
         }
@@ -599,8 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/game/bot_move', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fen: game.fen(), time_limit: selectedBotTime })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({fen: game.fen(), time_limit: selectedBotTime})
             });
 
             const data = await response.json();
@@ -618,10 +619,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentFenIndex < moveHistory.length - 1) {
                     moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 }
-                moveHistory.push({ fen: newFen, score: evalScoreText });
+                moveHistory.push({fen: newFen, score: evalScoreText});
                 currentFenIndex = moveHistory.length - 1;
 
-                game.move(botMoveUci, { sloppy: true });
+                game.move(botMoveUci, {sloppy: true});
                 board.position(game.fen());
                 updateAllHighlights();
 
@@ -706,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Lấy lịch sử nước đi từ đối tượng game (Chess.js)
-        const history = game.history({ verbose: true });
+        const history = game.history({verbose: true});
 
         let pgnHtml = '';
 
@@ -740,8 +741,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/game/evaluate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fen: fen })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({fen: fen})
             });
             const data = await response.json();
 
@@ -867,11 +868,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Lấy hướng bàn cờ trước khi nó bị phá hủy bởi initChessboard
         const currentOrientation = board.orientation();
-        fetch('/api/game/clear_cache', { method: 'POST' });
+        fetch('/api/game/clear_cache', {method: 'POST'});
 
         // 2. TÁI KHỞI TẠO BÀN CỜ VÀ LỊCH SỬ MỚI
         initChessboard(currentOrientation);
-
+        resetTimers();
         // 3. ĐỒNG BỘ HÓA THANH ĐIỂM
         const scoreWrapper = document.querySelector('.score-alignment-wrapper');
         if (scoreWrapper) {
@@ -887,7 +888,6 @@ document.addEventListener('DOMContentLoaded', () => {
             handleBotTurn();
         }
     }
-
 
 
     // ===== TÍCH HỢP AI GEMINI =====
@@ -958,7 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 5. Lấy FEN và lịch sử
         const currentFen = game.fen();
         const pgnHistory = game.pgn();
-        const history = game.history({ verbose: true });
+        const history = game.history({verbose: true});
         let lastMoveSan = 'N/A';
         if (history.length > 0) {
             lastMoveSan = history[history.length - 1]?.san;
@@ -968,7 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/analysis/chat_analysis', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     user_question: message,
                     fen: currentFen,
@@ -991,9 +991,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let isFirstChunk = true;
 
             while (!done) {
-                const { value, done: readerDone } = await reader.read();
+                const {value, done: readerDone} = await reader.read();
                 done = readerDone;
-                const chunk = decoder.decode(value, { stream: true });
+                const chunk = decoder.decode(value, {stream: true});
 
                 for (const char of chunk) {
                     if (isFirstChunk) {
@@ -1045,6 +1045,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return html;
     }
+
     // ===== ĐỒNG HỒ THỜI GIAN ======
 
     function formatTime(seconds) {
@@ -1168,9 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fenToLoad = game.fen(); // Lấy FEN của vị trí cuối cùng
                 }
             }
-        }
-
-        else if (activeTabId === 'fen-pane') {
+        } else if (activeTabId === 'fen-pane') {
             const fenText = document.getElementById('fen-input').value.trim();
             if (fenText) {
                 success = game.load(fenText);
@@ -1178,9 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fenToLoad = fenText;
                 }
             }
-        }
-
-        else if (activeTabId === 'image-pane') {
+        } else if (activeTabId === 'image-pane') {
             const imageInput = document.getElementById('image-upload-input');
             const statusEl = document.getElementById('image-upload-status');
 
@@ -1211,8 +1208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusEl.textContent = `Lỗi: ${data.error} `;
                 return;
             }
-        }
-        else if (activeTabId === 'live-scan-pane') {
+        } else if (activeTabId === 'live-scan-pane') {
             const statusEl = document.getElementById('scan-status');
 
             if (!currentWebcamStream) {
@@ -1258,8 +1254,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Cập nhật bàn cờ với vị trí mới
             game.load(fenToLoad);
             board.position(fenToLoad);
-            fetch('/api/game/clear_cache', { method: 'POST' });
-            moveHistory = [{ fen: fenToLoad, score: null }]; // Tạo cache mới
+            fetch('/api/game/clear_cache', {method: 'POST'});
+            moveHistory = [{fen: fenToLoad, score: null}]; // Tạo cache mới
             currentFenIndex = 0;
 
             await fetchDeepEvaluation(fenToLoad);
@@ -1423,6 +1419,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
     // Áp dụng cho lựa chọn màu
     setupModalButtonSelection('.setting-group button[data-color]');
 
@@ -1448,6 +1445,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameOverModalInstance) {
             gameOverModalInstance.show();
         }
+    }
+
+    const btnNewGameModal = document.getElementById('modalNewGameBtn');
+    if (btnNewGameModal) {
+        btnNewGameModal.addEventListener('click', function () {
+            if (gameOverModalInstance) {
+                gameOverModalInstance.hide();
+            }
+            clearBoard();
+        });
     }
 
     /**
@@ -1510,7 +1517,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!currentWebcamStream) {
             statusEl.textContent = '⚠️ Camera chưa bật!';
-            if(autoScanToggle) autoScanToggle.checked = false;
+            if (autoScanToggle) autoScanToggle.checked = false;
             return;
         }
 
@@ -1585,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Sự kiện bật/tắt công tắc
     if (autoScanToggle) {
-        autoScanToggle.addEventListener('change', function() {
+        autoScanToggle.addEventListener('change', function () {
             if (this.checked) {
                 // Bắt đầu quét
                 document.getElementById('scan-status').textContent = '🟢 Chế độ rảnh tay đã bật.';
@@ -1602,7 +1609,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (captureBtn) {
         captureBtn.addEventListener('click', async () => {
             // Tắt auto nếu đang bật để tránh xung đột
-            if(autoScanToggle) autoScanToggle.checked = false;
+            if (autoScanToggle) autoScanToggle.checked = false;
             clearTimeout(autoScanInterval);
             await performScan();
         });
