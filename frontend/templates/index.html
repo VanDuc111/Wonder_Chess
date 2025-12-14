@@ -85,16 +85,29 @@
                             </div>
                         </div>
 
-                        <div class="button-group-container text-center mt-3">
-                            <button class="btn btn-sm btn-outline-light me-1" data-action="first">⟪ First</button>
-                            <button class="btn btn-sm btn-outline-light me-1" data-action="prev">⟪ Prev</button>
-                            <button id="load-pgn-btn" class="btn btn-sm btn-success me-1" data-action="load"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#loadDataModal">Load
+                        <div class="button-group-container mt-2">
+                            <button class="btn btn-sm btn-chess-nav" data-action="first" title="First Move">
+                                <i class="bi bi-chevron-double-left"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-light me-1" data-action="next">Next ⟫</button>
-                            <button class="btn btn-sm btn-outline-light me-1" data-action="last">Last ⟫</button>
-                            <button class="btn btn-sm btn-outline-danger" data-action="clear">Clear 🗑️</button>
+                            <button class="btn btn-sm btn-chess-nav" data-action="prev" title="Previous Move">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+
+                            <button id="load-pgn-btn" class="btn btn-sm btn-chess-action" data-action="load"
+                                    data-bs-toggle="modal" data-bs-target="#loadDataModal">
+                                <i class="bi bi-upload"></i> Load
+                            </button>
+
+                            <button class="btn btn-sm btn-chess-nav" data-action="next" title="Next Move">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                            <button class="btn btn-sm btn-chess-nav" data-action="last" title="Last Move">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </button>
+
+                            <button class="btn btn-sm btn-chess-danger" data-action="clear" title="Clear Board">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
                     </div>
                 </div>

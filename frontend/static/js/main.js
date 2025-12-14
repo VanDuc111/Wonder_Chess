@@ -872,7 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. TÁI KHỞI TẠO BÀN CỜ VÀ LỊCH SỬ MỚI
         initChessboard(currentOrientation);
-        resetTimers();
+        // resetTimers();
         // 3. ĐỒNG BỘ HÓA THANH ĐIỂM
         const scoreWrapper = document.querySelector('.score-alignment-wrapper');
         if (scoreWrapper) {
@@ -882,13 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 scoreWrapper.classList.remove('rotated-score');
             }
         }
-
-        // 4. Kích hoạt Bot nếu nó là quân Trắng (người chơi là Đen)
-        if (playerColor === 'b') {
-            handleBotTurn();
-        }
     }
-
 
     // ===== TÍCH HỢP AI GEMINI =====
 
@@ -1453,7 +1447,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameOverModalInstance) {
                 gameOverModalInstance.hide();
             }
+
             clearBoard();
+
+            // Nếu đang chơi với Bot (playerColor != null) thì tái khởi động đồng hồ
+            const timeLimitMinutes = parseInt(selectedBotTime);
+            if (playerColor !== null && !isNaN(timeLimitMinutes) && timeLimitMinutes > 0) {
+                // Thiết lập lại đồng hồ theo thời gian đã chọn và bật đồng hồ cho bên đang đi
+                initTimers(timeLimitMinutes);
+                startTimer(game.turn());
+            } else {
+                resetTimers();
+            }
+
+            // Đồng bộ trạng thái hiển thị board (xoay nếu người chơi chọn Đen)
+            const boardContainer = document.querySelector('.chess-board-area');
+            if (playerColor === 'b') {
+                if (boardContainer) boardContainer.classList.add('rotated-board');
+                handleBotTurn();
+            } else {
+                if (boardContainer) boardContainer.classList.remove('rotated-board');
+            }
         });
     }
 
