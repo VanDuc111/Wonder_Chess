@@ -759,20 +759,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 3. Xử lý kết quả và cập nhật giao diện
         if (success && fenToLoad) {
-            // Cập nhật bàn cờ với vị trí mới
-            game.load(fenToLoad);
-            board.position(fenToLoad);
-            fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
-            moveHistory = [{fen: fenToLoad, score: null}]; // Tạo cache mới
-            currentFenIndex = 0;
-
-            await fetchDeepEvaluation(fenToLoad);
-            updateUI(fenToLoad);
-            if (loadDataModalInstance) {
-                if (document.activeElement) {
-                    document.activeElement.blur();
+            // Validate FEN before loading
+            if (!isValidFen(fenToLoad)) {
+                const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
+                if (statusEl) {
+                    statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua — bỏ qua.';
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                    }, 3000);
                 }
-                loadDataModalInstance.hide();
+            } else {
+                // Cập nhật bàn cờ với vị trí mới
+                game.load(fenToLoad);
+                board.position(fenToLoad);
+                fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
+                moveHistory = [{fen: fenToLoad, score: null}]; // Tạo cache mới
+                currentFenIndex = 0;
+
+                await fetchDeepEvaluation(fenToLoad);
+                updateUI(fenToLoad);
+                if (loadDataModalInstance) {
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
+                    loadDataModalInstance.hide();
+                }
             }
 
         } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
@@ -1190,4 +1201,188 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Chức năng: Kiểm tra tính hợp lệ của FEN
+    function isValidFen(fen) {
+        if (!fen || typeof fen !== 'string') return false;
+        try {
+            const testGame = new Chess(fen);
+            // Đảm bảo có cả hai quân Vua trên bàn cờ
+            const boardArr = testGame.board ? testGame.board() : null;
+            if (Array.isArray(boardArr)) {
+                let hasWhiteKing = false;
+                let hasBlackKing = false;
+                for (const row of boardArr) {
+                    for (const cell of row) {
+                        if (cell && cell.type === 'k') {
+                            if (cell.color === 'w') hasWhiteKing = true;
+                            if (cell.color === 'b') hasBlackKing = true;
+                        }
+                    }
+                }
+                return hasWhiteKing && hasBlackKing;
+            }
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    // Cập nhật để kiểm tra tính hợp lệ của FEN trước khi tải
+    document.getElementById('confirm-load-btn').addEventListener('click', async () => {
+
+        let success = false;
+        let fenToLoad = null;
+
+        // 1. Lấy tab đang hoạt động
+        const activeTab = document.querySelector('.tab-pane.fade.show.active');
+        const activeTabId = activeTab ? activeTab.id : null;
+
+        // 2. Xử lý theo từng loại dữ liệu
+
+        if (activeTabId === 'pgn-pane') {
+            const pgnText = document.getElementById('pgn-input').value.trim();
+            if (pgnText) {
+                success = game.load_pgn(pgnText);
+                if (success) {
+                    fenToLoad = game.fen(); // Lấy FEN của vị trí cuối cùng
+                }
+            }
+        } else if (activeTabId === 'fen-pane') {
+            const fenText = document.getElementById('fen-input').value.trim();
+            if (fenText) {
+                success = game.load(fenText);
+                if (success) {
+                    fenToLoad = fenText;
+                }
+            }
+        } else if (activeTabId === 'image-pane') {
+            const imageInput = document.getElementById('image-upload-input');
+            const statusEl = document.getElementById('image-upload-status');
+
+            if (imageInput.files.length === 0) {
+                statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
+                return;
+            }
+
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            statusEl.textContent = 'Đang tải lên và phân tích...';
+
+            // Gọi API Backend
+            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                success = true;
+                fenToLoad = data.fen;
+                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
+            } else {
+                statusEl.textContent = `Lỗi: ${data.error} `;
+                return;
+            }
+        } else if (activeTabId === 'live-scan-pane') {
+            const statusEl = document.getElementById('scan-status');
+
+            if (!currentWebcamStream) {
+                statusEl.textContent = 'Lỗi: Camera chưa được bật.';
+                return;
+            }
+
+            statusEl.textContent = 'Đang chụp và phân tích...';
+
+            // 1. Tạo một canvas ẩn để "chụp ảnh"
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            // 2. Chuyển ảnh từ canvas sang file (Blob)
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+
+            // 3. Gửi file (Blob) đến API
+            const formData = new FormData();
+            formData.append('file', blob, 'webcam-scan.jpg');
+
+            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                success = true;
+                fenToLoad = data.fen;
+                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
+                stopWebcam(); // Tắt camera sau khi thành công
+            } else {
+                statusEl.textContent = `Lỗi: ${data.error} `;
+                return;
+            }
+        }
+
+        // 3. Xử lý kết quả và cập nhật giao diện
+        if (success && fenToLoad) {
+            // Validate FEN before loading
+            if (!isValidFen(fenToLoad)) {
+                const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
+                if (statusEl) {
+                    statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua — bỏ qua.';
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                    }, 3000);
+                }
+            } else {
+                // Cập nhật bàn cờ với vị trí mới
+                game.load(fenToLoad);
+                board.position(fenToLoad);
+                fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
+                moveHistory = [{fen: fenToLoad, score: null}]; // Tạo cache mới
+                currentFenIndex = 0;
+
+                await fetchDeepEvaluation(fenToLoad);
+                updateUI(fenToLoad);
+                if (loadDataModalInstance) {
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
+                    loadDataModalInstance.hide();
+                }
+            }
+
+        } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
+            alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ. Vui lòng kiểm tra lại.");
+        }
+    });
+
+    // Kiểm tra và khởi tạo Modal FEN không hợp lệ từ template có sẵn
+    (function initInvalidFenModalFromTemplate() {
+        const modalEl = document.getElementById('invalidFenModal');
+        if (!modalEl) {
+            // fallback: nếu không tìm thấy modal, tạo hàm rỗng
+            window.showInvalidFenModal = function (msg) {
+                alert(msg || 'FEN không hợp lệ');
+            };
+            return;
+        }
+
+        const modalInstance = new bootstrap.Modal(modalEl);
+        const retryBtn = modalEl.querySelector('#invalidFenModalRetry');
+        if (retryBtn) retryBtn.addEventListener('click', () => {
+            modalInstance.hide();
+            if (typeof performScan === 'function') performScan();
+        });
+
+        window.showInvalidFenModal = function (message) {
+            const body = modalEl.querySelector('#invalidFenModalBody');
+            if (body && message) body.textContent = message;
+            modalInstance.show();
+        };
+    })();
 });

@@ -8,66 +8,147 @@
     const L = {};
 
     L.updateEvaluationBar = function (score, fen) {
-        const evalBar = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_BAR) ? window.APP_CONST.IDS.EVAL_BAR : 'eval-white-advantage');
-        const evalScoreText = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_SCORE) ? window.APP_CONST.IDS.EVAL_SCORE : 'evaluation-score');
-        let formattedScore = "0.00";
-        let percentAdvantage = 50;
+        try {
+            // ngăn chặn hiển thị modal fen không hợp lệ quá thường xuyên
+            if (!window._lastInvalidFenModalAt) window._lastInvalidFenModalAt = 0;
+            const nowTs = Date.now();
+            const evalBar = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_BAR) ? window.APP_CONST.IDS.EVAL_BAR : 'eval-white-advantage');
+            const evalScoreText = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_SCORE) ? window.APP_CONST.IDS.EVAL_SCORE : 'evaluation-score');
+            let formattedScore = "0.00";
+            let percentAdvantage = 50;
 
-        let localGame = null;
-        if (fen) {
-            localGame = new Chess(fen);
-        } else {
-            localGame = game;
-        }
-
-        if (localGame.game_over()) {
-            if (localGame.in_checkmate()) {
-                formattedScore = (localGame.turn() === 'b') ? "1-0" : "0-1";
-                percentAdvantage = (localGame.turn() === 'b') ? 100 : 0;
-            } else {
-                formattedScore = "1/2-1/2";
-                percentAdvantage = 50;
-            }
-            if (evalBar) evalBar.style.height = `${percentAdvantage}%`;
-            if (evalScoreText) evalScoreText.textContent = formattedScore;
-            return;
-        }
-
-        if (typeof score === 'string' && (score.includes('M') || score.includes('#'))) {
-            formattedScore = score.replace("#", "M");
-            if (score.includes('+')) {
-                percentAdvantage = 100;
-            } else if (score.includes('-')) {
-                percentAdvantage = 0;
-            } else {
-                percentAdvantage = 50;
-            }
-        } else if (typeof score === 'number') {
-            const MATE_THRESHOLD = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_SCORE_BASE ? window.APP_CONST.ENGINE.MATE_SCORE_BASE : 1000000) - (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT ? window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT : 500);
-
-            if (Math.abs(score) > MATE_THRESHOLD) {
-                const movesToMate = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_SCORE_BASE ? window.APP_CONST.ENGINE.MATE_SCORE_BASE : 1000000) - Math.abs(score);
-                formattedScore = (score > 0) ? `M+${movesToMate}` : `M-${movesToMate}`;
-                percentAdvantage = (score > 0) ? 100 : 0;
-            } else {
-                const pawnScore = score;
-                const MAX_EVAL_DISPLAY_PAWNS = 10.0;
-                let cappedScore = Math.max(-MAX_EVAL_DISPLAY_PAWNS, Math.min(MAX_EVAL_DISPLAY_PAWNS, pawnScore));
-                percentAdvantage = 50 + (cappedScore / (MAX_EVAL_DISPLAY_PAWNS * 2)) * 100;
-                const displayScore = pawnScore;
-                if (displayScore > 0) {
-                    formattedScore = `+${displayScore.toFixed(2)}`;
-                } else {
-                    formattedScore = `${displayScore.toFixed(2)}`;
+            // Tạo đối tượng Chess tạm thời để kiểm tra trạng thái ván đấu
+            let localGame = null;
+            if (fen) {
+                try {
+                    localGame = new Chess(fen);
+                    // Đảm bảo đối tượng game hợp lệ
+                    if (!localGame || typeof localGame.game_over !== 'function') {
+                        console.warn('Invalid FEN (no game_over):', fen);
+                        localGame = null;
+                    } else {
+                        // Kiểm tra cấu trúc bảng bên trong
+                        try {
+                            const boardArr = (typeof localGame.board === 'function') ? localGame.board() : null;
+                            if (Array.isArray(boardArr)) {
+                                let boardOk = true;
+                                for (const row of boardArr) {
+                                    if (!Array.isArray(row)) {
+                                        boardOk = false;
+                                        break;
+                                    }
+                                    for (const cell of row) {
+                                        if (cell !== null && (typeof cell !== 'object' || typeof cell.type !== 'string')) {
+                                            boardOk = false;
+                                            break;
+                                        }
+                                    }
+                                    if (!boardOk) break;
+                                }
+                                if (!boardOk) {
+                                    console.warn('Invalid internal board structure from FEN:', fen);
+                                    localGame = null;
+                                }
+                            }
+                        } catch (innerErr) {
+                            console.warn('Error validating internal board structure:', innerErr);
+                            localGame = null;
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Invalid FEN provided to updateEvaluationBar:', fen, err);
+                    localGame = null;
                 }
             }
-        } else {
-            formattedScore = "0.00";
-            percentAdvantage = 50;
-        }
 
-        if (evalBar) evalBar.style.height = `${percentAdvantage}%`;
-        if (evalScoreText) evalScoreText.textContent = formattedScore;
+            if (!localGame) {
+                // fallback tới global game nếu có thể
+                if (typeof game !== 'undefined' && game && typeof game.game_over === 'function') {
+                    localGame = game;
+                } else {
+                    // không có game hợp lệ, hiển thị trung lập
+                    if (evalBar) evalBar.style.height = `${percentAdvantage}%`;
+                    if (evalScoreText) evalScoreText.textContent = formattedScore;
+                    return;
+                }
+            }
+
+            // Kiểm tra trạng thái kết thúc ván đấu
+            try {
+                if (localGame.game_over && localGame.game_over()) {
+                    if (localGame.in_checkmate && localGame.in_checkmate()) {
+                        formattedScore = (localGame.turn() === 'b') ? "1-0" : "0-1";
+                        percentAdvantage = (localGame.turn() === 'b') ? 100 : 0;
+                    } else {
+                        formattedScore = "1/2-1/2";
+                        percentAdvantage = 50;
+                    }
+                    if (evalBar) evalBar.style.height = `${percentAdvantage}%`;
+                    if (evalScoreText) evalScoreText.textContent = formattedScore;
+                    return;
+                }
+            } catch (err) {
+                console.warn('Error while checking game_over for eval bar:', err);
+                // nếu có fen không hợp lệ và có modal, hiển thị modal không quá thường xuyên
+                try {
+                    if (fen && window.showInvalidFenModal && (nowTs - window._lastInvalidFenModalAt > 2000)) {
+                        window._lastInvalidFenModalAt = nowTs;
+                        window.showInvalidFenModal('Hệ thống nhận diện thế cờ từ ảnh chưa chính xác. Vui lòng thử chụp lại toàn bộ bàn cờ (cả hai Vua phải hiển thị).');
+                    }
+                } catch (inner) {
+                    // lờ đi
+                }
+                // fallback tới trạng thái trung lập
+                if (evalBar) evalBar.style.height = `${percentAdvantage}%`;
+                if (evalScoreText) evalScoreText.textContent = formattedScore;
+                return;
+            }
+
+            if (typeof score === 'string' && (score.includes('M') || score.includes('#'))) {
+                formattedScore = score.replace("#", "M");
+                if (score.includes('+')) {
+                    percentAdvantage = 100;
+                } else if (score.includes('-')) {
+                    percentAdvantage = 0;
+                } else {
+                    percentAdvantage = 50;
+                }
+            } else if (typeof score === 'number') {
+                const MATE_THRESHOLD = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_SCORE_BASE ? window.APP_CONST.ENGINE.MATE_SCORE_BASE : 1000000) - (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT ? window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT : 500);
+
+                if (Math.abs(score) > MATE_THRESHOLD) {
+                    const movesToMate = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_SCORE_BASE ? window.APP_CONST.ENGINE.MATE_SCORE_BASE : 1000000) - Math.abs(score);
+                    formattedScore = (score > 0) ? `M+${movesToMate}` : `M-${movesToMate}`;
+                    percentAdvantage = (score > 0) ? 100 : 0;
+                } else {
+                    const pawnScore = score;
+                    const MAX_EVAL_DISPLAY_PAWNS = 10.0;
+                    let cappedScore = Math.max(-MAX_EVAL_DISPLAY_PAWNS, Math.min(MAX_EVAL_DISPLAY_PAWNS, pawnScore));
+                    percentAdvantage = 50 + (cappedScore / (MAX_EVAL_DISPLAY_PAWNS * 2)) * 100;
+                    const displayScore = pawnScore;
+                    if (displayScore > 0) {
+                        formattedScore = `+${displayScore.toFixed(2)}`;
+                    } else {
+                        formattedScore = `${displayScore.toFixed(2)}`;
+                    }
+                }
+            } else {
+                formattedScore = "0.00";
+                percentAdvantage = 50;
+            }
+
+            if (evalBar) evalBar.style.height = `${percentAdvantage}%`;
+            if (evalScoreText) evalScoreText.textContent = formattedScore;
+        } catch (err) {
+            console.warn('Error in updateEvaluationBar:', err);
+            try {
+                const evalBar = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_BAR) ? window.APP_CONST.IDS.EVAL_BAR : 'eval-white-advantage');
+                const evalScoreText = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_SCORE) ? window.APP_CONST.IDS.EVAL_SCORE : 'evaluation-score');
+                if (evalBar) evalBar.style.height = `50%`;
+                if (evalScoreText) evalScoreText.textContent = '0.00';
+            } catch (noop) {
+            }
+        }
     };
 
     L.initChessboard = function (orientation = 'white') {
@@ -259,18 +340,30 @@
             clearInterval(timerInterval);
         }
 
-        if (game.game_over()) {
-            if (isTimedGame) clearInterval(timerInterval);
-            L.updateEvaluationBar(0, newFen);
-            let title = "Ván đấu kết thúc";
-            let body = "Ván cờ hòa!";
-            if (game.in_checkmate()) {
-                const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-                body = `Chiếu hết! ${winner} thắng cuộc.`;
+        // protect global game.game_over calls
+        try {
+            if (game && typeof game.game_over === 'function' && game.game_over()) {
+                if (isTimedGame) clearInterval(timerInterval);
+                L.updateEvaluationBar(0, newFen);
+                let title = "Ván đấu kết thúc";
+                let body = "Ván cờ hòa!";
+                if (game.in_checkmate()) {
+                    const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
+                    body = `Chiếu hết! ${winner} thắng cuộc.`;
+                }
+                setTimeout(() => {
+                    if (window.showGameOverModal) window.showGameOverModal(title, body);
+                }, 200);
+                isPlayerTurn = true;
+                return;
             }
-            setTimeout(() => {
-                if (window.showGameOverModal) window.showGameOverModal(title, body);
-            }, 200);
+        } catch (err) {
+            console.warn('handleTurnEnd: error checking game_over - possible invalid game state:', err);
+            try {
+                if (window.showInvalidFenModal) window.showInvalidFenModal('Trạng thái bàn cờ hiện tại không hợp lệ. Vui lòng tải lại hoặc thử chụp lại ảnh.');
+            } catch (e) {
+            }
+            // fallback: reset to safe state
             isPlayerTurn = true;
             return;
         }
@@ -387,6 +480,42 @@
 
             if (data.success && data.engine_results && data.engine_results.search_score !== undefined) {
                 const searchScoreText = data.engine_results.search_score;
+                // validate fen before updating score UI
+                let fenValid = true;
+                try {
+                    const test = new Chess(fen);
+                    // basic internal board check
+                    const boardArr = (typeof test.board === 'function') ? test.board() : null;
+                    if (Array.isArray(boardArr)) {
+                        let ok = true;
+                        for (const row of boardArr) {
+                            if (!Array.isArray(row)) {
+                                ok = false;
+                                break;
+                            }
+                            for (const cell of row) {
+                                if (cell !== null && (typeof cell !== 'object' || typeof cell.type !== 'string')) {
+                                    ok = false;
+                                    break;
+                                }
+                            }
+                            if (!ok) break;
+                        }
+                        if (!ok) fenValid = false;
+                    }
+                } catch (err) {
+                    fenValid = false;
+                }
+
+                if (!fenValid) {
+                    console.warn('fetchDeepEvaluation: received invalid FEN, skipping score update', fen);
+                    try {
+                        if (window.showInvalidFenModal) window.showInvalidFenModal('Hệ thống nhận diện thế cờ từ ảnh chưa chính xác. Vui lòng thử chụp lại.');
+                    } catch (e) {
+                    }
+                    return null;
+                }
+
                 L.handleScoreUpdate(searchScoreText, fen);
                 console.log(`Điểm tìm kiếm (Search Score) mới: ${searchScoreText}`);
                 return searchScoreText;
