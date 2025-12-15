@@ -1058,3 +1058,43 @@ body {
         transform: translateY(-5px);
     }
 }
+
+/* Modal (dark themed) */
+.modal-content.modal-dark {
+    background: linear-gradient(180deg, rgba(20, 20, 30, 0.95), rgba(16, 16, 22, 0.95));
+    color: var(--color-text-light);
+    border-radius: var(--radius-default);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--box-shadow-1);
+}
+
+.modal-content.modal-dark .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.modal-content.modal-dark .modal-title {
+    color: var(--color-text-light);
+}
+
+.modal-content.modal-dark .modal-body {
+    color: var(--color-text-secondary);
+}
+
+.modal-content.modal-dark .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.modal-content.modal-dark .btn-primary {
+    background: var(--color-primary);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.modal-content.modal-dark .btn-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-text-light);
+    border-color: rgba(255, 255, 255, 0.03);
+}
+
+.btn-close {
+    filter: invert(1);
+}
