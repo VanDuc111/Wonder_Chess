@@ -2,38 +2,43 @@ let board = null;
 let game = null;
 let moveHistory = [];
 let currentFenIndex = 0;
-const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const STARTING_FEN = (window.APP_CONST && window.APP_CONST.STARTING_FEN) ? window.APP_CONST.STARTING_FEN : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 let playerColor = null;
 let isPlayerTurn = true;
-let selectedBotColor = 'w';
-let selectedBotTime = '5';
+let selectedBotColor = (window.APP_CONST && window.APP_CONST.DEFAULTS && window.APP_CONST.DEFAULTS.BOT_COLOR) ? window.APP_CONST.DEFAULTS.BOT_COLOR : 'w';
+let selectedBotTime = (window.APP_CONST && window.APP_CONST.DEFAULTS && window.APP_CONST.DEFAULTS.BOT_TIME_MINUTES) ? window.APP_CONST.DEFAULTS.BOT_TIME_MINUTES : '5';
 let whiteTime = 0;
 let blackTime = 0;
 let timerInterval = null;
 let isTimedGame = false;
-const JS_MATE_SCORE_BASE = 1000000;
-const JS_MATE_DEPTH_ADJUSTMENT = 500;
+
+const JS_MATE_SCORE_BASE = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_SCORE_BASE) ? window.APP_CONST.ENGINE.MATE_SCORE_BASE : 1000000;
+const JS_MATE_DEPTH_ADJUSTMENT = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT) ? window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT : 500;
 let gameOverModalInstance = null;
 let loadDataModalInstance = null;
 let currentWebcamStream = null;
 let timerWhiteEl = null;
 let timerBlackEl = null;
 
+// Auto scan delay (ms)
+const AUTO_SCAN_DELAY = (window.APP_CONST && window.APP_CONST.AUTO_SCAN && window.APP_CONST.AUTO_SCAN.DELAY_MS) ? window.APP_CONST.AUTO_SCAN.DELAY_MS : 5000;
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    const welcomeScreen = document.getElementById('welcome-screen');
-    const mainAppScreen = document.getElementById('main-app-screen');
+    const welcomeScreen = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WELCOME_SCREEN) ? window.APP_CONST.IDS.WELCOME_SCREEN : 'welcome-screen');
+    const mainAppScreen = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.MAIN_APP_SCREEN) ? window.APP_CONST.IDS.MAIN_APP_SCREEN : 'main-app-screen');
     const nicknameForm = document.getElementById('nickname-form');
     const nicknameInput = document.getElementById('nickname-input');
-    const chatbotMessages = document.getElementById('chatbot-messages');
+    const chatbotMessages = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.CHATBOT_MESSAGES) ? window.APP_CONST.IDS.CHATBOT_MESSAGES : 'chatbot-messages');
     const chatbotInput = document.getElementById('chatbot-input');
     const chatbotSendButton = document.getElementById('send-chat-button');
 
     const userDisplaySpan = document.getElementById('user-display');
-    const loadDataModalEl = document.getElementById('loadDataModal');
-    const videoElement = document.getElementById('webcam-feed');
+    const loadDataModalEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.LOAD_DATA_MODAL) ? window.APP_CONST.IDS.LOAD_DATA_MODAL : 'loadDataModal');
+    const videoElement = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WEBCAM_VIDEO) ? window.APP_CONST.IDS.WEBCAM_VIDEO : 'webcam-feed');
 
-    timerWhiteEl = document.getElementById('timer-white');
-    timerBlackEl = document.getElementById('timer-black');
+    timerWhiteEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.TIMER_WHITE) ? window.APP_CONST.IDS.TIMER_WHITE : 'timer-white');
+    timerBlackEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.TIMER_BLACK) ? window.APP_CONST.IDS.TIMER_BLACK : 'timer-black');
     if (loadDataModalEl) {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
         loadDataModalEl.addEventListener('hidden.bs.modal', stopWebcam);
@@ -58,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const welcomeMessage = `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
         displayChatbotMessage(welcomeMessage);
 
-        fetch('/api/game/clear_cache', {method: 'POST'});
+        fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
 
         document.title = `WonderChess - Chào mừng ${nickname}`;
 
@@ -190,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             //create new chessboard
             initChessboard(boardOrientation);
-            fetch('/api/game/clear_cache', {method: 'POST'});
+            fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
 
             const boardContainer = document.querySelector('.chess-board-area');
 
@@ -233,623 +238,126 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== THANH ĐIỂM =====
 
-    // Hàm giả lập cập nhật thanh điểm
     function updateEvaluationBar(score, fen) {
-        const evalBar = document.getElementById('eval-white-advantage');
-        const evalScoreText = document.getElementById('evaluation-score');
-        let formattedScore = "0.00"; // Điểm mặc định
-        let percentAdvantage = 50;   // Thanh 50% mặc định
-
-        // 1. Tạo bản sao game cục bộ để kiểm tra FEN
-        let localGame = null;
-        if (fen) {
-            localGame = new Chess(fen);
-        } else {
-            localGame = game;
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.updateEvaluationBar === 'function') {
+            return window.LOGIC_GAME.updateEvaluationBar(score, fen);
         }
-
-        // === LOGIC MỚI: KIỂM TRA GAME OVER TRƯỚC ===
-        if (localGame.game_over()) {
-            if (localGame.in_checkmate()) {
-                formattedScore = (localGame.turn() === 'b') ? "1-0" : "0-1";
-                percentAdvantage = (localGame.turn() === 'b') ? 100 : 0;
-            } else {
-                formattedScore = "1/2-1/2";
-                percentAdvantage = 50;
-            }
-            evalBar.style.height = `${percentAdvantage}%`;
-            evalScoreText.textContent = formattedScore;
-            return;
-        }
-        // ==========================================
-
-        // 2. XỬ LÝ ĐIỂM SỐ (NẾU GAME CHƯA KẾT THÚC)
-        if (typeof score === 'string' && (score.includes('M') || score.includes('#'))) {
-
-
-            formattedScore = score.replace("#", "M");
-
-            // Xác định ai đang thắng để tô màu thanh bar
-            // Nếu chuỗi chứa '+' (VD: +M2) -> Trắng thắng (100%)
-            // Nếu chuỗi chứa '-' (VD: -M3) -> Đen thắng (0%)
-            if (score.includes('+')) {
-                percentAdvantage = 100;
-            } else if (score.includes('-')) {
-                percentAdvantage = 0;
-            } else {
-                percentAdvantage = 50;
-            }
-        } else if (typeof score === 'number') {
-            // Xử lý điểm số Centipawn (ví dụ: 48 hoặc 999996)
-
-            // Đặt ngưỡng MATE
-            const MATE_THRESHOLD = JS_MATE_SCORE_BASE - JS_MATE_DEPTH_ADJUSTMENT;
-
-            // 2a. XỬ LÝ MATE-IN-X
-            if (Math.abs(score) > MATE_THRESHOLD) {
-                // Tính số nước đi (ví dụ: 1000000 - 999997 = 3 nước)
-                const movesToMate = JS_MATE_SCORE_BASE - Math.abs(score);
-
-                formattedScore = (score > 0) ? `M+${movesToMate}` : `M-${movesToMate}`;
-                percentAdvantage = (score > 0) ? 100 : 0;
-            }
-            // 2b. XỬ LÝ ĐIỂM TỐT THÔNG THƯỜNG
-            else {
-                const pawnScore = score; // Chuyển 48 thành 0.48
-                const MAX_EVAL_DISPLAY_PAWNS = 10.0;
-
-                let cappedScore = Math.max(-MAX_EVAL_DISPLAY_PAWNS, Math.min(MAX_EVAL_DISPLAY_PAWNS, pawnScore));
-                percentAdvantage = 50 + (cappedScore / (MAX_EVAL_DISPLAY_PAWNS * 2)) * 100;
-
-                const displayScore = pawnScore;
-                if (displayScore > 0) {
-                    formattedScore = `+${displayScore.toFixed(2)}`;
-                } else {
-                    formattedScore = `${displayScore.toFixed(2)}`;
-                }
-            }
-        }
-        // 3. XỬ LÝ LỖI (NaN, v.v.)
-        else {
-            formattedScore = "0.00";
-            percentAdvantage = 50;
-        }
-
-        // Cập nhật UI
-        evalBar.style.height = `${percentAdvantage}%`;
-        evalScoreText.textContent = formattedScore;
     }
 
 
     // Hàm khởi tạo bàn cờ (Chỉ gọi khi vào màn hình chính)
     function initChessboard(orientation = 'white') {
-        if (board) {
-            board.destroy();
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.initChessboard === 'function') {
+            return window.LOGIC_GAME.initChessboard(orientation);
         }
-        game = new Chess(STARTING_FEN);
-        moveHistory = [];
-        currentFenIndex = 0;
-        moveHistory.push({fen: STARTING_FEN, score: "0.00"});
-        const config = {
-
-            draggable: true,
-            position: STARTING_FEN,
-            pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png',
-            orientation: orientation,
-            onDrop: onDrop,
-            onDragStart: onDragStart,
-            onSnapEnd: onSnapEnd
-        };
-
-        board = Chessboard('myBoard', config);
-        window.addEventListener('resize', () => {
-            board.resize();
-            syncBoardAndEvalHeight();
-        });
-        syncBoardAndEvalHeight();
-
-        // Giả lập điểm ban đầu
-        updateEvaluationBar(0.0, STARTING_FEN);
-        // updateUI(STARTING_FEN);
-
-        // Đảm bảo bàn cờ điều chỉnh kích thước khi cửa sổ thay đổi
-        window.addEventListener('resize', board.resize);
     }
 
     // Hàm khớp chiều cao thanh điểm và bàn cờ
     function syncBoardAndEvalHeight() {
-        const boardContainer = document.getElementById('chessboard-main-container');
-        const scoreBarContainer = document.querySelector('.score-bar-container');
-        const evalScore = document.getElementById('evaluation-score');
-        const wrapper = document.querySelector('.score-alignment-wrapper');
-
-        if (!boardContainer || !scoreBarContainer || !wrapper) return;
-
-        const totalBoardAreaHeight = boardContainer.offsetHeight; // Chiều cao tổng của bàn cờ
-        wrapper.style.height = `${totalBoardAreaHeight}px`;
-
-        const scoreHeight = evalScore ? evalScore.offsetHeight : 0;
-        const verticalSpacing = 20; // Khoảng margin/padding giữa bar và điểm số
-
-        const targetBarContainerHeight = totalBoardAreaHeight - scoreHeight - verticalSpacing;
-
-        scoreBarContainer.style.height = `${targetBarContainerHeight}px`;
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.syncBoardAndEvalHeight === 'function') {
+            return window.LOGIC_GAME.syncBoardAndEvalHeight();
+        }
     }
 
 
     // Hàm kiểm soát nước đi
     async function makeMove(moveUci) {
-        const currentFen = game.fen();
-        const move = game.move(moveUci, {sloppy: true});
-        if (move === null) {
-            return false;
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.makeMove === 'function') {
+            return await window.LOGIC_GAME.makeMove(moveUci);
         }
-        game.undo();
-        try {
-            const response = await fetch('/api/game/make_move', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({move: moveUci, fen: currentFen})
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                const newFen = data.fen;
-
-                if (currentFenIndex < moveHistory.length - 1) {
-                    moveHistory = moveHistory.slice(0, currentFenIndex + 1);
-                }
-
-                moveHistory.push({fen: newFen, score: null});
-
-                currentFenIndex = moveHistory.length - 1;
-                game.move(moveUci, {sloppy: true});
-                board.position(game.fen());
-
-                return true;
-
-            } else {
-                console.error('Lỗi Backend (make_move):', data.error);
-                return false;
-            }
-        } catch (error) {
-            console.error('Lỗi mạng/server:', error);
-            return false;
-        }
+        return false;
     }
 
     // Xử lý sự kiện kéo thả
     async function onDrop(source, target) {
-        let moveUci = source + target;
-
-        // --- 1: KIỂM TRA PHONG CẤP (KHÔNG KIỂM TRA TÍNH HỢP LỆ) ---
-        const pieceObj = game.get(source);
-        let isPawnPromotion = false;
-
-        // Chỉ kiểm tra nếu quân đang được kéo là Tốt ('p')
-        if (pieceObj && pieceObj.type === 'p') {
-
-            // Kiểm tra Tốt Trắng phong cấp ở hàng 8
-            if (pieceObj.color === 'w' && target[1] === '8') {
-                isPawnPromotion = true;
-            }
-            // Kiểm tra Tốt Đen phong cấp ở hàng 1
-            else if (pieceObj.color === 'b' && target[1] === '1') {
-                isPawnPromotion = true;
-            }
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.onDrop === 'function') {
+            return await window.LOGIC_GAME.onDrop(source, target);
         }
-
-        // --- 2: MẶC ĐỊNH PHONG HẬU VÀ THỰC HIỆN NƯỚC ĐI ---
-
-        if (isPawnPromotion) {
-            // Auto promote Queen
-            moveUci += 'q';
-        }
-        const success = await makeMove(moveUci);
-
-        // --- 3: XỬ LÝ KẾT QUẢ ---
-        if (success) {
-            await handleTurnEnd(game.fen());
-        }
-
-        if (!success) {
-            return 'snapback';
-        }
+        return 'snapback';
     }
 
 
     function onSnapEnd() {
-        if (board.fen() !== game.fen()) {
-            board.position(game.fen());
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.onSnapEnd === 'function') {
+            return window.LOGIC_GAME.onSnapEnd();
         }
     }
 
     function updateAllHighlights() {
-        // 1. Xóa tất cả highlight cũ
-        document.querySelectorAll('#myBoard .square-55d63').forEach(square => {
-            square.classList.remove('square-selected'); // Vàng
-            square.classList.remove('highlight-move');  // Chấm xanh
-            square.classList.remove('highlight-check'); // Đỏ
-        });
-
-        // 2. Highlight Vua bị chiếu (Ô Đỏ)
-        if (game.in_check()) {
-            const kingSquare = findKingSquare(game.turn());
-            if (kingSquare) {
-                document.querySelector(`#myBoard .square-${kingSquare}`).classList.add('highlight-check');
-            }
-        }
-
-        // 3. Highlight Nước đi Cuối cùng (Ô Vàng)
-        const history = game.history({verbose: true});
-        if (history.length > 0) {
-            const lastMove = history[history.length - 1];
-            // Chỉ highlight nếu FEN hiện tại là FEN cuối cùng
-            if (currentFenIndex === moveHistory.length - 1) {
-                document.querySelector(`#myBoard .square-${lastMove.from}`).classList.add('square-selected');
-                document.querySelector(`#myBoard .square-${lastMove.to}`).classList.add('square-selected');
-            }
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.updateAllHighlights === 'function') {
+            return window.LOGIC_GAME.updateAllHighlights();
         }
     }
 
-    /**
-     * Tìm Vua (Helper function, cần 'game' toàn cục)
-     * @param {string} color Màu 'w' hoặc 'b'
-     */
     function findKingSquare(color) {
-
-        const squares = [
-            'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2',
-            'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3', 'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4',
-            'a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5', 'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6',
-            'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7', 'a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'
-        ];
-        for (const square of squares) {
-            const piece = game.get(square); // game.get() là hàm đúng
-            if (piece && piece.type === 'k' && piece.color === color) {
-                return square;
-            }
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.findKingSquare === 'function') {
+            return window.LOGIC_GAME.findKingSquare(color);
         }
         return null;
     }
 
 
-    /**
-     * Tiền xử lý  điểm số thô từ engine trước khi gửi đến thanh điểm.
-     * Hàm này đóng vai trò "điều phối":
-     * - Nếu là chuỗi Mate ("#+1"), nó sẽ gửi thẳng chuỗi đó.
-     * - Nếu là chuỗi số ("98"), nó chuyển sang số (98) và gửi đi.
-     * - Nếu lỗi, nó gửi 0.0.
-     *
-     * @param {string} scoreText Điểm số thô dạng chuỗi (centipawn hoặc mate) nhận từ engine.
-     * @param {string} fen FEN của thế cờ, dùng để truyền xuống updateEvaluationBar.
-     */
     function handleScoreUpdate(scoreText, fen) {
-        if (typeof scoreText === 'string' && (scoreText.includes('M') || scoreText.includes('#'))) {
-            updateEvaluationBar(scoreText, fen);
-        } else {
-            const scoreInCentipawns = parseFloat(scoreText);
-
-            if (!isNaN(scoreInCentipawns)) {
-                updateEvaluationBar(scoreInCentipawns, fen);
-            } else {
-                updateEvaluationBar(0.0, fen);
-            }
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.handleScoreUpdate === 'function') {
+            return window.LOGIC_GAME.handleScoreUpdate(scoreText, fen);
         }
     }
 
 
     async function handleTurnEnd(newFen) {
-
-        updateAllHighlights();
-        updateUI(newFen);
-
-        // 1. Dừng đồng hồ của Người chơi
-        if (isTimedGame) {
-            clearInterval(timerInterval);
-        }
-
-        // 2. KIỂM TRA GAME OVER (Do Người chơi gây ra)
-        // (Phải kiểm tra trước khi fetch hoặc bật timer mới)
-        if (game.game_over()) {
-            if (isTimedGame) clearInterval(timerInterval); // Đảm bảo tắt hẳn
-            updateEvaluationBar(0, newFen);
-
-            let title = "Ván đấu kết thúc";
-            let body = "Ván cờ hòa!";
-            if (game.in_checkmate()) {
-                const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-                body = `Chiếu hết! ${winner} thắng cuộc.`;
-            }
-
-            setTimeout(() => {
-                showGameOverModal(title, body);
-            }, 200);
-            isPlayerTurn = true;
-            return; // Dừng mọi thứ
-        }
-
-        // 3. Lấy điểm của User (Chạy ngầm, không 'await')
-        // Bằng cách dùng .then(), chúng ta cho phép code chạy tiếp
-        // mà không cần chờ 4 giây.
-        fetchDeepEvaluation(newFen).then(scoreText => {
-            if (scoreText && moveHistory[currentFenIndex]) {
-                moveHistory[currentFenIndex].score = scoreText;
-            }
-        });
-
-        // 4. Quyết định lượt đi tiếp theo
-        if (playerColor !== null && game.turn() !== playerColor) {
-            // === ĐẾN LƯỢT BOT ===
-            // Bật đồng hồ cho Bot NGAY LẬP TỨC
-            if (isTimedGame) {
-                startTimer(game.turn());
-            }
-            await handleBotTurn(); // Chờ Bot đi (Bot sẽ tự bật đồng hồ User)
-        } else {
-            // === CHẾ ĐỘ PHÂN TÍCH ===
-            if (isTimedGame) {
-                startTimer(game.turn());
-            }
-            isPlayerTurn = true;
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.handleTurnEnd === 'function') {
+            return await window.LOGIC_GAME.handleTurnEnd(newFen);
         }
     }
 
     async function handleBotTurn() {
-        isPlayerTurn = false;
-        try {
-            const response = await fetch('/api/game/bot_move', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({fen: game.fen(), time_limit: selectedBotTime})
-            });
-
-            const data = await response.json();
-
-            // Dừng đồng hồ của Bot NGAY KHI có kết quả
-            if (isTimedGame) clearInterval(timerInterval);
-
-            if (data.success && data.move_uci) {
-                const botMoveUci = data.move_uci;
-                const newFen = data.fen;
-                const evalScoreText = data.evaluation;
-
-                // --- XỬ LÝ NƯỚC ĐI CỦA BOT ---
-                // (Cập nhật cache, game.move, board.position, updateUI, handleScoreUpdate...)
-                if (currentFenIndex < moveHistory.length - 1) {
-                    moveHistory = moveHistory.slice(0, currentFenIndex + 1);
-                }
-                moveHistory.push({fen: newFen, score: evalScoreText});
-                currentFenIndex = moveHistory.length - 1;
-
-                game.move(botMoveUci, {sloppy: true});
-                board.position(game.fen());
-                updateAllHighlights();
-
-                updateUI(newFen);
-                handleScoreUpdate(evalScoreText, newFen);
-                console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
-                // ---------------------------
-
-                if (game.game_over()) {
-                    if (isTimedGame) clearInterval(timerInterval);
-                    updateEvaluationBar(0, newFen);
-
-                    let title = "Ván đấu kết thúc";
-                    let body = "Ván cờ hòa!";
-                    if (game.in_checkmate()) {
-                        const winner = (game.turn() === 'b') ? 'Trắng' : 'Đen';
-                        body = `Chiếu hết! ${winner} thắng cuộc.`;
-                    }
-                    setTimeout(() => {
-                        showGameOverModal(title, body);
-                    }, 200);
-
-                } else {
-                    // Nếu game chưa kết thúc -> BẬT ĐỒNG HỒ CHO NGƯỜI CHƠI
-                    if (isTimedGame) {
-                        startTimer(game.turn());
-                    }
-                }
-
-            } else {
-                console.error('Bot Error:', data.error);
-                // Nếu lỗi, trả lại lượt cho người chơi
-                if (isTimedGame) startTimer(game.turn());
-            }
-        } catch (error) {
-            console.error('Lỗi kết nối Bot:', error);
-            if (isTimedGame) startTimer(game.turn());
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.handleBotTurn === 'function') {
+            return await window.LOGIC_GAME.handleBotTurn();
         }
-        isPlayerTurn = true; // Mở khóa bàn cờ cho người chơi
     }
 
 
     function onDragStart(source, piece, position, orientation) {
-
-        if (!isPlayerTurn) {
-            return false;
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.onDragStart === 'function') {
+            return window.LOGIC_GAME.onDragStart(source, piece, position, orientation);
         }
-
-        if (game.turn() !== piece[0]) {
-            return false;
-        }
-
-        updateAllHighlights();
-
-        const moves = game.moves({
-            square: source,
-            verbose: true
-        });
-
-
-        if (moves.length === 0) {
-            return false;
-        }
-
-
-        for (const move of moves) {
-            document.querySelector(`#myBoard .square-${move.to}`).classList.add('highlight-move');
-        }
-
-
         return true;
     }
 
-    /**
-     *  Hàm cập nhật lịch sử pgn
-     *
-     */
     function updatePgnHistory() {
-        const historyList = document.getElementById('pgn-history-list');
-        if (!historyList) {
-            return;
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.updatePgnHistory === 'function') {
+            return window.LOGIC_GAME.updatePgnHistory();
         }
-
-        // Lấy lịch sử nước đi từ đối tượng game (Chess.js)
-        const history = game.history({verbose: true});
-
-        let pgnHtml = '';
-
-        for (let i = 0; i < history.length; i++) {
-            const move = history[i];
-
-            // Nước đi là của Trắng
-            if (i % 2 === 0) {
-                const moveNumber = (i / 2) + 1;
-                // Thêm số lượt (ví dụ: 1.)
-                pgnHtml += `<span class="move-number me-1">${moveNumber}.</span>`;
-            }
-
-            let highlightClass = '';
-            if (i + 1 === currentFenIndex) {
-                highlightClass = 'current-move-highlight';
-            }
-
-            // Thêm nước đi với class tương ứng
-            pgnHtml += `<span class="move-text me-2 ${highlightClass}" data-index="${i + 1}">${move.san}</span>`;
-        }
-
-        historyList.innerHTML = pgnHtml;
-
-        historyList.parentElement.scrollLeft = historyList.scrollWidth;
     }
 
 
     // Hàm truyền điểm số vào thanh điểm
     async function fetchDeepEvaluation(fen) {
-        try {
-            const response = await fetch('/api/game/evaluate', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({fen: fen})
-            });
-            const data = await response.json();
-
-            if (data.success && data.engine_results && data.engine_results.search_score !== undefined) {
-
-                // Lấy điểm Search Score để phản ánh lợi thế thực tế
-                const searchScoreText = data.engine_results.search_score;
-
-                handleScoreUpdate(searchScoreText, fen); // Thêm fen
-
-                console.log(`Điểm tìm kiếm (Search Score) mới: ${searchScoreText}`);
-                return searchScoreText;
-
-            } else if (data.success && data.engine_results && data.engine_results.search_score === 'Game Over') {
-                // Xử lý trường hợp Game Over (ví dụ: đặt thanh điểm về 0 hoặc hiển thị trạng thái hòa/thắng)
-                console.log('Ván đấu đã kết thúc. Không cập nhật thanh điểm.');
-                updateEvaluationBar(0, fen);
-
-            } else {
-                console.error('Lỗi tính toán điểm số hoặc dữ liệu không hợp lệ:', data.error || data);
-                return null;
-            }
-        } catch (error) {
-            console.error('Lỗi mạng/server khi tính điểm số:', error);
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.fetchDeepEvaluation === 'function') {
+            return await window.LOGIC_GAME.fetchDeepEvaluation(fen);
         }
     }
 
-    // ==== Các button điều hướng nước đi =====
-
-    /**
-     * Tải trạng thái bàn cờ từ lịch sử dựa trên chỉ số (index).
-     * Đồng bộ hóa cả giao diện (board), logic game (chess.js) và điểm số.
-     *
-     * @param {number} index - Chỉ số của nước đi trong mảng moveHistory cần tải.
-     * @returns {void}
-     */
     function loadFen(index) {
-        if (index < 0 || index >= moveHistory.length) {
-            return;
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.loadFen === 'function') {
+            return window.LOGIC_GAME.loadFen(index);
         }
-        // 1. Cập nhật chỉ mục hiện tại
-        currentFenIndex = index;
-        const historyItem = moveHistory[currentFenIndex];
-
-        // 2. Tải FEN lên bàn cờ và đối tượng game
-        const fenToLoad = historyItem.fen;
-        const scoreToLoad = historyItem.score;
-
-        board.position(fenToLoad);
-        updateAllHighlights();
-
-        if (scoreToLoad) {
-            handleScoreUpdate(scoreToLoad, fenToLoad);
-        }
-        // 5. Cập nhật PGN và các nút
-        updateUI(fenToLoad);
     }
 
     // Hàm cập nhật giao diện
     function updateUI(fen) {
-        updateButtonState();
-        updatePgnHistory();
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.updateUI === 'function') {
+            return window.LOGIC_GAME.updateUI(fen);
+        } else {
+            updateButtonState();
+            updatePgnHistory();
+        }
     }
 
-    // Các nút điều chỉnh Fen hiện tại
-    $(document).ready(function () {
-
-        $('.button-group-container button').on('click', function () {
-            const action = $(this).data('action');
-
-            switch (action) {
-                case 'first':
-                    loadFen(0);
-                    break;
-                case 'prev':
-                    loadFen(currentFenIndex - 1);
-                    break;
-                case 'next':
-                    loadFen(currentFenIndex + 1);
-                    break;
-                case 'last':
-                    loadFen(moveHistory.length - 1);
-                    break;
-                case 'clear':
-                    clearBoard();
-                    break;
-                case 'load':
-                    $('#loadDataModal').modal('show');
-                    break;
-                default:
-                    break;
-            }
-
-            updateButtonState();
-        });
-
-        // Xử lý click vào danh sách PGN (Event Delegation)
-        $('#pgn-history-list').on('click', '.move-text', function () {
-            const index = parseInt($(this).data('index'));
-            if (!isNaN(index)) {
-                loadFen(index);
-            }
-        });
-        updateButtonState();
-    });
-
     function updateButtonState() {
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.updateButtonState === 'function') {
+            return window.LOGIC_GAME.updateButtonState();
+        }
         const isFirstMove = currentFenIndex <= 0;
         const isLastMove = currentFenIndex >= moveHistory.length - 1;
 
@@ -861,19 +369,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hàm thiết lập lại trò chơi về trạng thái ban đầu
     function clearBoard() {
-        // 1. Lấy hướng bàn cờ hiện tại
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.clearBoard === 'function') {
+            return window.LOGIC_GAME.clearBoard();
+        }
         if (!board) {
             console.error("Lỗi: Board chưa được khởi tạo.");
             return;
         }
-        // Lấy hướng bàn cờ trước khi nó bị phá hủy bởi initChessboard
         const currentOrientation = board.orientation();
-        fetch('/api/game/clear_cache', {method: 'POST'});
+        fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
 
-        // 2. TÁI KHỞI TẠO BÀN CỜ VÀ LỊCH SỬ MỚI
         initChessboard(currentOrientation);
-        // resetTimers();
-        // 3. ĐỒNG BỘ HÓA THANH ĐIỂM
         const scoreWrapper = document.querySelector('.score-alignment-wrapper');
         if (scoreWrapper) {
             if (playerColor === 'b') {
@@ -960,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 6. Gửi yêu cầu
         try {
-            const response = await fetch('/api/analysis/chat_analysis', {
+            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CHAT_ANALYSIS) ? window.APP_CONST.API.CHAT_ANALYSIS : '/api/analysis/chat_analysis', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -1142,6 +648,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
+    // Expose helpers that logic_game needs
+    window.startTimer = startTimer;
+    window.resetTimers = resetTimers;
+    window.initTimers = initTimers;
+    window.showGameOverModal = showGameOverModal;
+    window.startWebcam = startWebcam;
+    window.stopWebcam = stopWebcam;
+
     // ====== LOAD DATA ======
 
     document.getElementById('confirm-load-btn').addEventListener('click', async () => {
@@ -1187,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
             statusEl.textContent = 'Đang tải lên và phân tích...';
 
             // Gọi API Backend
-            const response = await fetch('/api/image/analyze_image', {
+            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
                 method: 'POST',
                 body: formData
             });
@@ -1226,7 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('file', blob, 'webcam-scan.jpg');
 
-            const response = await fetch('/api/image/analyze_image', {
+            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
                 method: 'POST',
                 body: formData
             });
@@ -1248,7 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Cập nhật bàn cờ với vị trí mới
             game.load(fenToLoad);
             board.position(fenToLoad);
-            fetch('/api/game/clear_cache', {method: 'POST'});
+            fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
             moveHistory = [{fen: fenToLoad, score: null}]; // Tạo cache mới
             currentFenIndex = 0;
 
@@ -1480,11 +994,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: 'environment'
-                }
-            });
+            const stream = await navigator.mediaDevices.getUserMedia((window.APP_CONST && window.APP_CONST.VIDEO_CONSTRAINTS) ? window.APP_CONST.VIDEO_CONSTRAINTS : {video: {facingMode: 'environment'}});
             videoElement.srcObject = stream;
             currentWebcamStream = stream;
 
@@ -1520,7 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LOGIC AUTO SCAN ---
     let autoScanInterval = null;
-    const AUTO_SCAN_DELAY = 5000; // 5 giây quét 1 lần (để kịp API trả về)
+    // const AUTO_SCAN_DELAY = 5000; // moved to top using APP_CONST
 
     const autoScanToggle = document.getElementById('auto-scan-toggle');
     const captureBtn = document.getElementById('capture-btn');
@@ -1552,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('file', blob, 'autocapture.jpg');
 
-            const response = await fetch('/api/image/analyze_image', {
+            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
                 method: 'POST',
                 body: formData
             });
@@ -1579,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (game.fen().split(' ')[0] !== newFen.split(' ')[0]) {
                         game.load(newFen);
                         board.position(newFen);
-                        fetchDeepEvaluation(newFen); // Gọi Alice/Engine đánh giá luôn
+                        fetchDeepEvaluation(newFen);
 
                         // Phát âm thanh nhẹ nhàng báo hiệu đã nhận
                         // (Optional) new Audio('/static/sounds/move.mp3').play();
@@ -1626,6 +1136,57 @@ document.addEventListener('DOMContentLoaded', () => {
             if (autoScanToggle) autoScanToggle.checked = false;
             clearTimeout(autoScanInterval);
             await performScan();
+        });
+    }
+
+    // === Button group controls (first/prev/load/next/last/clear) ===
+    const buttonGroup = document.querySelector('.button-group-container');
+    if (buttonGroup) {
+        buttonGroup.addEventListener('click', function (e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            switch (action) {
+                case 'first':
+                    loadFen(0);
+                    break;
+                case 'prev':
+                    loadFen(currentFenIndex - 1);
+                    break;
+                case 'next':
+                    loadFen(currentFenIndex + 1);
+                    break;
+                case 'last':
+                    loadFen(moveHistory.length - 1);
+                    break;
+                case 'clear':
+                    clearBoard();
+                    break;
+                case 'load':
+                    if (typeof loadDataModalInstance !== 'undefined' && loadDataModalInstance) {
+                        loadDataModalInstance.show();
+                    } else {
+                        const el = document.getElementById('loadDataModal');
+                        if (el) el.style.display = 'block';
+                    }
+                    break;
+                default:
+                    break;
+            }
+            updateButtonState();
+        });
+    }
+
+    const pgnHistoryEl = document.getElementById('pgn-history-list');
+    if (pgnHistoryEl) {
+        pgnHistoryEl.addEventListener('click', function (e) {
+            const mv = e.target.closest('.move-text');
+            if (!mv) return;
+            const idx = parseInt(mv.getAttribute('data-index'));
+            if (!isNaN(idx)) {
+                loadFen(idx);
+                updateButtonState();
+            }
         });
     }
 
