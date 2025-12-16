@@ -195,6 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             //create new chessboard
             initChessboard(boardOrientation);
+            try {
+                updateUI(game.fen());
+            } catch (e) {
+            }
             fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
 
             const boardContainer = document.querySelector('.chess-board-area');
@@ -370,7 +374,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hàm thiết lập lại trò chơi về trạng thái ban đầu
     function clearBoard() {
         if (window.LOGIC_GAME && typeof window.LOGIC_GAME.clearBoard === 'function') {
-            return window.LOGIC_GAME.clearBoard();
+            const res = window.LOGIC_GAME.clearBoard();
+            try {
+                updateUI(game.fen());
+            } catch (e) {
+            }
+            return res;
         }
         if (!board) {
             console.error("Lỗi: Board chưa được khởi tạo.");
@@ -392,6 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== TÍCH HỢP AI GEMINI =====
 
+    // Hàm thêm tin nhắn vào khung chat
     function appendMessage(sender, text) {
         const messageDiv = document.createElement('div');
         if (sender === 'user') {
@@ -648,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    // Expose helpers that logic_game needs
+    // hỗ trợ hàm toàn cục
     window.startTimer = startTimer;
     window.resetTimers = resetTimers;
     window.initTimers = initTimers;
@@ -811,6 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadArea.addEventListener(eventName, preventDefaults, false);
         });
 
+        // Ngăn hành vi mặc định
         function preventDefaults(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -896,8 +907,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // 2. Logic Đóng Modal (Nút đóng bên trong Modal)
-        // Giả định nút đóng có class 'close-btn' hoặc tương tự bên trong Modal
+        // 2. Logic Đóng Modal
         const closeModalBtn = modalElement.querySelector('.close-btn');
         if (closeModalBtn) {
             closeModalBtn.addEventListener('click', () => {
@@ -945,7 +955,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Áp dụng cho lựa chọn thời gian
     setupModalButtonSelection('.setting-group button[data-time]');
 
-    // Hàm xử lý modal game over
     const gameOverModalEl = document.getElementById('gameOverModal');
     if (gameOverModalEl) {
         gameOverModalInstance = new bootstrap.Modal(gameOverModalEl, {
@@ -954,6 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Hiển thị modal game over với tiêu đề và nội dung tùy chỉnh
     function showGameOverModal(title, body) {
         const titleEl = document.getElementById('gameOverModalTitle');
         const bodyEl = document.getElementById('gameOverModalBody');
@@ -974,6 +984,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             clearBoard();
+            try {
+                updateUI(game.fen());
+            } catch (e) {
+            }
 
             // Nếu đang chơi với Bot (playerColor != null) thì tái khởi động đồng hồ
             const timeLimitMinutes = parseInt(selectedBotTime);
@@ -1100,10 +1114,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (game.fen().split(' ')[0] !== newFen.split(' ')[0]) {
                         game.load(newFen);
                         board.position(newFen);
-                        fetchDeepEvaluation(newFen);
+                        // Reset lịch sử nước đi để xóa pgn-history của ván trước
+                        moveHistory = [{fen: newFen, score: null}];
+                        currentFenIndex = 0;
 
-                        // Phát âm thanh nhẹ nhàng báo hiệu đã nhận
-                        // (Optional) new Audio('/static/sounds/move.mp3').play();
+                        // Lấy điểm sâu và cập nhật UI
+                        await fetchDeepEvaluation(newFen);
+                        updateUI(newFen);
                     }
                 } catch (e) {
                     console.warn("Bỏ qua FEN lỗi từ Camera:", e.message);

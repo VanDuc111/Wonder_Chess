@@ -1,6 +1,6 @@
 (function () {
     // File: frontend/static/js/constants.js
-    // Centralized constants for the app (compatible with classic <script> loading)
+    // Xuất các hằng số ứng dụng và gắn chúng vào đối tượng toàn cục nếu chưa tồn tại
 
     const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -54,7 +54,7 @@
         CHAT_ANALYSIS: '/api/analysis/chat_analysis'
     };
 
-    // Attach global object for legacy scripts
+    // Gắn các hằng số vào đối tượng toàn cục nếu nó chưa tồn tại
     if (typeof window !== 'undefined') {
         if (!window.APP_CONST) {
             window.APP_CONST = {
@@ -68,7 +68,6 @@
                 API: API
             };
         } else {
-            // Merge any missing keys to existing APP_CONST without overwriting
             window.APP_CONST.STARTING_FEN = window.APP_CONST.STARTING_FEN || STARTING_FEN;
             window.APP_CONST.DEFAULTS = window.APP_CONST.DEFAULTS || DEFAULTS;
             window.APP_CONST.ENGINE = window.APP_CONST.ENGINE || ENGINE;
