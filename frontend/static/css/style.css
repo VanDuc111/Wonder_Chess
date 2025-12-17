@@ -1098,3 +1098,111 @@ body {
 .btn-close {
     filter: invert(1);
 }
+
+/* Chat resizer handle */
+.chat-column-inner {
+    display: flex;
+    align-items: stretch;
+}
+
+.chat-resizer {
+    width: 14px;
+    min-width: 14px;
+    cursor: ew-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition: background 0.15s ease, transform 0.15s ease;
+    user-select: none;
+    z-index: 20;
+}
+
+.chat-resizer:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.chat-resizer-icon {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+/* Khi chat bị thu gọn */
+.chat-collapsed .chatbot-container {
+    display: none !important;
+}
+
+.chat-collapsed #chat-resizer .chat-resizer-icon {
+    transform: rotate(180deg);
+}
+
+/* Khi chat đang ở chế độ thu nhỏ (small width) */
+.chatbot-container.resizing {
+    transition: none !important;
+}
+
+/* Hạn chế kích thước chat tối thiểu/ tối đa */
+#chat-col .chatbot-container {
+    min-width: 220px;
+    max-width: none; /* Removed limit to allow full stretch */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#chat-col {
+    padding-right: 0 !important; /* Flush to right edge */
+}
+
+/* Khi cột chat được co lại (kéo) */
+#chat-col.shrunk {
+    flex: 0 0 48px; /* chỉ hiển thị handle */
+    max-width: 48px;
+    min-width: 48px;
+}
+
+#chat-col.expanded {
+    flex: 0 0 40%; /* mặc định chiếm khoảng 40% trên màn lớn */
+    max-width: 60%;
+}
+
+@media (max-width: 991.98px) {
+    /* Trên tablet/mob, resizer ẩn một chút style để tránh chồng chéo */
+    .chat-resizer {
+        display: none !important; /* Hide resizer on mobile */
+    }
+
+    /* Force full width on mobile to override JS inline styles */
+    #chat-col,
+    #chat-col.expanded {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding-right: calc(var(--bs-gutter-x) * .5) !important;
+        padding-left: calc(var(--bs-gutter-x) * .5) !important;
+    }
+    
+    #chat-col .chatbot-container {
+        width: 100% !important;
+        min-width: 0 !important; /* Enable shrinking if needed */
+    }
+}
+
+@media (min-width: 992px) {
+    .main-content-row {
+        flex-wrap: nowrap !important;
+    }
+
+    .main-content-row > div:first-child {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        max-width: 100% !important;
+    }
+
+    /* Chat Column (Right) */
+    #chat-col {
+        /* Allow width to be controlled via JS styling */
+        max-width: 80% !important; 
+    }
+}

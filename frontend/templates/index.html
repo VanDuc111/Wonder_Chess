@@ -115,19 +115,28 @@
             </div>
         </div>
 
-        <div class="col-12 col-md-6 col-lg-6">
-            <div class="chatbot-container p-3 rounded-3" style="background: var(--color-element-background);">
-                <h5 class="text-center text-white mb-3">Chat with Alice</h5>
-                <div id="chatbot-messages" style="overflow-y: auto;">
+        <!-- Chat column with a resizer handle -->
+        <div id="chat-col" class="col-12 col-md-6 col-lg-6">
+            <div class="chat-column-inner d-flex" style="position:relative; height:100%;">
+                <!-- Resizer handle (bên trái của ô chat) -->
+                <div id="chat-resizer" class="chat-resizer"
+                     title="Kéo để thay đổi kích thước chat (nhấp đúp để thu gọn)">
+                    <i class="bi bi-chevron-left chat-resizer-icon" aria-hidden="true"></i>
                 </div>
-                <form id="chatbot-form" class="mt-3">
-                    <input type="text" id="chatbot-input"
-                           placeholder="Hỏi Alice về cờ vua...">
 
-                    <button class="btn" type="submit" id="send-chat-button">
-                        <i class="bi bi-arrow-up"></i>
-                    </button>
-                </form>
+                <div class="chatbot-container p-3 rounded-3" style="background: var(--color-element-background);">
+                    <h5 class="text-center text-white mb-3">Chat with Alice</h5>
+                    <div id="chatbot-messages" style="overflow-y: auto;">
+                    </div>
+                    <form id="chatbot-form" class="mt-3">
+                        <input type="text" id="chatbot-input"
+                               placeholder="Hỏi Alice về cờ vua...">
+
+                        <button class="btn" type="submit" id="send-chat-button">
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -148,3 +157,4 @@
 {% include 'game_over_modal.html' %}
 </body>
 </html>
+

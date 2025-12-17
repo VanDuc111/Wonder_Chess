@@ -1402,4 +1402,93 @@ document.addEventListener('DOMContentLoaded', () => {
             modalInstance.show();
         };
     })();
+
+    // === Chat resizer: kéo để thay đổi kích thước ===
+    (function setupChatResizer() {
+        const chatResizer = document.getElementById('chat-resizer');
+        const chatCol = document.getElementById('chat-col');
+        if (!chatResizer || !chatCol) return;
+
+        const chatbotContainer = chatCol.querySelector('.chatbot-container');
+        const MIN_WIDTH = 250; // Kích thước tối thiểu để không bị ẩn
+        const MAX_WIDTH = 800; // Kích thước tối đa
+        const DEFAULT_WIDTH = 400;
+
+        let isDragging = false;
+        let startX = 0;
+        let startWidth = 0;
+
+        // Restore saved state
+        const savedWidth = parseInt(localStorage.getItem('chatWidth'), 10);
+        
+        // Luôn hiển thị (không dùng logic collapsed) - Xóa class shrunk nếu có
+        chatCol.classList.remove('shrunk');
+        document.body.classList.remove('chat-collapsed');
+
+        if (!isNaN(savedWidth) && savedWidth >= MIN_WIDTH) {
+            const clamped = Math.min(Math.max(savedWidth, MIN_WIDTH), MAX_WIDTH);
+            chatCol.style.flex = `0 0 ${clamped}px`;
+            if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
+        } else {
+             // Default setup
+             if (window.innerWidth > 992) {
+                 chatCol.style.flex = `0 0 ${DEFAULT_WIDTH}px`;
+                 if (chatbotContainer) chatbotContainer.style.width = `${DEFAULT_WIDTH}px`;
+             }
+        }
+        chatCol.classList.add('expanded'); // Luôn expanded
+
+        // pointerdown
+        chatResizer.addEventListener('pointerdown', (e) => {
+            if (e.button && e.button !== 0) return;
+            e.preventDefault();
+            isDragging = true;
+            startX = e.clientX;
+            startWidth = chatCol.getBoundingClientRect().width;
+            try {
+                chatResizer.setPointerCapture(e.pointerId);
+            } catch (err) { }
+            
+            if (chatbotContainer) chatbotContainer.classList.add('resizing');
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            const delta = startX - e.clientX; // Kéo sang trái là tăng width
+            let newWidth = startWidth + delta; 
+            
+            // Đảm bảo bàn cờ luôn có tối thiểu 300px
+            newWidth = Math.round(Math.min(Math.max(newWidth, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 300)));
+
+            chatCol.style.flex = `0 0 ${newWidth}px`;
+            if (chatbotContainer) chatbotContainer.style.width = `${newWidth}px`;
+            
+            localStorage.setItem('chatWidth', String(newWidth));
+        });
+
+        document.addEventListener('pointerup', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            try {
+                chatResizer.releasePointerCapture(e.pointerId);
+            } catch (err) { }
+            
+            if (chatbotContainer) chatbotContainer.classList.remove('resizing');
+            document.body.style.userSelect = '';
+        });
+
+        // Xóa sự kiện dblclick/click ẩn chat -> chỉ giữ lại resize
+        
+        window.addEventListener('resize', () => {
+            const w = parseInt(localStorage.getItem('chatWidth'), 10);
+            if (!isNaN(w)) {
+                const clamped = Math.min(Math.max(w, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 300));
+                chatCol.style.flex = `0 0 ${clamped}px`;
+                if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
+            }
+        });
+
+    })();
+
 });
