@@ -57,8 +57,8 @@
         </nav>
     </header>
     <div class="row main-content-row">
-
-        <div class="col-12 col-md-6 col-lg-6">
+        <!-- Column 1: Chessboard -->
+        <div id="board-col" class="col-12 col-md-6 col-lg-5">
             <div id="game-view-container" class="d-flex justify-content-center align-items-stretch">
 
                 <div class="score-alignment-wrapper me-3">
@@ -80,12 +80,8 @@
 
                             <div id="timer-white" class="timer-box timer-bottom-right">0:00</div>
                         </div>
-                        <div id="pgn-history-container" class="mt-3">
-                            <div id="pgn-history-list">
-                            </div>
-                        </div>
 
-                        <div class="button-group-container mt-2">
+                        <div class="button-group-container mt-3">
                             <button class="btn btn-sm btn-chess-nav" data-action="first" title="First Move">
                                 <i class="bi bi-chevron-double-left"></i>
                             </button>
@@ -115,16 +111,34 @@
             </div>
         </div>
 
-        <!-- Chat column with a resizer handle -->
-        <div id="chat-col" class="col-12 col-md-6 col-lg-6">
-            <div class="chat-column-inner d-flex" style="position:relative; height:100%;">
+        <!-- Column 2: Move History & Opening (NEW) -->
+        <div id="history-col" class="col-12 col-md-6 col-lg-3">
+            <div class="history-container p-3 rounded-3 h-100 d-flex flex-column">
+                <div id="opening-info" class="mb-3">
+                    <h6 class="text-white-50 small text-uppercase fw-bold mb-1">Khai cuộc</h6>
+                    <div id="opening-name" class="text-white fw-bold">Chưa xác định</div>
+                </div>
+                
+                <div id="pgn-history-vertical" class="flex-grow-1 overflow-auto">
+                    <table class="table table-dark table-borderless history-table mb-0">
+                        <tbody id="pgn-history-list-vertical">
+                            <!-- Nước đi sẽ được chèn vào đây bởi JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 3: Chatbot with a resizer handle -->
+        <div id="chat-col" class="col-12 col-md-12 col-lg-4">
+            <div class="chat-column-inner d-flex h-100" style="position:relative;">
                 <!-- Resizer handle (bên trái của ô chat) -->
                 <div id="chat-resizer" class="chat-resizer"
-                     title="Kéo để thay đổi kích thước chat (nhấp đúp để thu gọn)">
+                     title="Kéo để thay đổi kích thước chat">
                     <i class="bi bi-chevron-left chat-resizer-icon" aria-hidden="true"></i>
                 </div>
 
-                <div class="chatbot-container p-3 rounded-3" style="background: var(--color-element-background);">
+                <div class="chatbot-container p-3 rounded-3 w-100">
                     <h5 class="text-center text-white mb-3">Chat with Alice</h5>
                     <div id="chatbot-messages" style="overflow-y: auto;">
                     </div>

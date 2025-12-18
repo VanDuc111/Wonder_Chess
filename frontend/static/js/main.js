@@ -1205,10 +1205,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const pgnHistoryEl = document.getElementById('pgn-history-list');
+    const pgnHistoryEl = document.getElementById('pgn-history-list-vertical');
     if (pgnHistoryEl) {
         pgnHistoryEl.addEventListener('click', function (e) {
-            const mv = e.target.closest('.move-text');
+            const mv = e.target.closest('.move-cell');
             if (!mv) return;
             const idx = parseInt(mv.getAttribute('data-index'));
             if (!isNaN(idx)) {
@@ -1455,13 +1455,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.addEventListener('pointermove', (e) => {
             if (!isDragging) return;
-            const delta = startX - e.clientX; // Kéo sang trái là tăng width
+            const delta = startX - e.clientX; // Moving left increases width
             let newWidth = startWidth + delta; 
             
-            // Đảm bảo bàn cờ luôn có tối thiểu 300px
-            newWidth = Math.round(Math.min(Math.max(newWidth, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 300)));
+            // For 3 columns: Max width must leave space for Board (~42%) and History (min 200px)
+            const reservedSpace = Math.round(window.innerWidth * 0.42) + 220; 
+            const maxAllowedChatWidth = window.innerWidth - reservedSpace;
+
+            newWidth = Math.round(Math.min(Math.max(newWidth, MIN_WIDTH), Math.min(MAX_WIDTH, maxAllowedChatWidth)));
 
             chatCol.style.flex = `0 0 ${newWidth}px`;
+            chatCol.style.width = `${newWidth}px`; // Add width specifically to override CSS
             if (chatbotContainer) chatbotContainer.style.width = `${newWidth}px`;
             
             localStorage.setItem('chatWidth', String(newWidth));
@@ -1478,12 +1482,16 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.style.userSelect = '';
         });
 
-        // Xóa sự kiện dblclick/click ẩn chat -> chỉ giữ lại resize
-        
+        // Xóa sự kiện dblclick/click ẩn chat        // Keep layout responsive on window resize
         window.addEventListener('resize', () => {
+            if (window.innerWidth <= 992) {
+                chatCol.style.flex = '';
+                if (chatbotContainer) chatbotContainer.style.width = '';
+                return;
+            }
             const w = parseInt(localStorage.getItem('chatWidth'), 10);
             if (!isNaN(w)) {
-                const clamped = Math.min(Math.max(w, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 300));
+                const clamped = Math.min(Math.max(w, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 600)); // Adjusted for 3 columns
                 chatCol.style.flex = `0 0 ${clamped}px`;
                 if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
             }

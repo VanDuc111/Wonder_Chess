@@ -451,22 +451,45 @@
     };
 
     L.updatePgnHistory = function () {
-        const historyList = document.getElementById('pgn-history-list');
-        if (!historyList) return;
+        const historyListVertical = document.getElementById('pgn-history-list-vertical');
+        if (!historyListVertical) return;
+        
         const history = game.history({verbose: true});
         let pgnHtml = '';
-        for (let i = 0; i < history.length; i++) {
-            const move = history[i];
-            if (i % 2 === 0) {
-                const moveNumber = (i / 2) + 1;
-                pgnHtml += `<span class="move-number me-1">${moveNumber}.</span>`;
-            }
-            let highlightClass = '';
-            if (i + 1 === currentFenIndex) highlightClass = 'current-move-highlight';
-            pgnHtml += `<span class="move-text me-2 ${highlightClass}" data-index="${i + 1}">${move.san}</span>`;
+        
+        for (let i = 0; i < history.length; i += 2) {
+            const moveNumber = Math.floor(i / 2) + 1;
+            const whiteMove = history[i];
+            const blackMove = history[i + 1];
+            
+            const whiteIdx = i + 1;
+            const blackIdx = i + 2;
+            
+            const whiteHighlight = (whiteIdx === currentFenIndex) ? 'current-move-highlight' : '';
+            const blackHighlight = (blackMove && blackIdx === currentFenIndex) ? 'current-move-highlight' : '';
+            
+            pgnHtml += `
+                <tr>
+                    <td class="move-number-cell">${moveNumber}.</td>
+                    <td class="move-cell ${whiteHighlight}" data-index="${whiteIdx}">${whiteMove.san}</td>
+                    <td class="move-cell ${blackHighlight}" data-index="${blackIdx}">${blackMove ? blackMove.san : ''}</td>
+                </tr>
+            `;
         }
-        historyList.innerHTML = pgnHtml;
-        if (historyList.parentElement) historyList.parentElement.scrollLeft = historyList.scrollWidth;
+        
+        historyListVertical.innerHTML = pgnHtml;
+        
+        // Auto scroll to bottom
+        const container = document.getElementById('pgn-history-vertical');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Logic cập nhật tên khai cuộc (Placeholder - có thể mở rộng với API thực tế)
+        const openingNameEl = document.getElementById('opening-name');
+        if (openingNameEl && history.length === 0) {
+            openingNameEl.textContent = "Chưa bắt đầu";
+        }
     };
 
     L.fetchDeepEvaluation = async function (fen) {
