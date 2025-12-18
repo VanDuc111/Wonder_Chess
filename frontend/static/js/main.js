@@ -90,6 +90,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     modeLinks.forEach(link => {
         link.addEventListener('click', (event) => {
+            const href = event.currentTarget.getAttribute('href');
+            // Nếu người dùng đang ở trang chủ (pathname là '/' hoặc '') và click vào link trang chủ, 
+            // chúng ta ngăn load lại trang để JS xử lý modal/mode.
+            const isHomePage = window.location.pathname === '/' || window.location.pathname.endsWith('/index.html') || window.location.pathname === '';
+            const isToHome = href === '/' || href === './' || href.endsWith('index.html');
+
+            if (href && href !== '#' && !href.startsWith('javascript:') && !(isHomePage && isToHome)) {
+                // Let the browser navigate to the new page
+                return;
+            }
+
             event.preventDefault();
 
             // 1. Xóa class 'active' khỏi tất cả các liên kết

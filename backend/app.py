@@ -18,3 +18,7 @@ app.register_blueprint(image_bp, url_prefix='/api/image')
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/openings')
+def openings_page():
+    return render_template('openings.html')

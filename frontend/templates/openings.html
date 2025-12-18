@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}Thư viện Khai cuộc - WonderChess{% endblock %}
+
+{% block body_class %}allow-scroll{% endblock %}
+
+{% block body_content %}
+<div id="main-app-screen" class="container-fluid py-3">
+    {% with active_page='openings' %}
+        {% include 'partials/navbar.html' %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Search Section -->
+        <div class="row mb-5 mt-4">
+            <div class="col-12 text-center">
+                <h2 class="text-white fw-bold mb-3 display-6">Thư viện Khai cuộc</h2>
+                <p class="text-white-50 mb-4">Khám phá hàng ngàn biến thể khai cuộc với sự trợ giúp của AI Alice.</p>
+                <div class="search-container">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="search-input" id="opening-search" placeholder="Tìm kiếm tên khai cuộc (vd: Sicilian, Ruy Lopez)...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="row mb-4">
+            <div class="col-12 d-flex flex-wrap justify-content-center" id="category-list">
+                <button class="category-btn active" data-filter="all">Tất cả</button>
+                <button class="category-btn" data-filter="e4">King's Pawn (e4)</button>
+                <button class="category-btn" data-filter="d4">Queen's Pawn (d4)</button>
+                <button class="category-btn" data-filter="flank">Flank Openings</button>
+                <button class="category-btn" data-filter="gambit">Gambits</button>
+            </div>
+        </div>
+
+        <!-- Opening Grid -->
+        <div class="row g-4" id="opening-grid">
+            <!-- Cards will be injected here by JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/openings.js') }}"></script>
+{% endblock %}

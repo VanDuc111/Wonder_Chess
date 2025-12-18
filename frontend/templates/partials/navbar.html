@@ -1,0 +1,30 @@
+<header class="row mb-3">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-transparent">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white fw-bold" href="{{ url_for('home') }}">
+                <span style="color: var(--color-primary);">Wonder Chess</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav justify-content-center flex-grow-1">
+                    <li class="nav-item">
+                        <a id="nav-analyze" class="nav-link nav-mode-link {{ 'active' if active_page == 'analyze' }}" href="{{ url_for('home') }}" data-mode="analyze">Phân tích</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="nav-play-bot" class="nav-link nav-mode-link {{ 'active' if active_page == 'play' }}" href="{{ url_for('home') }}" data-mode="play">Chơi với Bot</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="nav-opening" class="nav-link nav-mode-link {{ 'active' if active_page == 'openings' }}" href="{{ url_for('openings_page') }}">Khai cuộc</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center" id="navbar-user-section">
+                    <span id="user-display" class="me-3 align-self-center text-white-50">Chào, Khách!</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>

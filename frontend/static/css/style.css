@@ -114,6 +114,12 @@ body {
     background: linear-gradient(135deg, var(--color-background-start) 0%, var(--color-background-end) 100%);
 }
 
+body.allow-scroll {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
 /* Container chính cho nội dung chào mừng */
 #welcome-screen {
     top: 0;
@@ -219,16 +225,13 @@ body {
 /* ========================================= */
 
 #main-app-screen {
-    /* Đảm bảo main-app chiếm toàn bộ không gian còn lại */
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
     height: 100%;
 }
 
 .main-content-row {
-    height: calc(100vh - 100px);
+    height: calc(100vh - 110px);
     overflow-y: hidden;
-    padding-bottom: 10px;
+    padding-bottom: 5px;
 }
 
 /* ========================================= */
@@ -237,8 +240,8 @@ body {
 
 .navbar {
     background: transparent !important;
-    padding-top: 15px;
-    padding-bottom: 15px;
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 .navbar-brand {
@@ -287,9 +290,24 @@ body {
 }
 
 .nav-mode-link.active {
-    background-color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.08);
     color: white !important;
     font-weight: bold;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-mode-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: var(--color-primary);
+    border-radius: 2px;
+    box-shadow: 0 0 12px var(--color-primary);
 }
 
 #user-display {
@@ -492,7 +510,7 @@ body {
     transition: transform 0.5s ease-in-out;
     margin-top: auto;
     margin-bottom: auto;
-    padding-top: var(--spacing-lg);
+    padding-top: var(--spacing-unit);
 }
 
 .chess-board-area {
@@ -1285,6 +1303,108 @@ body {
     box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
+/* --- Openings Page Styles --- */
+.opening-card {
+    background: var(--color-element-background);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 12px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.opening-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+    border-color: var(--color-primary);
+}
+
+.opening-board-container {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.opening-card-body {
+    padding: 18px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.eco-badge {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.category-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border-subtle);
+    color: var(--color-text-main);
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.category-btn:hover, .category-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(60, 179, 113, 0.3);
+}
+
+.search-container {
+    max-width: 550px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border-subtle);
+    color: white;
+    border-radius: 50px;
+    padding: 14px 20px 14px 50px;
+    width: 100%;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+}
+
+.search-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(60, 179, 113, 0.15);
+}
+
+.search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+}
+
+/* Fix for navbar active links */
+.nav-link.active {
+    background: var(--color-glass-background);
+    color: var(--color-primary) !important;
+    font-weight: bold;
+    border-radius: 8px;
+}
 #pgn-history-vertical {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
