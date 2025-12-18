@@ -1,0 +1,49 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .loader-pawn {
+            fill: #fff;
+            filter: drop-shadow(0 0 5px rgba(0, 243, 255, 0.5));
+            animation: bounce 1.5s ease-in-out infinite, glow 2s linear infinite;
+            transform-origin: center;
+        }
+        .loader-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 4;
+        }
+        .loader-progress {
+            fill: none;
+            stroke: #00f3ff;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: 251.2;
+            animation: drive 2s ease-in-out infinite;
+            transform-origin: center;
+            transform: rotate(-90deg);
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 243, 255, 0.5)); }
+            50% { filter: drop-shadow(0 0 15px rgba(0, 243, 255, 0.8)); }
+        }
+        @keyframes drive {
+            0% { stroke-dashoffset: 251.2; transform: rotate(-90deg); }
+            50% { stroke-dashoffset: 0; transform: rotate(90deg); }
+            100% { stroke-dashoffset: -251.2; transform: rotate(270deg); }
+        }
+    </style>
+    <!-- Background Circle -->
+    <circle class="loader-circle" cx="50" cy="50" r="40" />
+    <!-- Progress Ring -->
+    <circle class="loader-progress" cx="50" cy="50" r="40" />
+    <!-- White Rabbit Pawn Icon (Simplified) -->
+    <g class="loader-pawn">
+        <path d="M50 25c-4.4 0-8 3.6-8 8 0 2.5 1.1 4.7 3 6.2-.6.4-1.2.9-1.8 1.4-2.8 2.3-3.2 5.4-3.2 8.4 0 2 .5 4 1.5 5.5l-3.5 5.5c-.6 1-.1 2.3 1 2.9.3.2.7.3 1 .3h20c1.2 0 2.2-1 2.2-2.2 0-.4-.1-.7-.3-1l-3.5-5.5c1-1.5 1.5-3.5 1.5-5.5 0-3-.4-6.1-3.2-8.4-.6-.5-1.2-1-1.8-1.4 1.9-1.5 3-3.7 3-6.2 0-4.4-3.6-8-8-8z"/>
+        <!-- Rabbit Ears -->
+        <path d="M44 26c-1-5 1-10 1-10s4 2 3 7M56 26c1-5-1-10-1-10s-4 2-3 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    </g>
+</svg>

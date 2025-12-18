@@ -1,30 +1,31 @@
 <div class="modal fade" id="loadDataModal" tabindex="-1" aria-labelledby="loadDataModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title" id="loadDataModalLabel">Tải Dữ Liệu Ván Cờ</h5>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content modal-dark">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loadDataModalLabel">
+                    <i class="bi bi-database-fill-gear me-2"></i>Tải Dữ Liệu Ván Cờ
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
             <div class="modal-body">
 
-                <ul class="nav nav-tabs" id="loadTabs" role="tablist">
+                <ul class="nav nav-pills custom-modal-tabs" id="loadTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="pgn-tab" data-bs-toggle="tab" data-bs-target="#pgn-pane"
-                            type="button" role="tab" aria-controls="pgn-pane" aria-selected="true">PGN</button>
+                            type="button" role="tab">PGN</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="fen-tab" data-bs-toggle="tab" data-bs-target="#fen-pane"
-                            type="button" role="tab" aria-controls="fen-pane" aria-selected="false">FEN</button>
+                            type="button" role="tab">FEN</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-pane"
-                            type="button" role="tab" aria-controls="image-pane" aria-selected="false">Tải ảnh</button>
+                            type="button" role="tab">Tải ảnh</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="live-scan-tab" data-bs-toggle="tab"
-                            data-bs-target="#live-scan-pane" type="button" role="tab" aria-controls="live-scan-pane"
-                            aria-selected="false">Quét Trực tiếp</button>
+                            data-bs-target="#live-scan-pane" type="button" role="tab">Quét Trực tiếp</button>
                     </li>
                 </ul>
 
@@ -60,7 +61,7 @@
                                 <label class="form-check-label" for="auto-scan-toggle">Auto Scan (5s)</label>
                             </div>
                         </div>
-                        <div class="ratio ratio-4x3 mb-3 border bg-dark position-relative">
+                        <div class="ratio ratio-4x3 mb-3 position-relative overflow-hidden" style="border-radius: 12px; border: 1px solid var(--color-border-subtle); background: rgba(0,0,0,0.2);">
                             <video id="webcam-feed" autoplay playsinline muted></video>
 
                             <img id="debug-overlay"
@@ -77,6 +78,16 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
                 <button type="button" class="btn btn-success" id="confirm-load-btn">Tải & Phân tích</button>
             </div>
+
+            <!-- Loading Overlay -->
+            <div id="modal-loader-overlay" class="modal-loader-overlay d-none">
+                <div class="loader-content text-center">
+                    <img src="/static/img/chess-loader.svg" alt="Loading..." class="chess-loader-svg">
+                    <p class="mt-3 text-white fw-bold">Alice đang soi bàn cờ...</p>
+                    <small class="text-white-50">Vui lòng chờ trong giây lát</small>
+                </div>
+            </div>
+        </div>
         </div>
     </div>
 </div>

@@ -17,3 +17,5 @@ __pycache__/
 
 # Thư mục test debug
 tests/debug/
+
+test/debug_results/

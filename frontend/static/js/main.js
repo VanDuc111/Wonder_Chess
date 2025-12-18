@@ -680,135 +680,122 @@ document.addEventListener('DOMContentLoaded', () => {
     // ====== LOAD DATA ======
 
     document.getElementById('confirm-load-btn').addEventListener('click', async () => {
-
         let success = false;
         let fenToLoad = null;
 
-        // 1. Lấy tab đang hoạt động
         const activeTab = document.querySelector('.tab-pane.fade.show.active');
         const activeTabId = activeTab ? activeTab.id : null;
+        const loader = document.getElementById('modal-loader-overlay');
 
-        // 2. Xử lý theo từng loại dữ liệu
-
-        if (activeTabId === 'pgn-pane') {
-            const pgnText = document.getElementById('pgn-input').value.trim();
-            if (pgnText) {
-                success = game.load_pgn(pgnText);
-                if (success) {
-                    fenToLoad = game.fen(); // Lấy FEN của vị trí cuối cùng
-                }
-            }
-        } else if (activeTabId === 'fen-pane') {
-            const fenText = document.getElementById('fen-input').value.trim();
-            if (fenText) {
-                success = game.load(fenText);
-                if (success) {
-                    fenToLoad = fenText;
-                }
-            }
-        } else if (activeTabId === 'image-pane') {
-            const imageInput = document.getElementById('image-upload-input');
-            const statusEl = document.getElementById('image-upload-status');
-
-            if (imageInput.files.length === 0) {
-                statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
-                return;
-            }
-
-            const file = imageInput.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
-
-            statusEl.textContent = 'Đang tải lên và phân tích...';
-
-            // Gọi API Backend
-            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                success = true;
-                fenToLoad = data.fen;
-                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
-            } else {
-                statusEl.textContent = `Lỗi: ${data.error} `;
-                return;
-            }
-        } else if (activeTabId === 'live-scan-pane') {
-            const statusEl = document.getElementById('scan-status');
-
-            if (!currentWebcamStream) {
-                statusEl.textContent = 'Lỗi: Camera chưa được bật.';
-                return;
-            }
-
-            statusEl.textContent = 'Đang chụp và phân tích...';
-
-            // 1. Tạo một canvas ẩn để "chụp ảnh"
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            // 2. Chuyển ảnh từ canvas sang file (Blob)
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-
-            // 3. Gửi file (Blob) đến API
-            const formData = new FormData();
-            formData.append('file', blob, 'webcam-scan.jpg');
-
-            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                success = true;
-                fenToLoad = data.fen;
-                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
-                stopWebcam(); // Tắt camera sau khi thành công
-            } else {
-                statusEl.textContent = `Lỗi: ${data.error} `;
-                return;
-            }
+        // Hiện loader nếu là tab xử lý ảnh
+        if (activeTabId === 'image-pane' || activeTabId === 'live-scan-pane') {
+            if (loader) loader.classList.remove('d-none');
         }
 
-        // 3. Xử lý kết quả và cập nhật giao diện
-        if (success && fenToLoad) {
-            // Validate FEN before loading
-            if (!isValidFen(fenToLoad)) {
-                const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
-                if (statusEl) {
-                    statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua — bỏ qua.';
-                    setTimeout(() => {
-                        statusEl.textContent = '';
-                    }, 3000);
+        try {
+            if (activeTabId === 'pgn-pane') {
+                const pgnText = document.getElementById('pgn-input').value.trim();
+                if (pgnText) {
+                    success = game.load_pgn(pgnText);
+                    if (success) fenToLoad = game.fen();
                 }
-            } else {
-                // Cập nhật bàn cờ với vị trí mới
-                game.load(fenToLoad);
-                board.position(fenToLoad);
-                fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
-                moveHistory = [{fen: fenToLoad, score: null}]; // Tạo cache mới
-                currentFenIndex = 0;
+            } else if (activeTabId === 'fen-pane') {
+                const fenText = document.getElementById('fen-input').value.trim();
+                if (fenText) {
+                    success = game.load(fenText);
+                    if (success) fenToLoad = fenText;
+                }
+            } else if (activeTabId === 'image-pane') {
+                const imageInput = document.getElementById('image-upload-input');
+                const statusEl = document.getElementById('image-upload-status');
 
-                await fetchDeepEvaluation(fenToLoad);
-                updateUI(fenToLoad);
-                if (loadDataModalInstance) {
-                    if (document.activeElement) {
-                        document.activeElement.blur();
-                    }
-                    loadDataModalInstance.hide();
+                if (imageInput.files.length === 0) {
+                    if (loader) loader.classList.add('d-none');
+                    statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
+                    return;
+                }
+
+                const file = imageInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    success = true;
+                    fenToLoad = data.fen;
+                } else {
+                    if (loader) loader.classList.add('d-none');
+                    statusEl.textContent = `Lỗi: ${data.error} `;
+                    return;
+                }
+            } else if (activeTabId === 'live-scan-pane') {
+                const statusEl = document.getElementById('scan-status');
+                if (!currentWebcamStream) {
+                    if (loader) loader.classList.add('d-none');
+                    statusEl.textContent = 'Lỗi: Camera chưa được bật.';
+                    return;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+                const formData = new FormData();
+                formData.append('file', blob, 'webcam-scan.jpg');
+
+                const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    success = true;
+                    fenToLoad = data.fen;
+                    stopWebcam();
+                } else {
+                    if (loader) loader.classList.add('d-none');
+                    statusEl.textContent = `Lỗi: ${data.error} `;
+                    return;
                 }
             }
 
-        } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
-            alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ. Vui lòng kiểm tra lại.");
+            // Xử lý nạp FEN
+            if (success && fenToLoad) {
+                if (!isValidFen(fenToLoad)) {
+                    if (loader) loader.classList.add('d-none');
+                    const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
+                    if (statusEl) statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua.';
+                } else {
+                    game.load(fenToLoad);
+                    board.position(fenToLoad);
+                    fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
+                    moveHistory = [{fen: fenToLoad, score: null}];
+                    currentFenIndex = 0;
+
+                    await fetchDeepEvaluation(fenToLoad);
+                    updateUI(fenToLoad);
+                    if (loader) loader.classList.add('d-none');
+                    if (loadDataModalInstance) loadDataModalInstance.hide();
+                }
+            } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
+                alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ.");
+            }
+
+        } catch (err) {
+            console.error("Lỗi confirm-load:", err);
+            if (loader) loader.classList.add('d-none');
+        } finally {
+            // Đảm bảo ẩn loader nếu chưa ẩn
+            if (loader) loader.classList.add('d-none');
         }
     });
 
@@ -1254,140 +1241,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
     }
-
-    // Cập nhật để kiểm tra tính hợp lệ của FEN trước khi tải
-    document.getElementById('confirm-load-btn').addEventListener('click', async () => {
-
-        let success = false;
-        let fenToLoad = null;
-
-        // 1. Lấy tab đang hoạt động
-        const activeTab = document.querySelector('.tab-pane.fade.show.active');
-        const activeTabId = activeTab ? activeTab.id : null;
-
-        // 2. Xử lý theo từng loại dữ liệu
-
-        if (activeTabId === 'pgn-pane') {
-            const pgnText = document.getElementById('pgn-input').value.trim();
-            if (pgnText) {
-                success = game.load_pgn(pgnText);
-                if (success) {
-                    fenToLoad = game.fen(); // Lấy FEN của vị trí cuối cùng
-                }
-            }
-        } else if (activeTabId === 'fen-pane') {
-            const fenText = document.getElementById('fen-input').value.trim();
-            if (fenText) {
-                success = game.load(fenText);
-                if (success) {
-                    fenToLoad = fenText;
-                }
-            }
-        } else if (activeTabId === 'image-pane') {
-            const imageInput = document.getElementById('image-upload-input');
-            const statusEl = document.getElementById('image-upload-status');
-
-            if (imageInput.files.length === 0) {
-                statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
-                return;
-            }
-
-            const file = imageInput.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
-
-            statusEl.textContent = 'Đang tải lên và phân tích...';
-
-            // Gọi API Backend
-            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                success = true;
-                fenToLoad = data.fen;
-                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
-            } else {
-                statusEl.textContent = `Lỗi: ${data.error} `;
-                return;
-            }
-        } else if (activeTabId === 'live-scan-pane') {
-            const statusEl = document.getElementById('scan-status');
-
-            if (!currentWebcamStream) {
-                statusEl.textContent = 'Lỗi: Camera chưa được bật.';
-                return;
-            }
-
-            statusEl.textContent = 'Đang chụp và phân tích...';
-
-            // 1. Tạo một canvas ẩn để "chụp ảnh"
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            // 2. Chuyển ảnh từ canvas sang file (Blob)
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-
-            // 3. Gửi file (Blob) đến API
-            const formData = new FormData();
-            formData.append('file', blob, 'webcam-scan.jpg');
-
-            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                success = true;
-                fenToLoad = data.fen;
-                statusEl.textContent = 'Thành công! FEN: ' + fenToLoad;
-                stopWebcam(); // Tắt camera sau khi thành công
-            } else {
-                statusEl.textContent = `Lỗi: ${data.error} `;
-                return;
-            }
-        }
-
-        // 3. Xử lý kết quả và cập nhật giao diện
-        if (success && fenToLoad) {
-            // Validate FEN before loading
-            if (!isValidFen(fenToLoad)) {
-                const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
-                if (statusEl) {
-                    statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua — bỏ qua.';
-                    setTimeout(() => {
-                        statusEl.textContent = '';
-                    }, 3000);
-                }
-            } else {
-                // Cập nhật bàn cờ với vị trí mới
-                game.load(fenToLoad);
-                board.position(fenToLoad);
-                fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
-                moveHistory = [{fen: fenToLoad, score: null}]; // Tạo cache mới
-                currentFenIndex = 0;
-
-                await fetchDeepEvaluation(fenToLoad);
-                updateUI(fenToLoad);
-                if (loadDataModalInstance) {
-                    if (document.activeElement) {
-                        document.activeElement.blur();
-                    }
-                    loadDataModalInstance.hide();
-                }
-            }
-
-        } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
-            alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ. Vui lòng kiểm tra lại.");
-        }
-    });
 
     // Kiểm tra và khởi tạo Modal FEN không hợp lệ từ template có sẵn
     (function initInvalidFenModalFromTemplate() {
