@@ -81,27 +81,17 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentFilter = 'all';
     let searchQuery = '';
 
-    function renderCards() {
+    // Initialize all cards once
+    function initAllCards() {
         gridEl.innerHTML = '';
         
-        const filtered = OPENINGS_DATA.filter(op => {
-            const matchesFilter = currentFilter === 'all' || op.category === currentFilter;
-            const matchesSearch = op.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                  op.eco.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesFilter && matchesSearch;
-        });
-
-        if (filtered.length === 0) {
-            gridEl.innerHTML = '<div class="col-12 text-center text-white-50 py-5">Không tìm thấy khai cuộc nào phù hợp.</div>';
-            return;
-        }
-
-        filtered.forEach((op, index) => {
+        OPENINGS_DATA.forEach((op, index) => {
+            const boardId = `board-${index}`;
             const cardHtml = `
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 opening-card-col" data-index="${index}">
                     <div class="opening-card" onclick="alert('Tính năng chi tiết &quot;${op.name}&quot; đang phát triển cho khóa luận!')">
                         <div class="opening-board-container p-3">
-                            <div id="board-${index}" style="width: 100%"></div>
+                            <div id="${boardId}" style="width: 100%"></div>
                         </div>
                         <div class="opening-card-body pt-0">
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -117,13 +107,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             `;
             gridEl.insertAdjacentHTML('beforeend', cardHtml);
-        });
 
-        // Initialize boards after standard DOM injection
-        // We use a slight timeout to ensure visibility
-        setTimeout(() => {
-            filtered.forEach((op, index) => {
-                const boardId = `board-${index}`;
+            // Initialize board immediately
+            setTimeout(() => {
                 if (document.getElementById(boardId)) {
                     Chessboard(boardId, {
                         position: op.fen,
@@ -132,27 +118,61 @@ document.addEventListener('DOMContentLoaded', function () {
                         pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
                     });
                 }
-            });
-        }, 50);
+            }, 50);
+        });
+        
+        // Add "No results" element hidden by default
+        const noResultsHtml = `<div id="no-results-msg" class="col-12 text-center text-white-50 py-5 d-none">
+            Không tìm thấy khai cuộc nào phù hợp.
+        </div>`;
+        gridEl.insertAdjacentHTML('beforeend', noResultsHtml);
+    }
+
+    function updateVisibility() {
+        let visibleCount = 0;
+        const cards = document.querySelectorAll('.opening-card-col');
+        
+        OPENINGS_DATA.forEach((op, index) => {
+            const matchesFilter = currentFilter === 'all' || op.category === currentFilter;
+            const matchesSearch = op.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                  op.eco.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const cardCol = cards[index];
+            if (matchesFilter && matchesSearch) {
+                cardCol.classList.remove('d-none');
+                cardCol.classList.add('fade-in-visible');
+                visibleCount++;
+            } else {
+                cardCol.classList.add('d-none');
+                cardCol.classList.remove('fade-in-visible');
+            }
+        });
+
+        const noResultsMsg = document.getElementById('no-results-msg');
+        if (visibleCount === 0) {
+            noResultsMsg.classList.remove('d-none');
+        } else {
+            noResultsMsg.classList.add('d-none');
+        }
     }
 
     // Event Listeners
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value;
-        renderCards();
+        updateVisibility();
     });
 
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove active class
             filterBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
             currentFilter = btn.getAttribute('data-filter');
-            renderCards();
+            updateVisibility();
         });
     });
 
-    // Initial render
-    renderCards();
+    // Initial load
+    initAllCards();
+    updateVisibility();
 });
