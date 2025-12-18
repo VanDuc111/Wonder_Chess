@@ -91,10 +91,22 @@
                 <div id="chat-resizer" class="chat-resizer" title="Kéo để thay đổi kích thước chat">
                     <i class="bi bi-chevron-left chat-resizer-icon" aria-hidden="true"></i>
                 </div>
-                <div class="chatbot-container p-3 rounded-3 w-100">
-                    <h5 class="text-center text-white mb-3">Chat with Alice</h5>
-                    <div id="chatbot-messages" style="overflow-y: auto;"></div>
-                    <form id="chatbot-form" class="mt-3">
+                <div class="chatbot-container p-0 rounded-3 w-100 d-flex flex-column overflow-hidden">
+                    <!-- Chat Header -->
+                    <div class="chat-header d-flex align-items-center p-3">
+                        <div class="alice-avatar-container me-3">
+                            <div class="alice-avatar">
+                                <img src="{{ url_for('static', filename='img/alice-avatar.png') }}" alt="Alice Avatar">
+                            </div>
+                        </div>
+                        <div class="chat-info">
+                            <h6 class="text-white mb-0 fw-bold">Alice</h6>
+                            <small class="text-white-50">Trợ lý cờ vua</small>
+                        </div>
+                    </div>
+
+                    <div id="chatbot-messages" class="flex-grow-1 p-3" style="overflow-y: auto;"></div>
+                    <form id="chatbot-form" class="mt-auto">
                         <input type="text" id="chatbot-input" placeholder="Hỏi Alice về cờ vua...">
                         <button class="btn" type="submit" id="send-chat-button">
                             <i class="bi bi-arrow-up"></i>

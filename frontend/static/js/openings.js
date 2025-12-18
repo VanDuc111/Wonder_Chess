@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const boardId = `board-${index}`;
             const cardHtml = `
                 <div class="col-12 col-sm-6 col-md-4 col-lg-3 opening-card-col" data-index="${index}">
-                    <div class="opening-card" onclick="alert('Tính năng chi tiết &quot;${op.name}&quot; đang phát triển cho khóa luận!')">
+                    <div class="opening-card" onclick="alert('Tính năng chi tiết &quot;${op.name}&quot; đang được phát triển!')">
                         <div class="opening-board-container p-3">
                             <div id="${boardId}" style="width: 100%"></div>
                         </div>

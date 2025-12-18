@@ -238,12 +238,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hàm hiển thị tin nhắn Chatbot
     function displayChatbotMessage(text, isBot = true) {
         const messageElement = document.createElement('div');
-        messageElement.classList.add('p-2', 'my-2', 'rounded-3');
-
+        // We use custom CSS classes now instead of Bootstrap utilities
         if (isBot) {
-            messageElement.classList.add('bg-success', 'text-white', 'me-auto');
+            messageElement.classList.add('alice-message');
         } else {
-            messageElement.classList.add('bg-secondary', 'text-white', 'ms-auto', 'text-end');
+            messageElement.classList.add('user-message');
         }
 
         messageElement.innerHTML = text;
