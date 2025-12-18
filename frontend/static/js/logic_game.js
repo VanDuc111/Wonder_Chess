@@ -170,13 +170,23 @@
 
         if (!boardContainer || !scoreBarContainer || !wrapper) return;
 
+        // Reset chiều cao trước khi đo để tránh bị kẹt ở kích thước cũ (gây overflow khi thu nhỏ)
+        wrapper.style.height = '100%';
+        if (scoreBarContainer) scoreBarContainer.style.height = 'auto';
+
+        // Lấy chiều cao thực tế của vùng chứa bàn cờ sau khi reset
         const totalBoardAreaHeight = boardContainer.offsetHeight;
+        
+        // Đồng bộ wrapper theo px để khớp hoàn hảo
         wrapper.style.height = `${totalBoardAreaHeight}px`;
 
         const scoreHeight = evalScore ? evalScore.offsetHeight : 0;
-        const verticalSpacing = 20;
+        const verticalSpacing = 20; // Khoảng cách đệm
         const targetBarContainerHeight = totalBoardAreaHeight - scoreHeight - verticalSpacing;
-        scoreBarContainer.style.height = `${targetBarContainerHeight}px`;
+        
+        if (scoreBarContainer) {
+            scoreBarContainer.style.height = `${targetBarContainerHeight}px`;
+        }
     };
 
     L.makeMove = async function (moveUci) {

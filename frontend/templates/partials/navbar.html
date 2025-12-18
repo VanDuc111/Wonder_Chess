@@ -1,8 +1,11 @@
 <header class="row mb-3">
     <nav class="navbar navbar-expand-lg navbar-dark bg-transparent">
         <div class="container-fluid">
-            <a class="navbar-brand text-white fw-bold" href="{{ url_for('home') }}">
-                <span style="color: var(--color-primary);">Wonder Chess</span>
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home') }}">
+                <img src="{{ url_for('static', filename='img/brand-logo.svg') }}" alt="WonderChess Logo" class="brand-icon me-2" style="width: 40px; height: 40px;">
+                <span class="brand-text">
+                    <span class="brand-wonder">Wonder</span><span class="brand-chess">Chess</span>
+                </span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">

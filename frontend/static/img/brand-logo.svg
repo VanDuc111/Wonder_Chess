@@ -1,0 +1,29 @@
+<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Ears behind Hat -->
+    <path d="M80 60 L75 20 C75 10, 85 5, 90 15 L95 60 Z" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"></path>
+    <path d="M120 60 L125 20 C125 10, 115 5, 110 15 L105 60 Z" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"></path>
+    <path d="M82 25 L86 50" stroke="#F472B6" stroke-width="4" stroke-linecap="round"></path>
+    <path d="M118 25 L114 50" stroke="#F472B6" stroke-width="4" stroke-linecap="round"></path>
+
+    <!-- Pawn Body (Waistcoat Blue) -->
+    <path d="M70 120 C60 130, 40 150, 50 165 C55 180, 145 180, 150 165 C160 150, 140 130, 130 120 Z" fill="#3B82F6"></path>
+    <rect x="50" y="170" width="100" height="15" rx="5" fill="#1E3A8A"></rect>
+    
+    <!-- Head (White Fur) -->
+    <circle cx="100" cy="85" r="35" fill="#F8FAFC"></circle>
+    
+    <!-- Top Hat -->
+    <rect x="70" y="55" width="60" height="10" fill="#1E293B"></rect> <!-- Brim -->
+    <rect x="75" y="25" width="50" height="30" fill="#1E293B"></rect> <!-- Top -->
+    <rect x="75" y="48" width="50" height="7" fill="#EF4444"></rect> <!-- Hat Band -->
+
+    <!-- Specs -->
+    <circle cx="90" cy="85" r="8" stroke="#F59E0B" stroke-width="2" fill="none"></circle>
+    <circle cx="110" cy="85" r="8" stroke="#F59E0B" stroke-width="2" fill="none"></circle>
+    <line x1="98" y1="85" x2="102" y2="85" stroke="#F59E0B" stroke-width="2"></line>
+
+    <!-- Bowtie -->
+    <path d="M85 120 L115 120 L100 130 Z" fill="#EF4444"></path>
+    <path d="M85 120 L115 120 L100 110 Z" fill="#EF4444"></path>
+    <circle cx="100" cy="120" r="5" fill="#B91C1C"></circle>
+</svg>
