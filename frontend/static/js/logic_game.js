@@ -9,57 +9,27 @@
 
     L.updateEvaluationBar = function (score, fen) {
         try {
-            // ngăn chặn hiển thị modal fen không hợp lệ quá thường xuyên
-            if (!window._lastInvalidFenModalAt) window._lastInvalidFenModalAt = 0;
-            const nowTs = Date.now();
             const evalBar = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_BAR) ? window.APP_CONST.IDS.EVAL_BAR : 'eval-white-advantage');
             const evalScoreText = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_SCORE) ? window.APP_CONST.IDS.EVAL_SCORE : 'evaluation-score');
+            
+            if (!evalBar && !evalScoreText) return;
+
             let formattedScore = "0.00";
             let percentAdvantage = 50;
 
-            // Tạo đối tượng Chess tạm thời để kiểm tra trạng thái ván đấu
-            let localGame = null;
-            if (fen) {
+            // Sử dụng global game nếu không có FEN hoặc FEN khớp với game hiện tại
+            let localGame = (typeof game !== 'undefined' && game) ? game : null;
+            
+            // Nếu FEN khác với state hiện tại, chỉ load nếu thực sự cần (ví dụ khi load ảnh)
+            if (fen && localGame && fen !== localGame.fen()) {
                 try {
                     localGame = new Chess(fen);
-                    // Đảm bảo đối tượng game hợp lệ
-                    if (!localGame || typeof localGame.game_over !== 'function') {
-                        console.warn('Invalid FEN (no game_over):', fen);
-                        localGame = null;
-                    } else {
-                        // Kiểm tra cấu trúc bảng bên trong
-                        try {
-                            const boardArr = (typeof localGame.board === 'function') ? localGame.board() : null;
-                            if (Array.isArray(boardArr)) {
-                                let boardOk = true;
-                                for (const row of boardArr) {
-                                    if (!Array.isArray(row)) {
-                                        boardOk = false;
-                                        break;
-                                    }
-                                    for (const cell of row) {
-                                        if (cell !== null && (typeof cell !== 'object' || typeof cell.type !== 'string')) {
-                                            boardOk = false;
-                                            break;
-                                        }
-                                    }
-                                    if (!boardOk) break;
-                                }
-                                if (!boardOk) {
-                                    console.warn('Invalid internal board structure from FEN:', fen);
-                                    localGame = null;
-                                }
-                            }
-                        } catch (innerErr) {
-                            console.warn('Error validating internal board structure:', innerErr);
-                            localGame = null;
-                        }
-                    }
-                } catch (err) {
-                    console.warn('Invalid FEN provided to updateEvaluationBar:', fen, err);
-                    localGame = null;
+                } catch (e) {
+                    localGame = game; 
                 }
             }
+
+            if (!localGame) return;
 
             if (!localGame) {
                 // fallback tới global game nếu có thể
@@ -162,33 +132,34 @@
         moveHistory = [];
         currentFenIndex = 0;
         moveHistory.push({fen: game.fen(), score: "0.00"});
+
         const config = {
             draggable: true,
             position: game.fen(),
             pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png',
             orientation: orientation,
-            onDrop: (typeof L.onDrop === 'function') ? L.onDrop : (typeof window.onDrop === 'function' ? window.onDrop : function () {
-                return 'snapback';
-            }),
-            onDragStart: (typeof L.onDragStart === 'function') ? L.onDragStart : (typeof window.onDragStart === 'function' ? window.onDragStart : function () {
-                return true;
-            }),
-            onSnapEnd: (typeof L.onSnapEnd === 'function') ? L.onSnapEnd : (typeof window.onSnapEnd === 'function' ? window.onSnapEnd : function () {
-            })
+            moveSpeed: 150,    // Nhanh hơn 200ms mặc định
+            snapSpeed: 25,     // Nhanh hơn 30ms mặc định
+            snapbackSpeed: 50,
+            onDrop: L.onDrop,
+            onDragStart: L.onDragStart,
+            onSnapEnd: L.onSnapEnd
         };
 
         board = Chessboard('myBoard', config);
-        window.addEventListener('resize', () => {
-            try {
-                board.resize();
-            } catch (e) {
-            }
-            L.syncBoardAndEvalHeight();
-        });
-        L.syncBoardAndEvalHeight();
 
+        // Khởi tạo resizer và đồng bộ chiều cao
+        L.syncBoardAndEvalHeight();
         L.updateEvaluationBar(0.0, game.fen());
-        window.addEventListener('resize', board.resize);
+
+        // Lắng nghe resize chỉ 1 lần duy nhất
+        if (!window._boardResizeHandler) {
+            window._boardResizeHandler = () => {
+                if (board) board.resize();
+                L.syncBoardAndEvalHeight();
+            };
+            window.addEventListener('resize', window._boardResizeHandler);
+        }
     };
 
     L.syncBoardAndEvalHeight = function () {
@@ -248,31 +219,61 @@
         }
     };
 
-    L.onDrop = async function (source, target) {
+    L.onDrop = function (source, target) {
+        // 1. Kiểm tra lượt đi (nếu đang ở chế độ đấu Bot)
+        if (playerColor !== null && game.turn() !== playerColor) return 'snapback';
+
         let moveUci = source + target;
         const pieceObj = game.get(source);
-        let isPawnPromotion = false;
+        let isPromotion = false;
+
+        // Tạm thời phong Hậu nếu là nước cờ phong cấp
         if (pieceObj && pieceObj.type === 'p') {
-            if (pieceObj.color === 'w' && target[1] === '8') {
-                isPawnPromotion = true;
-            } else if (pieceObj.color === 'b' && target[1] === '1') {
-                isPawnPromotion = true;
+            if ((pieceObj.color === 'w' && target[1] === '8') || (pieceObj.color === 'b' && target[1] === '1')) {
+                isPromotion = true;
+                moveUci += 'q';
             }
         }
-        if (isPawnPromotion) moveUci += 'q';
-        const success = await L.makeMove(moveUci);
-        if (success) {
-            await L.handleTurnEnd(game.fen());
+
+        // 2. Thử đi thử cục bộ (Instant feedback)
+        const move = game.move({
+            from: source,
+            to: target,
+            promotion: isPromotion ? 'q' : undefined
+        });
+
+        // Nếu nước đi lỗi, snapback ngay
+        if (move === null) return 'snapback';
+
+        // 3. Nếu là Nhập thành hoặc Bắt tốt qua đường, cần board.position() để cập nhật quân phụ
+        // Ta gọi ở SnapEnd cho mượt
+        
+        // 4. Xử lý logic hậu kỳ (Async)
+        L.handleLocalMove(moveUci);
+    };
+
+    L.handleLocalMove = async function (moveUci) {
+        // Cập nhật lịch sử cục bộ
+        if (currentFenIndex < moveHistory.length - 1) {
+            moveHistory = moveHistory.slice(0, currentFenIndex + 1);
         }
-        if (!success) {
-            return 'snapback';
-        }
+        moveHistory.push({ fen: game.fen(), score: null });
+        currentFenIndex = moveHistory.length - 1;
+
+        // Cập nhật UI ngay lập tức
+        L.updateAllHighlights();
+        L.updateUI(game.fen());
+
+        // Đồng bộ với backend và kích hoạt Bot
+        await L.handleTurnEnd(game.fen());
     };
 
     L.onSnapEnd = function () {
         try {
+            // Chỉ cập nhật lại position nếu thực sự cần thiết (nhập thành, bắt tốt qua đường)
+            // Dùng animate = false để tránh giật lag khi đồng bộ
             if (board.fen() !== game.fen()) {
-                board.position(game.fen());
+                board.position(game.fen(), false);
             }
         } catch (e) {
         }

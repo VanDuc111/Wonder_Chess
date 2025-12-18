@@ -58,7 +58,7 @@
     --font-size-title: 2em;
     --font-size-question: 1.2em;
 
-    --max-content-width: 500px;
+    --max-content-width: 580px;
     --modal-max-width: 450px;
 
     --gap-xs: 4px;
@@ -1209,7 +1209,7 @@ body.allow-scroll {
     /* Game Column (Left) */
     .main-content-row > div:first-child {
         flex: 0 0 auto;
-        width: 41.666667%; /* col-lg-5 equivalent */
+        width: 45%;
     }
 
     /* History Column (Middle) */
