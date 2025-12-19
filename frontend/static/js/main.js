@@ -661,6 +661,20 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(timerInterval);
         }
 
+        // CỘNG GIÂY TĂNG THÊM (INCREMENT)
+        // Người vừa đi xong nước (đối phương của người sắp đi) sẽ được cộng giây
+        if (isTimedGame && selectedBotIncrement > 0 && typeof game !== 'undefined' && game) {
+            const history = game.history();
+            if (history.length > 0) {
+                if (colorToMove === 'w') {
+                    blackTime += selectedBotIncrement;
+                } else {
+                    whiteTime += selectedBotIncrement;
+                }
+                updateTimerDisplay();
+            }
+        }
+
         if (colorToMove === 'w') {
             if (timerWhiteEl) timerWhiteEl.classList.add('active');
             if (timerBlackEl) timerBlackEl.classList.remove('active');
@@ -1311,63 +1325,5 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     })();
 
-    // === Chat resizer: kéo để thay đổi kích thước ===
-    (function setupChatResizer() {
-        const chatResizer = document.getElementById('chat-resizer');
-        const chatCol = document.getElementById('chat-col');
-        if (!chatResizer || !chatCol) return;
-
-        const chatbotContainer = chatCol.querySelector('.chatbot-container');
-        const MIN_WIDTH = 250; // Kích thước tối thiểu để không bị ẩn
-        const MAX_WIDTH = 800; // Kích thước tối đa
-        const DEFAULT_WIDTH = 400;
-
-        let isDragging = false;
-        let startX = 0;
-        let startWidth = 0;
-
-        // Restore saved state
-        const savedWidth = parseInt(localStorage.getItem('chatWidth'), 10);
-        
-        if (window.innerWidth > 992) {
-            if (!isNaN(savedWidth) && savedWidth >= MIN_WIDTH) {
-                const clamped = Math.min(Math.max(savedWidth, MIN_WIDTH), MAX_WIDTH);
-                chatCol.style.flex = `0 0 ${clamped}px`;
-                chatCol.style.width = `${clamped}px`;
-                if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
-            } else {
-                 chatCol.style.flex = `0 0 ${DEFAULT_WIDTH}px`;
-                 chatCol.style.width = `${DEFAULT_WIDTH}px`;
-                 if (chatbotContainer) chatbotContainer.style.width = `${DEFAULT_WIDTH}px`;
-            }
-            chatCol.classList.add('expanded');
-        } else {
-            // ĐẢM BẢO TRÊN MOBILE KHÔNG CÓ STYLE INLINE NÀO CẢN TRỞ
-            chatCol.style.flex = '';
-            chatCol.style.width = '';
-            chatCol.style.maxWidth = '';
-            if (chatbotContainer) chatbotContainer.style.width = '';
-            chatCol.classList.remove('expanded');
-            chatCol.classList.remove('shrunk');
-        }
-
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 992) {
-                chatCol.style.flex = '';
-                chatCol.style.width = '';
-                chatCol.style.maxWidth = '';
-                if (chatbotContainer) chatbotContainer.style.width = '';
-                return;
-            }
-            const w = parseInt(localStorage.getItem('chatWidth'), 10);
-            if (!isNaN(w)) {
-                const clamped = Math.min(Math.max(w, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 600)); 
-                chatCol.style.flex = `0 0 ${clamped}px`;
-                chatCol.style.width = `${clamped}px`;
-                if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
-            }
-        });
-
-    })();
 
 });

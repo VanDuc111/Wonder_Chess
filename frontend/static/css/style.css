@@ -212,22 +212,24 @@ body.allow-scroll {
 }
 
 .start-button {
-    background: var(--color-primary);
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%);
     color: white;
     border: none;
-    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
     text-transform: uppercase;
-    font-weight: bold;
-    border-radius: var(--radius-default);
     cursor: pointer;
-    transition: background 0.3s ease, transform 0.1s ease;
-    font-size: var(--font-size-base);
-    width: 100%;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .start-button:hover {
-    background: var(--color-primary-hover);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
+    filter: brightness(1.1);
 }
 
 .start-button:active {
@@ -627,6 +629,9 @@ body.allow-scroll {
 .history-table {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
+    border-collapse: separate;
+    border-spacing: 0 4px;
+    width: 100%;
 }
 
 .history-table thead th {
@@ -639,7 +644,6 @@ body.allow-scroll {
 }
 
 .history-table tbody tr {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     transition: background 0.2s;
 }
 
@@ -660,21 +664,22 @@ body.allow-scroll {
 
 .history-table .move-cell {
     cursor: pointer;
-    border-radius: 4px;
-    padding: 4px 8px !important;
+    border-radius: 8px;
+    padding: 6px 10px !important;
+    transition: all 0.2s ease;
 }
 
 .history-table .move-cell:hover {
-    background: rgba(60, 179, 113, 0.15);
-    color: var(--color-success);
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--color-primary);
 }
 
 .history-table .current-move-highlight {
-    background: var(--color-glass-background);
-    color: var(--color-primary);
-    font-weight: bold;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+    background: rgba(76, 175, 80, 0.15) !important;
+    color: var(--color-primary) !important;
+    font-weight: 700;
+    border-radius: 8px !important;
+    box-shadow: inset 0 0 0 1px rgba(76, 175, 80, 0.3);
 }
 
 #pgn-history-vertical {
@@ -955,42 +960,6 @@ body.allow-scroll {
 .typing-indicator span:nth-of-type(2) { animation-delay: 0.2s; }
 .typing-indicator span:nth-of-type(3) { animation-delay: 0.4s; }
 
-/* Chat Resizer */
-.chat-resizer {
-    width: 14px;
-    min-width: 14px;
-    cursor: ew-resize;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    transition: background 0.15s ease, transform 0.15s ease;
-    user-select: none;
-    z-index: 20;
-}
-
-.chat-resizer:hover {
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.chat-resizer-icon {
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    pointer-events: none;
-    transition: transform 0.2s ease;
-}
-
-.chat-collapsed .chatbot-container {
-    display: none !important;
-}
-
-.chat-collapsed #chat-resizer .chat-resizer-icon {
-    transform: rotate(180deg);
-}
-
-.chatbot-container.resizing {
-    transition: none !important;
-}
 
 #chat-col .chatbot-container {
     min-width: 220px;
@@ -1171,6 +1140,41 @@ body.allow-scroll {
     transition: background-color 0.3s;
 }
 
+/* Premium Modal Buttons */
+.btn-premium-confirm {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 10px 24px !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+}
+
+.btn-premium-confirm:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4) !important;
+    filter: brightness(1.1);
+}
+
+.btn-premium-cancel {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--color-border-subtle) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    border-radius: 12px !important;
+    padding: 10px 24px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-premium-cancel:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
 /* Modal Loader Overlay */
 .modal-loader-overlay {
     position: absolute;
@@ -1197,6 +1201,12 @@ body.allow-scroll {
     font-size: 1.2rem;
     letter-spacing: 1px;
     text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+#scan-status {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
 /* Custom Modal Tabs */
@@ -1470,7 +1480,6 @@ body.allow-scroll {
         border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .chat-resizer { display: none !important; }
 
     #chat-col {
         flex: 0 0 100%;

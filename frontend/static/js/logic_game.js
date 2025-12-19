@@ -211,7 +211,8 @@
                     moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 }
 
-                moveHistory.push({fen: newFen, score: null});
+                const openingName = L.detectOpening(true); 
+                moveHistory.push({fen: newFen, score: null, san: move.san, opening: openingName});
 
                 currentFenIndex = moveHistory.length - 1;
                 game.move(moveUci, {sloppy: true});
@@ -267,7 +268,9 @@
         if (currentFenIndex < moveHistory.length - 1) {
             moveHistory = moveHistory.slice(0, currentFenIndex + 1);
         }
-        moveHistory.push({ fen: game.fen(), score: null });
+        const h = game.history();
+        const openingName = L.detectOpening(true); 
+        moveHistory.push({ fen: game.fen(), score: null, san: h[h.length - 1], opening: openingName });
         currentFenIndex = moveHistory.length - 1;
 
         // Cập nhật UI ngay lập tức
@@ -436,8 +439,12 @@
             if (isTimedGame) clearInterval(timerInterval);
 
             if (botMoveUci) {
-                if (currentFenIndex < moveHistory.length - 1) moveHistory = moveHistory.slice(0, currentFenIndex + 1);
-                moveHistory.push({fen: newFen, score: evalScoreText});
+                if (currentFenIndex < moveHistory.length - 1) {
+                    moveHistory = moveHistory.slice(0, currentFenIndex + 1);
+                }
+                const h = game.history();
+                const openingName = L.detectOpening(true);
+                moveHistory.push({fen: newFen, score: evalScoreText, san: h[h.length - 1], opening: openingName});
                 currentFenIndex = moveHistory.length - 1;
 
                 board.position(game.fen());
@@ -493,22 +500,20 @@
         const history = game.history({verbose: true});
         let pgnHtml = '';
         
-        for (let i = 0; i < history.length; i += 2) {
-            const moveNumber = Math.floor(i / 2) + 1;
-            const whiteMove = history[i];
-            const blackMove = history[i + 1];
+        // i bắt đầu từ 1 vì moveHistory[0] là vị trí khởi đầu
+        for (let i = 1; i < moveHistory.length; i += 2) {
+            const moveNumber = Math.floor((i - 1) / 2) + 1;
+            const whiteMove = moveHistory[i];
+            const blackMove = moveHistory[i + 1];
             
-            const whiteIdx = i + 1;
-            const blackIdx = i + 2;
-            
-            const whiteHighlight = (whiteIdx === currentFenIndex) ? 'current-move-highlight' : '';
-            const blackHighlight = (blackMove && blackIdx === currentFenIndex) ? 'current-move-highlight' : '';
+            const whiteHighlight = (i === currentFenIndex) ? 'current-move-highlight' : '';
+            const blackHighlight = (blackMove && (i + 1) === currentFenIndex) ? 'current-move-highlight' : '';
             
             pgnHtml += `
                 <tr>
                     <td class="move-number-cell">${moveNumber}.</td>
-                    <td class="move-cell ${whiteHighlight}" data-index="${whiteIdx}">${whiteMove.san}</td>
-                    <td class="move-cell ${blackHighlight}" data-index="${blackIdx}">${blackMove ? blackMove.san : ''}</td>
+                    <td class="move-cell ${whiteHighlight}" data-index="${i}">${whiteMove.san || ''}</td>
+                    <td class="move-cell ${blackHighlight}" data-index="${i+1}">${blackMove ? (blackMove.san || '') : ''}</td>
                 </tr>
             `;
         }
@@ -590,21 +595,80 @@
         }
     };
 
+    L.detectOpening = function (forceRecalculate = false) {
+        const openingDisplay = document.getElementById('opening-name');
+        if (!openingDisplay) return "";
+
+        // Ưu tiên lấy từ state nếu đang điều hướng và không yêu cầu tính lại
+        if (!forceRecalculate && moveHistory[currentFenIndex] && moveHistory[currentFenIndex].opening) {
+            openingDisplay.textContent = moveHistory[currentFenIndex].opening;
+            return moveHistory[currentFenIndex].opening;
+        }
+
+        // Nếu chưa có (ví dụ nước mới nhất đang xử lý), tiến hành nhận diện
+        const history = game.history();
+        if (history.length === 0) {
+            openingDisplay.textContent = "Chưa bắt đầu";
+            return "Chưa bắt đầu";
+        }
+
+        let bestMatch = null;
+        let maxLen = -1;
+
+        if (typeof OPENINGS_DATA !== 'undefined') {
+            for (const op of OPENINGS_DATA) {
+                const opMoves = op.moves.replace(/\d+\.\s+/g, '').split(/\s+/).filter(m => m.length > 0);
+                
+                let isMatch = true;
+                if (opMoves.length > history.length) {
+                    isMatch = false; 
+                } else {
+                    for (let i = 0; i < opMoves.length; i++) {
+                        if (opMoves[i] !== history[i]) {
+                            isMatch = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (isMatch && opMoves.length > maxLen) {
+                    maxLen = opMoves.length;
+                    bestMatch = op;
+                }
+            }
+        }
+
+        let resultName = "";
+        if (bestMatch) {
+            resultName = bestMatch.name;
+        } else {
+            if (history.length <= 2) {
+                resultName = "Đang khai triển...";
+            } else {
+                resultName = "Khai cuộc không xác định";
+            }
+        }
+        
+        openingDisplay.textContent = resultName;
+        return resultName;
+    };
+
     L.loadFen = function (index) {
-        if (index < 0 || index >= moveHistory.length) return;
-        currentFenIndex = index;
-        const historyItem = moveHistory[currentFenIndex];
-        const fenToLoad = historyItem.fen;
-        const scoreToLoad = historyItem.score;
-        board.position(fenToLoad);
-        L.updateAllHighlights();
-        if (scoreToLoad) L.handleScoreUpdate(scoreToLoad, fenToLoad);
-        L.updateUI(fenToLoad);
+        if (index >= 0 && index < moveHistory.length) {
+            currentFenIndex = index;
+            const state = moveHistory[index];
+            game.load(state.fen);
+            board.position(state.fen);
+            L.updateAllHighlights();
+            L.updateUI(state.fen);
+            L.handleScoreUpdate(state.score, state.fen);
+        }
     };
 
     L.updateUI = function (fen) {
         L.updateButtonState();
         L.updatePgnHistory();
+        L.detectOpening();
     };
 
     L.updateButtonState = function () {
