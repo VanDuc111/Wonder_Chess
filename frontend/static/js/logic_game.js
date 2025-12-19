@@ -398,7 +398,13 @@
             const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.BOT_MOVE) ? window.APP_CONST.API.BOT_MOVE : '/api/game/bot_move', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({fen: game.fen(), time_limit: selectedBotTime})
+                body: JSON.stringify({
+                    fen: game.fen(),
+                    engine: typeof selectedBotEngine !== 'undefined' ? selectedBotEngine : 'stockfish',
+                    skill_level: typeof selectedBotLevel !== 'undefined' ? selectedBotLevel : 10,
+                    time_limit: selectedBotTime,
+                    increment: typeof selectedBotIncrement !== 'undefined' ? selectedBotIncrement : 0
+                })
             });
             const data = await response.json();
 

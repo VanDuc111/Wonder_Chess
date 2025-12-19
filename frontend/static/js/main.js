@@ -5,8 +5,11 @@ let currentFenIndex = 0;
 const STARTING_FEN = (window.APP_CONST && window.APP_CONST.STARTING_FEN) ? window.APP_CONST.STARTING_FEN : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 let playerColor = null;
 let isPlayerTurn = true;
-let selectedBotColor = (window.APP_CONST && window.APP_CONST.DEFAULTS && window.APP_CONST.DEFAULTS.BOT_COLOR) ? window.APP_CONST.DEFAULTS.BOT_COLOR : 'w';
-let selectedBotTime = (window.APP_CONST && window.APP_CONST.DEFAULTS && window.APP_CONST.DEFAULTS.BOT_TIME_MINUTES) ? window.APP_CONST.DEFAULTS.BOT_TIME_MINUTES : '5';
+let selectedBotColor = 'r';
+let selectedBotEngine = 'stockfish';
+let selectedBotLevel = 10;
+let selectedBotTime = '0';
+let selectedBotIncrement = 0;
 let whiteTime = 0;
 let blackTime = 0;
 let timerInterval = null;
@@ -152,30 +155,58 @@ document.addEventListener('DOMContentLoaded', () => {
     setupModalBehavior('bot-settings-modal', '#nav-play-bot');
 
 
-    const timeButtons = document.querySelectorAll('.time-select');
+    // === BOT SETTINGS UI LOGIC ===
+    const botEngineSelect = document.getElementById('bot-engine-select');
+    const botLevelSlider = document.getElementById('bot-level-slider');
+    const botLevelSelect = document.getElementById('bot-level-select');
+    const botSideSelect = document.getElementById('bot-side-select');
+    const botTimeSelect = document.getElementById('bot-time-select');
+    const botIncrementSelect = document.getElementById('bot-increment-select');
+    const levelDisplay = document.getElementById('level-value-display');
 
-    timeButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            timeButtons.forEach(btn => btn.classList.remove('selected'));
+    // Sync Slider and Level Display/Select
+    if (botLevelSlider) {
+        botLevelSlider.addEventListener('input', function() {
+            const val = parseInt(this.value);
+            selectedBotLevel = val;
+            
+            // Map 0-20 to ELO-like display (850 + Level * 50)
+            const elo = 850 + (val * 50); 
+            if (levelDisplay) levelDisplay.textContent = elo;
 
-            this.classList.add('selected');
-
-            selectedBotTime = this.getAttribute('data-time');
+            // Update Select
+            if (val <= 4) botLevelSelect.value = "0";
+            else if (val <= 8) botLevelSelect.value = "5";
+            else if (val <= 12) botLevelSelect.value = "10";
+            else if (val <= 16) botLevelSelect.value = "15";
+            else botLevelSelect.value = "20";
         });
-    });
-
-    const defaultTimeBtn = document.querySelector(`.time-select[data-time="${selectedBotTime}"]`);
-    if (defaultTimeBtn) {
-        defaultTimeBtn.classList.add('selected');
     }
-    const defaultColorBtn = document.querySelector(`.color-select[data-color="${selectedBotColor}"]`);
-    if (defaultColorBtn) {
-        defaultColorBtn.classList.add('selected');
+
+    if (botLevelSelect) {
+        botLevelSelect.addEventListener('change', function() {
+            const val = parseInt(this.value);
+            botLevelSlider.value = val;
+            selectedBotLevel = val;
+            const elo = 850 + (val * 50);
+            if (levelDisplay) levelDisplay.textContent = elo;
+        });
+    }
+
+    // Initialize Level Display
+    if (botLevelSlider && levelDisplay) {
+        levelDisplay.textContent = 850 + (parseInt(botLevelSlider.value) * 50);
     }
     // 3. LOGIC BẮT ĐẦU GAME BOT
     const startBotGameBtn = document.getElementById('start-bot-game-btn');
     if (startBotGameBtn) {
         startBotGameBtn.addEventListener('click', () => {
+            // Read all settings
+            selectedBotEngine = botEngineSelect.value;
+            selectedBotLevel = parseInt(botLevelSlider.value);
+            selectedBotColor = botSideSelect.value;
+            selectedBotTime = botTimeSelect.value;
+            selectedBotIncrement = parseInt(botIncrementSelect.value);
 
             // Ẩn Modal
             document.getElementById('bot-settings-modal').style.display = 'none';
@@ -238,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hàm hiển thị tin nhắn Chatbot
     function displayChatbotMessage(text, isBot = true) {
         const messageElement = document.createElement('div');
-        // We use custom CSS classes now instead of Bootstrap utilities
+
         if (isBot) {
             messageElement.classList.add('alice-message');
         } else {
@@ -1199,6 +1230,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
             }
             updateButtonState();
+        });
+
+        // Keyboard navigation (Left/Right Arrows)
+        document.addEventListener('keydown', function (e) {
+            // Ignore if user is typing in an input or textarea
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            if (e.key === 'ArrowLeft') {
+                loadFen(currentFenIndex - 1);
+                updateButtonState();
+            } else if (e.key === 'ArrowRight') {
+                loadFen(currentFenIndex + 1);
+                updateButtonState();
+            }
         });
     }
 

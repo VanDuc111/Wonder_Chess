@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request, Response
 import chess
 import chess.engine
 
-from backend.engine.minimax import (
+from backend.engines.minimax import (
     find_best_move,
     evaluate_board,
     MATE_SCORE,
@@ -78,23 +78,44 @@ def make_move() -> Response:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+from backend.engines.stockfish_engine import get_stockfish_move
+
 @game_bp.route('/bot_move', methods=['POST'])
 def bot_move() -> Response:
     """
     Yêu cầu Engine tính toán và thực hiện nước đi tốt nhất.
-    Sử dụng thuật toán Minimax/Negamax với độ sâu mặc định (hoặc từ config).
+    Hỗ trợ cả Stockfish và Engine tùy chỉnh.
     """
     data = request.get_json()
     fen = data.get('fen')
+    engine_choice = data.get('engine', 'stockfish')
+    skill_level = data.get('skill_level', 10)
+    time_limit_raw = data.get('time_limit', '0')
+    
+    # Chuyển đổi thời gian từ phút (string) sang giây (float) cho Engine
+    try:
+        time_limit_min = float(time_limit_raw)
+        if time_limit_min <= 0:
+            time_limit_sec = 1.0 # Mặc định 1s nếu là vô hạn để trả lời nhanh
+        else:
+            # Nếu là game có thời gian, bot suy nghĩ tối đa 2s để cân bằng
+            time_limit_sec = min(2.0, time_limit_min * 60) 
+    except:
+        time_limit_sec = 1.0
 
     if not fen:
         return jsonify({'success': False, 'error': 'FEN is required'}), 400
 
     try:
-        # Gọi Engine
-        engine_results = find_best_move(fen)
+        # Lựa chọn Engine
+        if engine_choice == 'stockfish':
+            engine_results = get_stockfish_move(fen, skill_level=skill_level, time_limit=time_limit_sec)
+        else:
+            # Engine tùy chỉnh (Minimax)
+            engine_results = find_best_move(fen, time_limit=time_limit_sec, skill_level=skill_level)
+            engine_results['success'] = True if engine_results.get('best_move') else False
 
-        if engine_results.get('best_move'):
+        if engine_results.get('success') and engine_results.get('best_move'):
             # Thực hiện nước đi trên bàn cờ ảo để lấy FEN mới
             temp_board = chess.Board(fen)
             temp_board.push_uci(engine_results['best_move'])
@@ -104,13 +125,11 @@ def bot_move() -> Response:
                 'success': True,
                 'move_uci': engine_results['best_move'],
                 'fen': new_fen,
-                'evaluation': engine_results['search_score']
+                'evaluation': engine_results.get('search_score', '0.00')
             })
         else:
-            return jsonify({
-                'success': False,
-                'error': engine_results.get('pv', 'Bot could not find a move (Game Over?)')
-            }), 500
+            error_msg = engine_results.get('error', 'Bot could not find a move (Game Over?)')
+            return jsonify({'success': False, 'error': error_msg}), 500
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

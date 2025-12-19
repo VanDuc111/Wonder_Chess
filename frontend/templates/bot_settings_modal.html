@@ -1,23 +1,70 @@
 <div id="bot-settings-modal" class="modal" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content modal-dark">
         <span class="close-btn">&times;</span>
-        <h2>Chọn chế độ chơi với Bot</h2>
+        <h2>Thiết lập trận đấu</h2>
 
+        <!-- Engine Selection -->
         <div class="setting-group">
-            <label>Chọn quân cờ:</label>
-            <button class="color-select" data-color="w">Trắng</button>
-            <button class="color-select" data-color="b">Đen</button>
-            <button class="color-select" data-color="r">Ngẫu nhiên</button>
+            <label for="bot-engine-select">Đối thủ:</label>
+            <select id="bot-engine-select" class="form-select-custom">
+                <option value="stockfish">Stockfish</option>
+                <option value="custom">Wonder Engine (Beta)</option>
+            </select>
         </div>
 
+        <!-- Level Slider -->
         <div class="setting-group">
-            <label>Thời gian (phút):</label>
-            <button class="time-select" data-time="5">5p</button>
-            <button class="time-select" data-time="10">10p</button>
-            <button class="time-select" data-time="30">30p</button>
-            <button class="time-select" data-time="0">Vô hạn</button>
+            <div class="d-flex justify-content-between">
+                <label>Cấp độ:</label>
+                <span id="level-value-display" class="fw-bold text-primary">1350</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <input type="range" id="bot-level-slider" min="0" max="20" value="10" class="form-range-custom">
+                <select id="bot-level-select" class="form-select-custom" style="width: 140px;">
+                    <option value="0">Beginner</option>
+                    <option value="5">Casual</option>
+                    <option value="10" selected>Intermediate</option>
+                    <option value="15">Advanced</option>
+                    <option value="20">Grandmaster</option>
+                </select>
+            </div>
         </div>
 
-        <button id="start-bot-game-btn">Bắt đầu</button>
+        <!-- Side Selection -->
+        <div class="setting-group">
+            <label for="bot-side-select">Bên chơi:</label>
+            <select id="bot-side-select" class="form-select-custom">
+                <option value="r">Ngẫu nhiên</option>
+                <option value="w">Trắng</option>
+                <option value="b">Đen</option>
+            </select>
+        </div>
+
+        <!-- Time Control -->
+        <div class="setting-group">
+            <label for="bot-time-select">Thời gian:</label>
+            <select id="bot-time-select" class="form-select-custom">
+                <option value="0">Vô hạn</option>
+                <option value="1">1 phút</option>
+                <option value="3">3 phút</option>
+                <option value="5">5 phút</option>
+                <option value="10">10 phút</option>
+                <option value="30">30 phút</option>
+            </select>
+        </div>
+
+        <!-- Increment -->
+        <div class="setting-group">
+            <label for="bot-increment-select">Tăng thêm (giây):</label>
+            <select id="bot-increment-select" class="form-select-custom">
+                <option value="0">0 giây</option>
+                <option value="1">1 giây</option>
+                <option value="2">2 giây</option>
+                <option value="5">5 giây</option>
+                <option value="10">10 giây</option>
+            </select>
+        </div>
+
+        <button id="start-bot-game-btn" class="btn-create-game mt-3">Bắt đầu</button>
     </div>
 </div>

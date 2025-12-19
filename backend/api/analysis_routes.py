@@ -7,7 +7,7 @@ Chức năng chính: Nhận câu hỏi từ người dùng, kết hợp với d�
 
 from flask import Blueprint, jsonify, request, Response, stream_with_context
 from backend.services.gemini_service import stream_gemini_response
-from backend.engine.minimax import find_best_move
+from backend.engines.minimax import find_best_move
 import chess
 
 analysis_bp = Blueprint('analysis', __name__)
