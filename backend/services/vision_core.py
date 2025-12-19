@@ -111,3 +111,36 @@ def map_point_to_grid(x, y, M, side_len):
     col = max(0, min(7, col))
 
     return row, col
+
+
+def is_quad_too_distorted(pts, angle_tolerance=15):
+    """
+    Kiểm tra xem hình tứ giác có bị méo quá mức so với hình chữ nhật không.
+    Dành cho ảnh 2D/Screenshot để tránh các đường grid bị vẹo.
+    """
+    if pts is None or len(pts) != 4:
+        return True
+    
+    rect = order_points(pts)
+    
+    def get_angle(p1, p2, p3):
+        # Tính góc giữa 3 điểm p1, p2, p3 (góc tại p2)
+        v1 = p1 - p2
+        v2 = p3 - p2
+        cos_theta = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6)
+        angle = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
+        return angle
+
+    # Kiểm tra 4 góc của tứ giác
+    angles = [
+        get_angle(rect[3], rect[0], rect[1]), # Góc TL
+        get_angle(rect[0], rect[1], rect[2]), # Góc TR
+        get_angle(rect[1], rect[2], rect[3]), # Góc BR
+        get_angle(rect[2], rect[3], rect[0])  # Góc BL
+    ]
+    
+    for a in angles:
+        if abs(a - 90) > angle_tolerance:
+            return True # Có ít nhất 1 góc quá nhọn hoặc quá tù
+            
+    return False

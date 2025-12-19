@@ -108,6 +108,14 @@ def analyze_image_to_fen(image_path):
     offset_x = 0
     offset_y = 0
 
+    # Khởi tạo các biến hình học để dùng chung
+    corners = None
+    use_perspective = False
+    M = None
+    side_len = 0
+    board_x1, board_y1, board_size, sq_w, sq_h = 0, 0, 0, 0, 0
+    is_2d_mode = False
+
     if board_box:
         print(f"✅ Phát hiện bàn cờ (Confidence: {board_box['confidence']:.2f}) -> Đang cắt ảnh...")
 
@@ -131,19 +139,56 @@ def analyze_image_to_fen(image_path):
         crop_w = x2 - x1
         crop_h = y2 - y1
 
-        if crop_w > 10 and crop_h > 10:  # Chỉ cắt nếu vùng bàn cờ đủ lớn (>10px)
+        if crop_w > 10 and crop_h > 10:  
             try:
-                img_crop = img[y1:y2, x1:x2]  # Thử cắt
+                # Thêm padding 5% để OpenCV dễ tìm góc viền bàn cờ hơn
+                pad_w = int(crop_w * 0.05)
+                pad_h = int(crop_h * 0.05)
+                
+                # Tính toán tọa độ cắt mới có lề
+                nx1 = max(0, x1 - pad_w)
+                ny1 = max(0, y1 - pad_h)
+                nx2 = min(w, x2 + pad_w)
+                ny2 = min(h, y2 + pad_h)
 
-                if img_crop.size == 0:
-                    print("⚠️ Lỗi: Ảnh sau khi cắt bị rỗng. Dùng ảnh gốc.")
-                else:
-                    img = img_crop  # Cập nhật ảnh chính
-                    offset_x = x1
-                    offset_y = y1
-                    h, w = img.shape[:2]  # Cập nhật kích thước mới
+                img_crop = img[ny1:ny2, nx1:nx2]
+                if img_crop.size > 0:
+                    img = img_crop
+                    offset_x = nx1
+                    offset_y = ny1
+                    h, w = img.shape[:2]
 
-                    # Dịch chuyển tọa độ quân cờ
+                    # --- KHỞI TẠO GÓC TỪ ROBOLOW (AI) ---
+                    # Tính toán tọa độ 4 góc của bàn cờ so với ảnh đã bị cắt (có padding)
+                    # Điều này giúp ta luôn có "khung xương" bàn cờ kể cả khi OpenCV thất bại
+                    ai_x1 = pad_w
+                    ai_y1 = pad_h
+                    ai_x2 = w - pad_w
+                    ai_y2 = h - pad_h
+                    corners = np.array([
+                        [ai_x1, ai_y1], [ai_x2, ai_y1], 
+                        [ai_x2, ai_y2], [ai_x1, ai_y2]
+                    ], dtype="float32")
+                    use_perspective = True
+                    M, side_len = get_board_mapping_matrix(corners, w, h)
+
+                    # --- NHẬN DIỆN CHẾ ĐỘ 2D/SCREENSHOT ---
+                    aspect_ratio = (x2 - x1) / (y2 - y1)
+                    if 0.92 < aspect_ratio < 1.08 and board_box['confidence'] > 0.7:
+                        print(f"💡 Chế độ: Bàn cờ 2D/Screenshot (Aspect: {aspect_ratio:.2f}).")
+                        is_2d_mode = True
+                        # Khử lề 2% cho 2D để bỏ qua nhãn tọa độ
+                        m_w, m_h = w * 0.02, h * 0.02
+                        corners = np.array([
+                            [m_w, m_h], [w - m_w, m_h], 
+                            [w - m_w, h - m_h], [m_w, h - m_h]
+                        ], dtype="float32")
+                        M, side_len = get_board_mapping_matrix(corners, w, h)
+                    else:
+                        print(f"💡 Chế độ: Bàn cờ 3D/Ảnh thực tế (Aspect: {aspect_ratio:.2f}).")
+                        is_2d_mode = False
+
+                    # Dịch chuyển tọa độ quân cờ về hệ tọa độ ảnh cắt
                     for p in piece_preds:
                         p['x'] -= offset_x
                         p['y'] -= offset_y
@@ -158,43 +203,45 @@ def analyze_image_to_fen(image_path):
 
     # 3. Xử lý hình học
 
-    corners = find_board_corners(img)
+    # --- XỬ LÝ HÌNH HỌC (Tinh chỉnh góc bằng OpenCV) ---
+    if not is_2d_mode:
+        # Thử tìm góc chính xác hơn bằng OpenCV
+        refined_corners = find_board_corners(img)
+        
+        if refined_corners is not None:
+            detected_width = np.linalg.norm(refined_corners[0] - refined_corners[1])
+            if detected_width > w * 0.5:
+                from backend.services.vision_core import is_quad_too_distorted
+                if not is_quad_too_distorted(refined_corners):
+                    print("✅ OpenCV tinh chỉnh được góc bàn cờ.")
+                    corners = refined_corners
+                    M, side_len = get_board_mapping_matrix(corners, w, h)
+                else:
+                    print("⚠️ Góc OpenCV quá méo, giữ nguyên khung AI.")
+        else:
+            print("⚠️ OpenCV không tìm thấy góc, sử dụng khung bàn cờ từ AI.")
 
-    use_perspective = False
-    M = None
-    side_len = 0
-
-    if corners is not None:
-        detected_width = np.linalg.norm(corners[0] - corners[1])
-        # Bàn cờ tìm được phải to (chiếm > 50% ảnh đã cắt)
-        if detected_width > w * 0.5:
-            print("✅ OpenCV tìm thấy góc bàn cờ.")
-            use_perspective = True
-            M, side_len = get_board_mapping_matrix(corners, w, h)
-    
-    # --- FALLBACK CHO ẢNH SCREENSHOT ---
+    # Nếu hoàn toàn không có thông tin góc (Trường hợp AI & OpenCV đều thất bại)
     if not use_perspective:
-        # Nếu là screenshot cực sạch, AI có thể không gán nhãn CHESSBOARD 
-        # và OpenCV cũng không tìm thấy Contours vì không có viền ngoài.
-        # Ta sẽ dùng toàn bộ khung hình làm bàn cờ.
-        print("💡 Fallback cực bộ: Sử dụng toàn bộ khung hình làm bàn cờ (dành cho screenshot).")
-        pseudo_corners = np.array([[0, 0], [w, 0], [w, h], [0, h]], dtype="float32")
-        use_perspective = True
-        M, side_len = get_board_mapping_matrix(pseudo_corners, w, h)
-
-    if not use_perspective:
-        if piece_preds:
-            all_x = [p['x'] for p in piece_preds]
-            all_y = [p['y'] for p in piece_preds]
-            margin = w * 0.05  # Margin nhỏ thôi vì đã crop rồi
-            board_x1 = max(0, min(all_x) - margin)
-            board_y1 = max(0, min(all_y) - margin)
-            board_size = (max(all_x) + margin) - board_x1  # Ép vuông
-            board_h = board_size
+        if not is_2d_mode:
+            print("💡 Fallback 3D: Dùng lưới nội bộ (trừ lề lấn background).")
+            # Padding 10% để chắc chắn loại bỏ phần nền gỗ bị AI bắt nhầm
+            board_x1 = w * 0.1
+            board_y1 = h * 0.1
+            board_size = w * 0.8
             sq_w = board_size / 8
             sq_h = board_size / 8
+            corners = np.array([
+                [board_x1, board_y1], [board_x1 + board_size, board_y1], 
+                [board_x1 + board_size, board_y1 + board_size], [board_x1, board_y1 + board_size]
+            ], dtype="float32")
         else:
-            return None, None, "Không có quân cờ để tính toán."
+            print("💡 Fallback 2D: Lưới toàn khung.")
+            board_x1, board_y1 = 0, 0
+            board_size = w
+            sq_w, sq_h = w / 8, h / 8
+            corners = np.array([[0, 0], [w, 0], [w, h], [0, h]], dtype="float32")
+
     # 4. MAPPING (Sử dụng dict để quản lý xung đột ô cờ)
     # Cấu trúc: { (row, col): { 'char': 'P', 'conf': 0.9 } }
     occupied_squares = {}
@@ -202,24 +249,63 @@ def analyze_image_to_fen(image_path):
     board_grid = [["1" for _ in range(8)] for _ in range(8)]
     debug_img = img.copy()
 
+    # --- VẼ KHUNG VÀ LƯỚI BÀN CỜ ---
     if corners is not None:
-        cv2.polylines(debug_img, [corners.astype(int)], True, (0, 255, 0), 2)
+        # 1. Vẽ khung bàn cờ (Boundary) - Màu xanh Neon
+        cv2.polylines(debug_img, [corners.astype(int)], True, (0, 255, 0), 3)
+
+        # 2. Vẽ lưới 8x8
+        if use_perspective and M is not None:
+            try:
+                M_inv = np.linalg.inv(M)
+                sq_size = side_len / 8
+                for i in range(1, 8): # Chỉ vẽ các đường bên trong (1-7)
+                    # Đường Ngang
+                    p1 = np.array([[[0, i * sq_size]]], dtype='float32')
+                    p2 = np.array([[[side_len, i * sq_size]]], dtype='float32')
+                    tp1 = cv2.perspectiveTransform(p1, M_inv)[0][0]
+                    tp2 = cv2.perspectiveTransform(p2, M_inv)[0][0]
+                    cv2.line(debug_img, tuple(tp1.astype(int)), tuple(tp2.astype(int)), (0, 255, 0), 1)
+                    
+                    # Đường Dọc
+                    p3 = np.array([[[i * sq_size, 0]]], dtype='float32')
+                    p4 = np.array([[[i * sq_size, side_len]]], dtype='float32')
+                    tp3 = cv2.perspectiveTransform(p3, M_inv)[0][0]
+                    tp4 = cv2.perspectiveTransform(p4, M_inv)[0][0]
+                    cv2.line(debug_img, tuple(tp3.astype(int)), tuple(tp4.astype(int)), (0, 255, 0), 1)
+            except Exception as e:
+                print(f"⚠️ Lỗi khi vẽ lưới grid: {e}")
+        elif not use_perspective:
+            # Fallback grid cho trường hợp không có perspective
+            for i in range(1, 8):
+                # Ngang
+                cv2.line(debug_img, (int(board_x1), int(board_y1 + i * sq_h)), 
+                         (int(board_x1 + board_size), int(board_y1 + i * sq_h)), (0, 255, 0), 1)
+                # Dọc
+                cv2.line(debug_img, (int(board_x1 + i * sq_w), int(board_y1)), 
+                         (int(board_x1 + i * sq_w), int(board_y1 + board_size)), (0, 255, 0), 1)
 
     for p in piece_preds:
         class_name = p["class"]
         conf = p.get("confidence", 0)
 
-        # Lấy điểm CHÂN (Bottom Center) của quân cờ
-        foot_x = p["x"]
-        foot_y = p["y"] + (p["height"] / 2) * 0.9 
-
+        # Lấy điểm quy chiếu để xác định ô cờ
+        if is_2d_mode:
+            # Ảnh 2D dùng tâm (Center)
+            ref_x = p["x"]
+            ref_y = p["y"]
+        else:
+            # Ảnh 3D dùng chân (Bottom)
+            ref_x = p["x"]
+            ref_y = p["y"] + (p["height"] / 2) * 0.9 
+        
         row, col = -1, -1
 
         if use_perspective:
-            row, col = map_point_to_grid(foot_x, foot_y, M, side_len)
+            row, col = map_point_to_grid(ref_x, ref_y, M, side_len)
         else:
-            rel_x = foot_x - board_x1
-            rel_y = foot_y - board_y1
+            rel_x = ref_x - board_x1
+            rel_y = ref_y - board_y1
             col = int(rel_x // sq_w)
             row = int(rel_y // sq_h)
             row = max(0, min(7, row))

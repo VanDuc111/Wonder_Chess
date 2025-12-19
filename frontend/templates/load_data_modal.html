@@ -46,9 +46,32 @@
                     </div>
 
                     <div class="tab-pane fade" id="image-pane" role="tabpanel" aria-labelledby="image-tab">
-                        <label for="image-upload-input" class="form-label">Chọn ảnh bàn cờ:</label>
-                        <input class="form-control" type="file" id="image-upload-input" accept="image/png, image/jpeg">
-                        <div id="image-upload-status" class="form-text text-white-50 mt-2"></div>
+                        <div id="drop-zone" class="upload-drop-zone">
+                            <div class="drop-zone-content">
+                                <i class="bi bi-cloud-arrow-up-fill mb-3" style="font-size: 3.5rem; color: var(--color-primary); opacity: 0.8;"></i>
+                                <h5 class="fw-bold text-white mb-2">Bật tính năng "Soi" bàn cờ bằng AI</h5>
+                                <p class="text-white-50 mb-3">Kéo & thả ảnh vào đây hoặc nhấn để duyệt</p>
+                                <button type="button" class="btn btn-premium-confirm btn-sm px-4" id="browse-btn">
+                                    <i class="bi bi-image me-2"></i>Chọn ảnh
+                                </button>
+                                <input type="file" id="image-upload-input" accept="image/png, image/jpeg" style="display: none;">
+                            </div>
+                            <div id="file-preview" class="file-preview-container d-none">
+                                <div class="preview-wrapper">
+                                    <img id="preview-img" src="" alt="Preview">
+                                </div>
+                                <div class="file-details mt-3 text-center">
+                                    <div id="file-name" class="fw-bold text-white text-truncate" style="max-width: 250px;"></div>
+                                    <div id="file-size" class="text-white-50 small"></div>
+                                </div>
+                                <button type="button" class="btn-remove-file" id="remove-file-btn" title="Gỡ bỏ ảnh">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="image-upload-status" class="form-text text-white-50 mt-3 text-center">
+                            Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.
+                        </div>
                     </div>
                     <div class="tab-pane fade" id="live-scan-pane" role="tabpanel">
                         <div class="d-flex justify-content-center align-items-center gap-3 my-3">

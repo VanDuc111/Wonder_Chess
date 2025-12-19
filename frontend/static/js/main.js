@@ -844,89 +844,115 @@ document.addEventListener('DOMContentLoaded', () => {
     // =======================================================
     // LOGIC UPLOAD ẢNH (Drag & Drop + Preview)
     // =======================================================
-    const uploadArea = document.getElementById('upload-area');
-    const imageInput = document.getElementById('image-upload-input');
-    const previewContainer = document.getElementById('image-preview-container');
-    const previewImage = document.getElementById('image-preview');
-    const removeImageBtn = document.getElementById('remove-image-btn');
+    const dropZone = document.getElementById('drop-zone');
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const browseBtn = document.getElementById('browse-btn');
+    const filePreview = document.getElementById('file-preview');
+    const previewImg = document.getElementById('preview-img');
+    const fileNameEl = document.getElementById('file-name');
+    const fileSizeEl = document.getElementById('file-size');
+    const removeFileBtn = document.getElementById('remove-file-btn');
 
-    if (uploadArea && imageInput) {
-        // 1. Click để mở file dialog
-        uploadArea.addEventListener('click', () => {
-            imageInput.click();
-        });
-
-        // 2. Xử lý Drag & Drop
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        // Ngăn hành vi mặc định
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
+    if (dropZone && imageUploadInput) {
+        // Click browse button
+        if (browseBtn) {
+            browseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                imageUploadInput.click();
+            });
         }
 
+        // Click on drop zone (except on inner buttons)
+        dropZone.addEventListener('click', (e) => {
+            if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
+                imageUploadInput.click();
+            }
+        });
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        // Highlight drop zone
         ['dragenter', 'dragover'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, highlight, false);
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('dragover');
+            }, false);
         });
 
         ['dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, unhighlight, false);
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('dragover');
+            }, false);
         });
 
-        function highlight(e) {
-            uploadArea.classList.add('dragover');
-        }
-
-        function unhighlight(e) {
-            uploadArea.classList.remove('dragover');
-        }
-
-        uploadArea.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
+        // Handle dropped files
+        dropZone.addEventListener('drop', (e) => {
             const dt = e.dataTransfer;
             const files = dt.files;
             if (files.length > 0) {
-                imageInput.files = files;
-                handleFiles(files);
+                imageUploadInput.files = files;
+                handleImageFiles(files[0]);
             }
-        }
-
-        // 3. Xử lý khi chọn file qua dialog
-        imageInput.addEventListener('change', function () {
-            handleFiles(this.files);
         });
 
-        function handleFiles(files) {
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        previewImage.src = e.target.result;
-                        previewContainer.classList.remove('d-none');
-                        uploadArea.classList.add('d-none'); // Ẩn vùng upload
-                    }
-                    reader.readAsDataURL(file);
-                } else {
-                    alert("Vui lòng chọn file ảnh hợp lệ.");
-                }
+        // Handle selected files
+        imageUploadInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleImageFiles(this.files[0]);
             }
+        });
+
+        function handleImageFiles(file) {
+            if (!file.type.startsWith('image/')) {
+                alert("Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                fileNameEl.textContent = file.name;
+                fileSizeEl.textContent = formatBytes(file.size);
+                
+                filePreview.classList.remove('d-none');
+                dropZone.classList.add('has-file');
+                
+                // Clear any previous status message
+                const statusEl = document.getElementById('image-upload-status');
+                if (statusEl) statusEl.textContent = "Sẵn sàng để phân tích!";
+            }
+            reader.readAsDataURL(file);
         }
 
-        // 4. Xử lý nút Xóa ảnh
-        if (removeImageBtn) {
-            removeImageBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
-                imageInput.value = ''; // Reset input
-                previewImage.src = '';
-                previewContainer.classList.add('d-none');
-                uploadArea.classList.remove('d-none'); // Hiện lại vùng upload
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // Handle remove button
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                imageUploadInput.value = '';
+                previewImg.src = '';
+                filePreview.classList.add('d-none');
+                dropZone.classList.remove('has-file');
+                
+                const statusEl = document.getElementById('image-upload-status');
+                if (statusEl) statusEl.textContent = "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
             });
         }
     }
+
 
 
     /**
