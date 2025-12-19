@@ -12,7 +12,7 @@ import os
 import time
 
 # --- CẤU HÌNH ENGINE ---
-ENGINE_DEPTH = 10
+ENGINE_DEPTH = 6
 MATE_SCORE = 100000
 TRANS_TABLE = {}  # Key: Zobrist Hash (Int), Value: (Depth, Score, Flag, BestMove)
 

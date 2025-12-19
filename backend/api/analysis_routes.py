@@ -8,6 +8,7 @@ Chức năng chính: Nhận câu hỏi từ người dùng, kết hợp với d�
 from flask import Blueprint, jsonify, request, Response, stream_with_context
 from backend.services.gemini_service import stream_gemini_response
 from backend.engines.minimax import find_best_move
+from backend.engines.stockfish_engine import get_stockfish_move
 import chess
 
 analysis_bp = Blueprint('analysis', __name__)
@@ -46,9 +47,15 @@ def chat_analysis() -> Response:
             if not board.is_valid():
                 engine_error_message = "Invalid FEN: Board state is illegal.."
             else:
-                # Gọi Engine
-                engine_results_from_find = find_best_move(fen)
-                engine_results.update(engine_results_from_find)
+                # Ưu tiên gọi Stockfish để Alice có dữ liệu phân tích chuẩn nhất (GM level)
+                engine_results_from_sf = get_stockfish_move(fen, skill_level=16, time_limit=0.5)
+                
+                if engine_results_from_sf.get('success'):
+                    engine_results.update(engine_results_from_sf)
+                else:
+                    # Nếu Stockfish lỗi (chưa cài trên server), dùng tạm Minimax
+                    engine_results_from_find = find_best_move(fen)
+                    engine_results.update(engine_results_from_find)
 
         except ValueError:
             engine_error_message = "Invalid FEN structure."

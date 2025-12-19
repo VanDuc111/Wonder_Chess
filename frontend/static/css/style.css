@@ -1002,17 +1002,6 @@ body.allow-scroll {
     padding-right: var(--spacing-sm) !important;
 }
 
-#chat-col.shrunk {
-    flex: 0 0 48px;
-    max-width: 48px;
-    min-width: 48px;
-}
-
-#chat-col.expanded {
-    flex: 0 0 40%;
-    max-width: 60%;
-}
-
 /* ========================================= */
 /* 9. MODALS & OVERLAYS                      */
 /* ========================================= */
@@ -1357,6 +1346,20 @@ body.allow-scroll {
     to { opacity: 1; }
 }
 
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 5px 0;
+}
+
+.alice-loading-svg {
+    width: 60px;
+    height: 30px;
+    animation: fadeIn 0.4s ease-out forwards;
+    filter: drop-shadow(0 0 5px rgba(156, 39, 176, 0.3));
+}
+
 /* ========================================= */
 /* 12. RESPONSIVE DESIGN (MEDIA QUERIES)     */
 /* ========================================= */
@@ -1389,6 +1392,17 @@ body.allow-scroll {
         width: 33.333333%; 
         padding-right: var(--spacing-sm) !important;
     }
+
+    #chat-col.shrunk {
+        flex: 0 0 48px;
+        max-width: 48px;
+        min-width: 48px;
+    }
+
+    #chat-col.expanded {
+        flex: 0 0 40%;
+        max-width: 60%;
+    }
 }
 
 /* Medium Screens (Tablets) */
@@ -1403,6 +1417,8 @@ body.allow-scroll {
         height: auto !important;
         overflow-y: visible !important;
         padding-bottom: 20px;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
 
     .navbar-collapse {
@@ -1459,7 +1475,21 @@ body.allow-scroll {
     #chat-col {
         flex: 0 0 100%;
         max-width: 100%;
-        padding-right: var(--spacing-sm) !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    /* Giãn rộng bong bóng chat trên mobile */
+    #chatbot-messages > div {
+        max-width: 95%;
+    }
+
+    .message-bubble {
+        max-width: 95%;
+    }
+
+    #chatbot-form {
+        margin: 10px;
     }
 }
 

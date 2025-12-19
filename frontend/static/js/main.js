@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
 
-        document.title = `WonderChess - Chào mừng ${nickname}`;
+        document.title = `WonderChess - Intelligent Chess Assistant System`;
 
         initChessboard();
     }
@@ -471,9 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sender === 'Alice') {
             messageDiv.innerHTML = `
                 <div class="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    <img src="static/img/alice-loading.svg" alt="Alice is thinking..." class="alice-loading-svg">
                 </div>
             `;
         } else {
@@ -1331,78 +1329,41 @@ document.addEventListener('DOMContentLoaded', () => {
         // Restore saved state
         const savedWidth = parseInt(localStorage.getItem('chatWidth'), 10);
         
-        // Luôn hiển thị (không dùng logic collapsed) - Xóa class shrunk nếu có
-        chatCol.classList.remove('shrunk');
-        document.body.classList.remove('chat-collapsed');
-
-        if (!isNaN(savedWidth) && savedWidth >= MIN_WIDTH) {
-            const clamped = Math.min(Math.max(savedWidth, MIN_WIDTH), MAX_WIDTH);
-            chatCol.style.flex = `0 0 ${clamped}px`;
-            if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
-        } else {
-             // Default setup
-             if (window.innerWidth > 992) {
+        if (window.innerWidth > 992) {
+            if (!isNaN(savedWidth) && savedWidth >= MIN_WIDTH) {
+                const clamped = Math.min(Math.max(savedWidth, MIN_WIDTH), MAX_WIDTH);
+                chatCol.style.flex = `0 0 ${clamped}px`;
+                chatCol.style.width = `${clamped}px`;
+                if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
+            } else {
                  chatCol.style.flex = `0 0 ${DEFAULT_WIDTH}px`;
+                 chatCol.style.width = `${DEFAULT_WIDTH}px`;
                  if (chatbotContainer) chatbotContainer.style.width = `${DEFAULT_WIDTH}px`;
-             }
+            }
+            chatCol.classList.add('expanded');
+        } else {
+            // ĐẢM BẢO TRÊN MOBILE KHÔNG CÓ STYLE INLINE NÀO CẢN TRỞ
+            chatCol.style.flex = '';
+            chatCol.style.width = '';
+            chatCol.style.maxWidth = '';
+            if (chatbotContainer) chatbotContainer.style.width = '';
+            chatCol.classList.remove('expanded');
+            chatCol.classList.remove('shrunk');
         }
-        chatCol.classList.add('expanded'); // Luôn expanded
 
-        // pointerdown
-        chatResizer.addEventListener('pointerdown', (e) => {
-            if (e.button && e.button !== 0) return;
-            e.preventDefault();
-            isDragging = true;
-            startX = e.clientX;
-            startWidth = chatCol.getBoundingClientRect().width;
-            try {
-                chatResizer.setPointerCapture(e.pointerId);
-            } catch (err) { }
-            
-            if (chatbotContainer) chatbotContainer.classList.add('resizing');
-            document.body.style.userSelect = 'none';
-        });
-
-        document.addEventListener('pointermove', (e) => {
-            if (!isDragging) return;
-            const delta = startX - e.clientX; // Moving left increases width
-            let newWidth = startWidth + delta; 
-            
-            // For 3 columns: Max width must leave space for Board (~42%) and History (min 200px)
-            const reservedSpace = Math.round(window.innerWidth * 0.42) + 220; 
-            const maxAllowedChatWidth = window.innerWidth - reservedSpace;
-
-            newWidth = Math.round(Math.min(Math.max(newWidth, MIN_WIDTH), Math.min(MAX_WIDTH, maxAllowedChatWidth)));
-
-            chatCol.style.flex = `0 0 ${newWidth}px`;
-            chatCol.style.width = `${newWidth}px`; // Add width specifically to override CSS
-            if (chatbotContainer) chatbotContainer.style.width = `${newWidth}px`;
-            
-            localStorage.setItem('chatWidth', String(newWidth));
-        });
-
-        document.addEventListener('pointerup', (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            try {
-                chatResizer.releasePointerCapture(e.pointerId);
-            } catch (err) { }
-            
-            if (chatbotContainer) chatbotContainer.classList.remove('resizing');
-            document.body.style.userSelect = '';
-        });
-
-        // Xóa sự kiện dblclick/click ẩn chat        // Keep layout responsive on window resize
         window.addEventListener('resize', () => {
             if (window.innerWidth <= 992) {
                 chatCol.style.flex = '';
+                chatCol.style.width = '';
+                chatCol.style.maxWidth = '';
                 if (chatbotContainer) chatbotContainer.style.width = '';
                 return;
             }
             const w = parseInt(localStorage.getItem('chatWidth'), 10);
             if (!isNaN(w)) {
-                const clamped = Math.min(Math.max(w, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 600)); // Adjusted for 3 columns
+                const clamped = Math.min(Math.max(w, MIN_WIDTH), Math.min(MAX_WIDTH, window.innerWidth - 600)); 
                 chatCol.style.flex = `0 0 ${clamped}px`;
+                chatCol.style.width = `${clamped}px`;
                 if (chatbotContainer) chatbotContainer.style.width = `${clamped}px`;
             }
         });

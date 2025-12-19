@@ -1,0 +1,46 @@
+<svg width="100" height="50" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes cat-run {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes tail-swing {
+      0%, 100% { transform: rotate(-5deg); }
+      50% { transform: rotate(15deg); }
+    }
+    @keyframes dot-blink {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    .cat-body { animation: cat-run 0.5s infinite ease-in-out; }
+    .cat-tail { transform-origin: 30px 35px; animation: tail-swing 0.5s infinite ease-in-out; }
+    .loading-dot { animation: dot-blink 1.4s infinite both; fill: #e1bee7; }
+    .dot-2 { animation-delay: 0.2s; }
+    .dot-3 { animation-delay: 0.4s; }
+  </style>
+
+  <g class="cat-body">
+    <!-- Big Animated Tail -->
+    <path class="cat-tail" d="M25 35 Q10 5 35 5 Q55 5 45 25" fill="none" stroke="#9c27b0" stroke-width="8" stroke-linecap="round" />
+    <path class="cat-tail" d="M25 35 Q10 5 35 5 Q55 5 45 25" fill="none" stroke="#e91e63" stroke-width="8" stroke-dasharray="4 4" stroke-linecap="round" />
+
+    <!-- Body with Stripes -->
+    <rect x="30" y="25" width="25" height="15" rx="7" fill="#9c27b0" />
+    <path d="M35 25 L35 40 M42 25 L42 40 M49 25 L49 40" stroke="#e1bee7" stroke-width="3" opacity="0.6" />
+
+    <!-- Head -->
+    <circle cx="55" cy="28" r="10" fill="#9c27b0" />
+    <path d="M48 22 L45 12 L55 20 Z" fill="#9c27b0" />
+    <path d="M62 22 L65 12 L55 20 Z" fill="#9c27b0" />
+    
+    <!-- Face -->
+    <circle cx="52" cy="26" r="2" fill="yellow" />
+    <circle cx="58" cy="26" r="2" fill="yellow" />
+    <path d="M48 32 Q55 38 62 32" fill="white" stroke="#e91e63" stroke-width="0.5" />
+  </g>
+
+  <!-- 3 Dots next to cat -->
+  <circle class="loading-dot dot-1" cx="75" cy="35" r="2.5" />
+  <circle class="loading-dot dot-2" cx="85" cy="35" r="2.5" />
+  <circle class="loading-dot dot-3" cx="95" cy="35" r="2.5" />
+</svg>

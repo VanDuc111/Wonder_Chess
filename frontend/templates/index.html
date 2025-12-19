@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 
-{% block title %}WonderChess{% endblock %}
+{% block title %}WonderChess - Intelligent Chess Assistant System{% endblock %}
 
 {% block body_content %}
 <div id="welcome-screen" class="d-flex justify-content-center align-items-center vh-100">
@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<div id="main-app-screen" class="container-fluid py-3 d-none">
+<div id="main-app-screen" class="container-fluid py-3 px-0 px-md-3 d-none">
     {% with active_page='analyze' %}
         {% include 'partials/navbar.html' %}
     {% endwith %}
@@ -125,6 +125,7 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/constants.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stockfish_manager.js') }}"></script>
 <script src="{{ url_for('static', filename='js/logic_game.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}

@@ -394,38 +394,57 @@
 
     L.handleBotTurn = async function () {
         isPlayerTurn = false;
+        const engineType = typeof selectedBotEngine !== 'undefined' ? selectedBotEngine : 'stockfish';
+        const level = typeof selectedBotLevel !== 'undefined' ? selectedBotLevel : 10;
+        
         try {
-            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.BOT_MOVE) ? window.APP_CONST.API.BOT_MOVE : '/api/game/bot_move', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    fen: game.fen(),
-                    engine: typeof selectedBotEngine !== 'undefined' ? selectedBotEngine : 'stockfish',
-                    skill_level: typeof selectedBotLevel !== 'undefined' ? selectedBotLevel : 10,
-                    time_limit: selectedBotTime,
-                    increment: typeof selectedBotIncrement !== 'undefined' ? selectedBotIncrement : 0
-                })
-            });
-            const data = await response.json();
+            let botMoveUci = null;
+            let evalScoreText = "0.00";
+            let newFen = "";
+
+            if (engineType === 'stockfish' && window.SF_MANAGER) {
+                // --- CHẠY STOCKFISH TẠI FRONTEND (WASM) ---
+                console.log("Using Frontend Stockfish WASM...");
+                const result = await window.SF_MANAGER.getBestMove(game.fen(), level, 500); 
+                botMoveUci = result.move;
+                evalScoreText = result.score;
+                game.move(botMoveUci, {sloppy: true});
+                newFen = game.fen();
+            } else {
+                // --- CHẠY WONDER ENGINE TẠI BACKEND ---
+                console.log("Using Backend Wonder Engine...");
+                const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.BOT_MOVE) ? window.APP_CONST.API.BOT_MOVE : '/api/game/bot_move', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        fen: game.fen(),
+                        engine: engineType,
+                        skill_level: level,
+                        time_limit: selectedBotTime,
+                        increment: typeof selectedBotIncrement !== 'undefined' ? selectedBotIncrement : 0
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    botMoveUci = data.move_uci;
+                    newFen = data.fen;
+                    evalScoreText = data.evaluation;
+                    game.move(botMoveUci, {sloppy: true});
+                }
+            }
 
             if (isTimedGame) clearInterval(timerInterval);
 
-            if (data.success && data.move_uci) {
-                const botMoveUci = data.move_uci;
-                const newFen = data.fen;
-                const evalScoreText = data.evaluation;
-
+            if (botMoveUci) {
                 if (currentFenIndex < moveHistory.length - 1) moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 moveHistory.push({fen: newFen, score: evalScoreText});
                 currentFenIndex = moveHistory.length - 1;
 
-                game.move(botMoveUci, {sloppy: true});
                 board.position(game.fen());
                 L.updateAllHighlights();
 
                 L.updateUI(newFen);
                 L.handleScoreUpdate(evalScoreText, newFen);
-                console.log(`Điểm tìm kiếm (Bot Move): ${evalScoreText}`);
 
                 if (game.game_over()) {
                     if (isTimedGame) clearInterval(timerInterval);
