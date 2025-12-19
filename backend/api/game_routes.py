@@ -6,6 +6,7 @@ Bao gồm nhận diện nước đi hợp lệ, thực hiện nước đi, yêu 
 from flask import Blueprint, jsonify, request, Response
 import chess
 import chess.engine
+from backend.engines.stockfish_engine import get_stockfish_move
 
 from backend.engines.minimax import (
     find_best_move,
@@ -78,8 +79,6 @@ def make_move() -> Response:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-from backend.engines.stockfish_engine import get_stockfish_move
-
 @game_bp.route('/bot_move', methods=['POST'])
 def bot_move() -> Response:
     """
@@ -148,17 +147,29 @@ def get_engine_score() -> Response:
         return jsonify({'success': False, 'error': 'FEN is required.'}), 400
 
     try:
-        # Giới hạn 0.1s để không làm lag UI
-        results = find_best_move(fen, max_depth=10, time_limit=0.1)
+        # Sử dụng Stockfish để đánh giá (0.2s để đảm bảo độ chính xác vượt trội)
+        results = get_stockfish_move(fen, skill_level=20, time_limit=0.2)
 
-        return jsonify({
-            'success': True,
-            'engine_results': {
-                'search_score': results['search_score'],
-                'best_move': results['best_move'],
-                'pv': results['pv']
-            }
-        })
+        if results.get('success'):
+            return jsonify({
+                'success': True,
+                'engine_results': {
+                    'search_score': results['search_score'],
+                    'best_move': results.get('best_move'),
+                    'pv': results.get('best_move') # Stockfish basic info
+                }
+            })
+        else:
+            # Fallback về Minimax nếu Stockfish lỗi
+            results = find_best_move(fen, max_depth=8, time_limit=0.1)
+            return jsonify({
+                'success': True,
+                'engine_results': {
+                    'search_score': results['search_score'],
+                    'best_move': results['best_move'],
+                    'pv': results['pv']
+                }
+            })
 
     except Exception as e:
         print(f"EVALUATE ERROR: {e}")

@@ -374,6 +374,8 @@ body.allow-scroll {
     margin-top: auto;
     margin-bottom: auto;
     padding-top: var(--spacing-unit);
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .chess-board-area {
@@ -399,9 +401,9 @@ body.allow-scroll {
 }
 
 #chessboard-main-container {
-    flex-grow: 1;
-    width: 100%;
+    flex: 1;
     min-width: 0;
+    width: 100%;
 }
 
 #myBoard {
@@ -465,12 +467,12 @@ body.allow-scroll {
 
 /* Evaluation Bar */
 .score-alignment-wrapper {
-    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: var(--spacing-unit);
+    margin-top: var(--spacing-sm); /* Match board area padding */
     transform-origin: center center;
+    margin-right: 15px;
 }
 
 .score-alignment-wrapper.rotated-score {
@@ -487,18 +489,16 @@ body.allow-scroll {
     flex-direction: column;
     align-items: center;
     flex-grow: 1;
-    padding-top: 5px;
 }
 
 #evaluation-bar {
     width: 20px;
     background: linear-gradient(to top, var(--color-eval-gradient-start) 0%, var(--color-eval-gradient-end) 100%);
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     position: relative;
-    flex-grow: 1;
+    height: 100%; /* Fill container */
     border: 1px solid rgba(255, 255, 255, 0.1);
-    bottom: 20px;
 }
 
 .eval-advantage-bar {
@@ -515,7 +515,6 @@ body.allow-scroll {
     font-size: 0.9em;
     width: 60px;
     text-align: center;
-    bottom: 20px;
 }
 
 /* Square Highlighting */
@@ -872,7 +871,7 @@ body.allow-scroll {
 
 #chatbot-form {
     flex-shrink: 0;
-    margin: 15px;
+    margin: 12px 12px 0 12px; /* Pull flush to bottom */
     margin-top: auto !important;
     position: relative;
     background: var(--color-input-background);
@@ -1415,7 +1414,42 @@ body.allow-scroll {
     }
 }
 
-/* Medium Screens (Tablets) */
+/* Tablet screens (stack logically) */
+@media (max-width: 991.98px) {
+    #board-col, #history-col, #chat-col {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    .chess-board-area {
+        max-width: 500px !important; /* Larger on tablet than mobile */
+        margin: 0 auto;
+    }
+
+    #history-col {
+        margin-top: var(--spacing-sm) !important;
+    }
+
+    #chat-col {
+        margin-top: var(--spacing-sm) !important;
+    }
+
+    .history-container {
+        height: 400px;
+        margin-bottom: 15px;
+    }
+
+    .chatbot-container {
+        margin-bottom: 0 !important;
+    }
+
+    /* Đảm bảo game container không bị lệch */
+    #game-view-container {
+        justify-content: center !important;
+        padding-right: 0 !important;
+    }
+}
 @media (max-width: 991.98px) {
     body {
         height: auto !important;
@@ -1426,7 +1460,7 @@ body.allow-scroll {
     .main-content-row {
         height: auto !important;
         overflow-y: visible !important;
-        padding-bottom: 20px;
+        padding-bottom: 0 !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
     }
@@ -1498,51 +1532,107 @@ body.allow-scroll {
     }
 
     #chatbot-form {
-        margin: 10px;
+        margin: 10px 10px 0 10px;
     }
 }
 
-/* Small Screens (Mobile) */
 @media (max-width: 767.98px) {
     .chatbot-container {
         height: 500px;
-        margin-top: 20px;
     }
 
-    .chess-board-area {
-        padding-right: var(--space-lg2) !important;
-        padding-left: var(--space-lg2) !important;
+    .score-alignment-wrapper {
+        margin-right: 6px !important;
+        width: 20px;
+        padding-top: 0;
+    }
+
+    #evaluation-bar {
+        width: 10px;
+        margin-top: 40px;
+    }
+
+    #evaluation-score {
+        width: 100%;
+        font-size: 0.75rem;
+        margin-top: 4px !important;
+    }
+
+    #chessboard-main-container {
+        flex: 1;
+        min-width: 0;
         max-width: 100%;
     }
 
+    .chess-board-area {
+        padding: 5px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    #myBoard {
+        width: 100% !important;
+    }
+
     .board-relative-wrapper {
-        margin-top: 45px;
-        margin-bottom: 45px;
+        margin-top: 35px;
+        margin-bottom: 35px;
     }
 
     .timer-box {
+        position: absolute;
         right: 0;
-        width: auto;
-        padding: var(--space-xs) var(--spacing-md);
+        width: 70px;
+        font-size: 0.85rem;
+        padding: 4px 0;
+        background: rgba(15, 15, 26, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 105;
+        border-radius: 6px;
+        text-align: center;
     }
 
-    .timer-top-right { top: var(--timer-offset-mobile); }
-    .timer-bottom-right { bottom: var(--timer-offset-mobile); }
+    .timer-top-right { top: -35px; }
+    .timer-bottom-right { bottom: -35px; }
 
-    .chess-board-area.rotated-board .timer-top-right { top: auto; bottom: var(--timer-offset-mobile); }
-    .chess-board-area.rotated-board .timer-bottom-right { bottom: auto; top: var(--timer-offset-mobile); }
+    .analysis-controls-horizontal {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 8px 15px;
+        overflow-x: visible !important;
+    }
+
+    .custom-switch-sm {
+        margin-right: 0 !important;
+    }
+
+    .custom-switch-sm .form-check-label {
+        font-size: 0.7rem;
+    }
 }
 
 @media (max-width: 576px) {
+    .button-group-container {
+        width: 100%;
+        padding: 0 10px;
+    }
+
     .button-group-container .btn {
         font-size: 0.8rem;
-        padding: 6px 8px;
-        min-width: 60px;
+        padding: 8px 2px;
+        min-width: 0;
+        flex: 1 1 30%; /* Stretches more naturally */
+    }
+
+    .btn-chess-action {
+        flex: 1 1 45% !important;
     }
 
     .button-group-container .btn i {
-        display: block;
-        margin-bottom: 2px;
+        display: inline-block;
+        margin-bottom: 0;
+        margin-right: 4px;
         font-size: 1rem;
     }
 }
@@ -1567,7 +1657,8 @@ body.allow-scroll {
         transform: translateY(0);
     }
 }
-\n/* Bot Settings Modal Specifics (Modern) */
+
+/* Bot Settings Modal Specifics (Modern) */
 #bot-settings-modal {
     position: fixed;
     z-index: 2000;
@@ -1703,4 +1794,105 @@ body.allow-scroll {
 
 .btn-create-game:active {
     transform: translateY(0);
+}
+
+/* ========================================= */
+/* 9. ANALYSIS SETTINGS (Compact)            */
+/* ========================================= */
+.analysis-settings-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.analysis-controls-horizontal {
+    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+/* Small Premium Switch */
+.custom-switch-sm {
+    padding-left: 2.2rem;
+    min-height: 1.2rem;
+    display: flex;
+    align-items: center;
+}
+
+.custom-switch-sm .form-check-input {
+    width: 2.2rem;
+    height: 1.1rem;
+    margin-left: -2.2rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2.5' fill='rgba(255,255,255,0.3)'/%3e%3c/svg%3e");
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.custom-switch-sm .form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2.5' fill='%23fff'/%3e%3c/svg%3e");
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+}
+
+.custom-switch-sm .form-check-input:focus {
+    box-shadow: none;
+}
+
+.custom-switch-sm .form-check-label {
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    user-select: none;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
+.custom-switch-sm .form-check-input:checked + .form-check-label {
+    color: white;
+    font-weight: 500;
+}
+
+/* Move Annotations (Symbols) */
+.move-annotation {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.move-annotation img {
+    height: 18px;
+    width: auto;
+    display: inline-block;
+}
+
+.move-annotation span {
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+.annot-brilliant { color: #26c2a3; }
+.annot-great { color: #5c8bb0; }
+.annot-good { color: #95b806; }
+.annot-book { color: #d5a47d; }
+.annot-mistake { color: #ffa459; }
+.annot-blunder { color: #fa412d; }
+
+/* Arrow Overlay */
+#myBoard {
+    position: relative;
+}
+
+#arrow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
 }

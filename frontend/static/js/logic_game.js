@@ -147,6 +147,13 @@
         };
 
         board = Chessboard('myBoard', config);
+        
+        // Nếu có container arrow, resize nó
+        const arrowContainer = document.getElementById('arrow-container');
+        if (arrowContainer) {
+            const container = document.getElementById('myBoard');
+            arrowContainer.setAttribute("viewBox", `0 0 ${container.offsetWidth} ${container.offsetHeight}`);
+        }
 
         // Khởi tạo resizer và đồng bộ chiều cao
         L.syncBoardAndEvalHeight();
@@ -157,32 +164,50 @@
             window._boardResizeHandler = () => {
                 if (board) board.resize();
                 L.syncBoardAndEvalHeight();
+                // Resize arrow container
+                const arrowCont = document.getElementById('arrow-container');
+                const boardCont = document.getElementById('myBoard');
+                if (arrowCont && boardCont) {
+                    arrowCont.setAttribute("viewBox", `0 0 ${boardCont.offsetWidth} ${boardCont.offsetHeight}`);
+                    // Re-render arrow if needed
+                    if (moveHistory[currentFenIndex] && moveHistory[currentFenIndex].bestMove) {
+                        L.renderBestMoveArrow(moveHistory[currentFenIndex].bestMove);
+                    }
+                }
             };
             window.addEventListener('resize', window._boardResizeHandler);
+        }
+
+        // Đỏ hướng dựa trên switch nếu cần
+        const flipSwitch = document.getElementById('flip-board-switch');
+        if (flipSwitch && flipSwitch.checked) {
+            board.orientation('black');
+        }
+
+        // Thiết lập listeners cho switches (chỉ thực hiện khi page load lần đầu hoặc init)
+        if (!window._analysisListenersAttached) {
+            L.attachAnalysisListeners();
+            window._analysisListenersAttached = true;
         }
     };
 
     L.syncBoardAndEvalHeight = function () {
-        const boardContainer = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.BOARD_CONTAINER) ? window.APP_CONST.IDS.BOARD_CONTAINER : 'chessboard-main-container');
+        const myBoard = document.getElementById('myBoard');
         const scoreBarContainer = document.querySelector('.score-bar-container');
         const evalScore = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.EVAL_SCORE) ? window.APP_CONST.IDS.EVAL_SCORE : 'evaluation-score');
         const wrapper = document.querySelector('.score-alignment-wrapper');
 
-        if (!boardContainer || !scoreBarContainer || !wrapper) return;
+        if (!myBoard || !scoreBarContainer || !wrapper) return;
 
-        // Reset chiều cao trước khi đo để tránh bị kẹt ở kích thước cũ (gây overflow khi thu nhỏ)
-        wrapper.style.height = '100%';
-        if (scoreBarContainer) scoreBarContainer.style.height = 'auto';
-
-        // Lấy chiều cao thực tế của vùng chứa bàn cờ sau khi reset
-        const totalBoardAreaHeight = boardContainer.offsetHeight;
+        // Lấy chiều cao thực tế của bàn cờ
+        const boardHeight = myBoard.clientHeight;
         
-        // Đồng bộ wrapper theo px để khớp hoàn hảo
-        wrapper.style.height = `${totalBoardAreaHeight}px`;
+        // Đồng bộ wrapper theo đúng chiều cao bàn cờ
+        wrapper.style.height = `${boardHeight}px`;
 
         const scoreHeight = evalScore ? evalScore.offsetHeight : 0;
-        const verticalSpacing = 20; // Khoảng cách đệm
-        const targetBarContainerHeight = totalBoardAreaHeight - scoreHeight - verticalSpacing;
+        const verticalGap = 8;
+        const targetBarContainerHeight = boardHeight - scoreHeight - verticalGap;
         
         if (scoreBarContainer) {
             scoreBarContainer.style.height = `${targetBarContainerHeight}px`;
@@ -211,8 +236,15 @@
                     moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 }
 
-                const openingName = L.detectOpening(true); 
-                moveHistory.push({fen: newFen, score: null, san: move.san, opening: openingName});
+                const openingInfo = L.detectOpening(true); 
+                moveHistory.push({
+                    fen: newFen, 
+                    score: null, 
+                    san: move.san, 
+                    uci: moveUci, 
+                    opening: openingInfo.name, 
+                    isBookMove: openingInfo.isBookMove
+                });
 
                 currentFenIndex = moveHistory.length - 1;
                 game.move(moveUci, {sloppy: true});
@@ -269,8 +301,15 @@
             moveHistory = moveHistory.slice(0, currentFenIndex + 1);
         }
         const h = game.history();
-        const openingName = L.detectOpening(true); 
-        moveHistory.push({ fen: game.fen(), score: null, san: h[h.length - 1], opening: openingName });
+        const openingInfo = L.detectOpening(true); 
+        moveHistory.push({ 
+            fen: game.fen(), 
+            score: null, 
+            san: h[h.length - 1], 
+            uci: moveUci, 
+            opening: openingInfo.name, 
+            isBookMove: openingInfo.isBookMove 
+        });
         currentFenIndex = moveHistory.length - 1;
 
         // Cập nhật UI ngay lập tức
@@ -443,8 +482,15 @@
                     moveHistory = moveHistory.slice(0, currentFenIndex + 1);
                 }
                 const h = game.history();
-                const openingName = L.detectOpening(true);
-                moveHistory.push({fen: newFen, score: evalScoreText, san: h[h.length - 1], opening: openingName});
+                const openingInfo = L.detectOpening(true);
+                moveHistory.push({
+                    fen: newFen, 
+                    score: evalScoreText, 
+                    san: h[h.length - 1], 
+                    uci: botMoveUci, 
+                    opening: openingInfo.name, 
+                    isBookMove: openingInfo.isBookMove
+                });
                 currentFenIndex = moveHistory.length - 1;
 
                 board.position(game.fen());
@@ -509,11 +555,14 @@
             const whiteHighlight = (i === currentFenIndex) ? 'current-move-highlight' : '';
             const blackHighlight = (blackMove && (i + 1) === currentFenIndex) ? 'current-move-highlight' : '';
             
+            const whiteAnnot = L.renderAnnotationHtml(whiteMove, i);
+            const blackAnnot = blackMove ? L.renderAnnotationHtml(blackMove, i + 1) : '';
+
             pgnHtml += `
                 <tr>
                     <td class="move-number-cell">${moveNumber}.</td>
-                    <td class="move-cell ${whiteHighlight}" data-index="${i}">${whiteMove.san || ''}</td>
-                    <td class="move-cell ${blackHighlight}" data-index="${i+1}">${blackMove ? (blackMove.san || '') : ''}</td>
+                    <td class="move-cell ${whiteHighlight}" data-index="${i}">${whiteMove.san || ''} ${whiteAnnot}</td>
+                    <td class="move-cell ${blackHighlight}" data-index="${i+1}">${blackMove ? (blackMove.san || '') : ''} ${blackAnnot}</td>
                 </tr>
             `;
         }
@@ -581,6 +630,14 @@
                 }
 
                 L.handleScoreUpdate(searchScoreText, fen);
+
+                // Lưu bestmove để vẽ arrow
+                const bestMove = data.engine_results.best_move;
+                if (bestMove && moveHistory[currentFenIndex]) {
+                    moveHistory[currentFenIndex].bestMove = bestMove;
+                    L.renderBestMoveArrow(bestMove);
+                }
+
                 console.log(`Điểm tìm kiếm (Search Score) mới: ${searchScoreText}`);
                 return searchScoreText;
             } else if (data.success && data.engine_results && data.engine_results.search_score === 'Game Over') {
@@ -597,19 +654,17 @@
 
     L.detectOpening = function (forceRecalculate = false) {
         const openingDisplay = document.getElementById('opening-name');
-        if (!openingDisplay) return "";
+        if (!openingDisplay) return { name: "", isBookMove: false };
 
-        // Ưu tiên lấy từ state nếu đang điều hướng và không yêu cầu tính lại
         if (!forceRecalculate && moveHistory[currentFenIndex] && moveHistory[currentFenIndex].opening) {
             openingDisplay.textContent = moveHistory[currentFenIndex].opening;
-            return moveHistory[currentFenIndex].opening;
+            return { name: moveHistory[currentFenIndex].opening, isBookMove: moveHistory[currentFenIndex].isBookMove };
         }
 
-        // Nếu chưa có (ví dụ nước mới nhất đang xử lý), tiến hành nhận diện
         const history = game.history();
         if (history.length === 0) {
             openingDisplay.textContent = "Chưa bắt đầu";
-            return "Chưa bắt đầu";
+            return { name: "Chưa bắt đầu", isBookMove: false };
         }
 
         let bestMatch = null;
@@ -639,6 +694,8 @@
         }
 
         let resultName = "";
+        let isBookMove = (bestMatch && maxLen === history.length); // Chỉ là Book Move nếu nó trùng khớp hoàn toàn số nước đi
+
         if (bestMatch) {
             resultName = bestMatch.name;
         } else {
@@ -650,7 +707,7 @@
         }
         
         openingDisplay.textContent = resultName;
-        return resultName;
+        return { name: resultName, isBookMove: isBookMove };
     };
 
     L.loadFen = function (index) {
@@ -662,13 +719,219 @@
             L.updateAllHighlights();
             L.updateUI(state.fen);
             L.handleScoreUpdate(state.score, state.fen);
+            
+            // Vẽ lại arrow nếu có dữ liệu
+            if (state.bestMove) {
+                L.renderBestMoveArrow(state.bestMove);
+            } else {
+                L.renderBestMoveArrow(null); // clear
+            }
         }
+    };
+
+    L.renderBestMoveArrow = function(moveUci) {
+        const container = document.getElementById('myBoard');
+        if (!container) return;
+
+        let arrowContainer = document.getElementById('arrow-container');
+        if (!arrowContainer) {
+            arrowContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            arrowContainer.id = "arrow-container";
+            container.appendChild(arrowContainer);
+        } else {
+            arrowContainer.innerHTML = '';
+        }
+
+        const switchEl = document.getElementById('best-move-switch');
+        if (!switchEl || !switchEl.checked) return;
+        if (!moveUci || moveUci.length < 4) return;
+
+        arrowContainer.setAttribute("viewBox", `0 0 ${container.offsetWidth} ${container.offsetHeight}`);
+        arrowContainer.style.width = '100%';
+        arrowContainer.style.height = '100%';
+
+        const from = moveUci.substring(0, 2);
+        const to = moveUci.substring(2, 4);
+
+        const fromEl = container.querySelector(`.square-${from}`);
+        const toEl = container.querySelector(`.square-${to}`);
+
+        if (!fromEl || !toEl) return;
+
+        const getCenter = (el) => {
+            return {
+                x: el.offsetLeft + el.offsetWidth / 2,
+                y: el.offsetTop + el.offsetHeight / 2
+            };
+        };
+
+        const start = getCenter(fromEl);
+        const end = getCenter(toEl);
+
+        // Tính toán để thu ngắn đường line lại, tránh bị lòi ra khỏi đầu mũi tên
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const offset = 10; // Khoảng cách thu hồi (pixel)
+        const ratio = (length - offset) / length;
+        const shortEndX = start.x + dx * ratio;
+        const shortEndY = start.y + dy * ratio;
+
+        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        marker.id = "arrowhead";
+        // Tăng marker size một chút để che phủ tốt hơn
+        marker.setAttribute("markerWidth", "6");
+        marker.setAttribute("markerHeight", "5");
+        marker.setAttribute("refX", "5");
+        marker.setAttribute("refY", "2.5");
+        marker.setAttribute("orient", "auto");
+        const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        polygon.setAttribute("points", "0 0, 6 2.5, 0 5");
+        polygon.setAttribute("fill", "rgba(76, 175, 80, 0.9)");
+        marker.appendChild(polygon);
+        defs.appendChild(marker);
+        arrowContainer.appendChild(defs);
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", start.x);
+        line.setAttribute("y1", start.y);
+        line.setAttribute("x2", shortEndX);
+        line.setAttribute("y2", shortEndY);
+        line.setAttribute("stroke", "rgba(76, 175, 80, 0.6)");
+        line.setAttribute("stroke-width", "6");
+        line.setAttribute("marker-end", "url(#arrowhead)");
+
+        arrowContainer.appendChild(line);
+    };
+
+    L.renderAnnotationHtml = function(moveObj, index) {
+        const switchNotate = document.getElementById('move-notate-switch');
+        if (!switchNotate || !switchNotate.checked) return '';
+        
+        if (moveObj.isBookMove) {
+             return `<span class="move-annotation" title="Book Move"><img src="static/img/icon/book.svg" alt="Book"></span>`;
+        }
+        
+        const scoreStr = moveObj.score;
+        if (!scoreStr) return '';
+
+        // Phân tích tương quan điểm số với nước đi trước đó
+        if (index > 0 && moveHistory[index-1] && moveHistory[index-1].score) {
+            const currentScore = L.parseScore(moveObj.score);
+            const prevScore = L.parseScore(moveHistory[index-1].score);
+            const isWhiteMove = (index % 2 !== 0); 
+            const diff = currentScore - prevScore;
+            
+            // Lấy nước đi tốt nhất do máy gợi ý ở thế cờ TRƯỚC ĐÓ
+            const engineBestMove = moveHistory[index-1].bestMove;
+            const isBestMove = (engineBestMove && moveObj.uci === engineBestMove);
+
+            // Chỉnh lại diff theo góc nhìn của phe vừa đi
+            const moveDiff = isWhiteMove ? diff : -diff;
+
+            // 1. Nhóm nước đi tốt (Dương hoặc khớp máy)
+            if (moveDiff > 1.2) return `<span class="move-annotation" title="Brilliant Move"><img src="static/img/icon/brilliant.svg" alt="!!"></span>`;
+            if (moveDiff > 0.5) return `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg" alt="!"></span>`;
+            if (isBestMove) return `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg" alt="Best"></span>`;
+            if (moveDiff > -0.1) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg" alt="Good"></span>`;
+            
+            // 2. Nhóm nước đi ổn định
+            if (moveDiff > -0.2) return `<span class="move-annotation" title="Solid"><img src="static/img/icon/solid.svg" alt="Solid"></span>`;
+            
+            // 3. Nhóm nước đi sai lầm
+            // Kiểm tra "Miss" (Bỏ lỡ cơ hội thắng)
+            const wasWinning = isWhiteMove ? (prevScore > 2.0) : (prevScore < -2.0);
+            const nowNeutral = isWhiteMove ? (currentScore < 0.5 && currentScore > -0.5) : (currentScore > -0.5 && currentScore < 0.5);
+            if (wasWinning && nowNeutral) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg" alt="Miss"></span>`;
+
+            if (moveDiff < -1.2) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg" alt="??"></span>`;
+            if (moveDiff < -0.5) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg" alt="?"></span>`;
+            if (moveDiff < -0.2) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg" alt="?!"></span>`;
+        }
+        
+        if (scoreStr.includes('M')) return `<span class="move-annotation" title="Brilliant Move"><img src="static/img/icon/brilliant.svg" alt="!!"></span>`;
+        
+        return '';
+    };
+
+    L.parseScore = function(scoreStr) {
+        if (!scoreStr || typeof scoreStr !== 'string') return 0;
+        if (scoreStr.includes('M')) {
+            return scoreStr.includes('+') ? 100 : -100;
+        }
+        const val = parseFloat(scoreStr);
+        return isNaN(val) ? 0 : val;
+    };
+
+    L.attachAnalysisListeners = function() {
+        const flipSwitch = document.getElementById('flip-board-switch');
+        if (flipSwitch) {
+            flipSwitch.addEventListener('change', function() {
+                if (board) {
+                    board.flip();
+                    // Re-render arrow after flip (với delay nhỏ để board cập nhật DOM)
+                    setTimeout(() => {
+                        if (moveHistory[currentFenIndex] && moveHistory[currentFenIndex].bestMove) {
+                            L.renderBestMoveArrow(moveHistory[currentFenIndex].bestMove);
+                        }
+                    }, 50);
+                }
+            });
+        }
+
+        const bestMoveSwitch = document.getElementById('best-move-switch');
+        if (bestMoveSwitch) {
+            bestMoveSwitch.addEventListener('change', function() {
+                if (moveHistory[currentFenIndex] && moveHistory[currentFenIndex].bestMove) {
+                    L.renderBestMoveArrow(moveHistory[currentFenIndex].bestMove);
+                } else {
+                    L.renderBestMoveArrow(null);
+                }
+            });
+        }
+
+        const notateSwitch = document.getElementById('move-notate-switch');
+        if (notateSwitch) {
+            notateSwitch.addEventListener('change', function() {
+                L.updatePgnHistory();
+            });
+        }
+
+        const evalBarSwitch = document.getElementById('eval-bar-switch');
+        if (evalBarSwitch) {
+            evalBarSwitch.addEventListener('change', function() {
+                const scoreWrapper = document.querySelector('.score-alignment-wrapper');
+                if (scoreWrapper) {
+                    scoreWrapper.style.display = this.checked ? 'flex' : 'none';
+                    if (board) board.resize(); // Resize chessboard to fit remaining space
+                    if (this.checked) {
+                        setTimeout(() => L.syncBoardAndEvalHeight(), 50); // Re-sync height
+                    }
+                }
+            });
+        }
+
+        // Shortcut Keys
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            if (e.key.toLowerCase() === 'f') {
+                if (flipSwitch) flipSwitch.click();
+            }
+        });
     };
 
     L.updateUI = function (fen) {
         L.updateButtonState();
         L.updatePgnHistory();
         L.detectOpening();
+        
+        if (moveHistory[currentFenIndex] && moveHistory[currentFenIndex].bestMove) {
+            L.renderBestMoveArrow(moveHistory[currentFenIndex].bestMove);
+        } else {
+            L.renderBestMoveArrow(null);
+        }
     };
 
     L.updateButtonState = function () {
@@ -695,6 +958,7 @@
         if (scoreWrapper) {
             if (playerColor === 'b') scoreWrapper.classList.add('rotated-score'); else scoreWrapper.classList.remove('rotated-score');
         }
+        L.renderBestMoveArrow(null);
     };
 
     // Gắn vào window

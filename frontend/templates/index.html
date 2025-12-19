@@ -23,9 +23,9 @@
         <!-- Column 1: Chessboard -->
         <div id="board-col" class="col-12 col-md-6 col-lg-5">
             <div id="game-view-container" class="d-flex justify-content-center align-items-stretch">
-                <div class="score-alignment-wrapper me-3">
+                <div class="score-alignment-wrapper" style="display: none;">
                     <div class="score-bar-container">
-                        <div id="evaluation-bar" class="evaluation-bar p-2 rounded-3">
+                        <div id="evaluation-bar" class="evaluation-bar">
                             <div id="eval-white-advantage" class="eval-advantage-bar"></div>
                         </div>
                     </div>
@@ -62,6 +62,27 @@
                             <button class="btn btn-sm btn-chess-danger" data-action="clear" title="Clear Board">
                                 <i class="bi bi-trash"></i>
                             </button>
+                        </div>
+
+                        <div class="analysis-settings-container mt-2 p-2 rounded-3">
+                            <div class="analysis-controls-horizontal d-flex justify-content-around align-items-center">
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="flip-board-switch">
+                                    <label class="form-check-label" for="flip-board-switch">Đổi hướng (F)</label>
+                                </div>
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="best-move-switch">
+                                    <label class="form-check-label" for="best-move-switch">Gợi ý</label>
+                                </div>
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="move-notate-switch">
+                                    <label class="form-check-label" for="move-notate-switch">Ký hiệu</label>
+                                </div>
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="eval-bar-switch">
+                                    <label class="form-check-label" for="eval-bar-switch">Thanh điểm</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
