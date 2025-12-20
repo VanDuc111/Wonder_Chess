@@ -8,7 +8,7 @@ def open_browser():
     webbrowser.open_new("http://127.0.0.1:5000")
 
 if __name__ == "__main__":
-    # Force debug mode to True (or set to False if you don't want reloader)
+    # Force debug mode to True
     app.debug = True
     
     # 1. If reloader is active (child process), open the browser

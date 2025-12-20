@@ -392,7 +392,9 @@ body.allow-scroll {
     padding: var(--spacing-sm);
     position: relative;
     box-shadow: var(--shadow-card);
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease;
+    height: auto !important; 
+    min-height: 0;
 }
 
 /* Adjust padding-right only when timers are potentially overlapping */
@@ -477,9 +479,16 @@ body.allow-scroll {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: var(--spacing-sm); /* Match board area padding */
+    margin-top: var(--spacing-sm);
     transform-origin: center center;
-    margin-right: 15px;
+    margin-right: 25px;
+    margin-left: 10px;
+}
+
+@media (min-width: 768px) {
+    .score-alignment-wrapper {
+        margin-right: 15px;
+    }
 }
 
 .score-alignment-wrapper.rotated-score {
@@ -519,9 +528,22 @@ body.allow-scroll {
 
 #evaluation-score {
     color: var(--color-text-light);
-    font-size: 0.9em;
-    width: 60px;
-    text-align: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-top: 8px;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    #evaluation-score {
+        font-size: 0.85rem;
+        width: 50px;
+    }
 }
 
 /* Square Highlighting */
@@ -619,6 +641,8 @@ body.allow-scroll {
     flex-direction: column;
     overflow: hidden;
     height: 100%;
+    min-height: 350px;
+    max-height: calc(100vh - 150px);
 }
 
 #opening-info {

@@ -1,22 +1,56 @@
 /**
- * File: frontend/static/js/logic_game.js
- * Tập hợp các hàm xử lý logic bàn cờ và nước đi theo cấu trúc Class OOP.
+ * @fileoverview Logic core for WonderChess application.
+ * Handles chessboard initialization, move validation, AI interaction, and UI updates.
+ * Built with an Object-Oriented approach for maintainability and performance.
  */
 
+/**
+ * Class representing the User Interface components of the chess game.
+ * Manages evaluation bars, highlights, and visual arrows.
+ */
 class ChessUI {
+    /**
+     * Create a ChessUI instance and initialize internal DOM cache.
+     */
     constructor() {
+        /** @type {number} Timestamp of the last invalid FEN modal shown */
         this._lastInvalidFenModalAt = 0;
+        /** @type {Object<string, HTMLElement|null>} Internal DOM element cache */
+        this.dom = {
+            evalBar: null,
+            evalScore: null,
+            boardCont: null,
+            arrowCont: null,
+            openingName: null
+        };
     }
 
+    /**
+     * Ensures mandatory DOM elements are cached for performance.
+     * @private
+     */
+    _ensureDom() {
+        if (!this.dom.evalBar) this.dom.evalBar = document.getElementById(window.APP_CONST?.IDS?.EVAL_BAR || 'eval-white-advantage');
+        if (!this.dom.evalScore) this.dom.evalScore = document.getElementById(window.APP_CONST?.IDS?.EVAL_SCORE || 'evaluation-score');
+        if (!this.dom.boardCont) this.dom.boardCont = document.getElementById('myBoard');
+        if (!this.dom.openingName) this.dom.openingName = document.getElementById('opening-name');
+    }
+
+    /**
+     * Updates the visual evaluation bar based on the current engine score.
+     * @param {number|string} score - The numerical evaluation or mate string (e.g., "+0.5", "M2").
+     * @param {string} fen - Current FEN string.
+     * @param {Object} gameInstance - The chess.js instance.
+     */
     updateEvaluationBar(score, fen, gameInstance) {
         try {
-            const evalBar = document.getElementById(window.APP_CONST?.IDS?.EVAL_BAR || 'eval-white-advantage');
-            const evalScoreText = document.getElementById(window.APP_CONST?.IDS?.EVAL_SCORE || 'evaluation-score');
-            if (!evalBar && !evalScoreText) return;
+            this._ensureDom();
+            if (!this.dom.evalBar && !this.dom.evalScore) return;
 
             let formattedScore = "0.00";
             let percentAdvantage = 50;
 
+            // Check for game over states first
             if (gameInstance && typeof gameInstance.game_over === 'function' && gameInstance.game_over()) {
                 if (gameInstance.in_checkmate()) {
                     formattedScore = (gameInstance.turn() === 'b') ? "1-0" : "0-1";
@@ -25,7 +59,7 @@ class ChessUI {
                     formattedScore = "1/2-1/2";
                     percentAdvantage = 50;
                 }
-                this._applyEvalUI(evalBar, evalScoreText, percentAdvantage, formattedScore);
+                this._applyEvalUI(percentAdvantage, formattedScore);
                 return;
             }
 
@@ -49,45 +83,75 @@ class ChessUI {
                     }
                 }
             }
-            this._applyEvalUI(evalBar, evalScoreText, percentAdvantage, formattedScore);
+            this._applyEvalUI(percentAdvantage, formattedScore);
         } catch (err) {
             console.warn('UI Eval Error:', err);
         }
     }
 
-    _applyEvalUI(bar, text, percent, score) {
-        if (bar) bar.style.height = `${percent}%`;
-        if (text) text.textContent = score;
+    /**
+     * Applies the calculated evaluation to the DOM.
+     * @param {number} percent - Height percentage for the white advantage bar.
+     * @param {string} score - Formatted score text.
+     * @private
+     */
+    _applyEvalUI(percent, score) {
+        if (this.dom.evalBar) this.dom.evalBar.style.height = `${percent}%`;
+        if (this.dom.evalScore) this.dom.evalScore.textContent = score;
     }
 
+    /**
+     * Synchronizes the evaluation bar height with the chessboard's dynamic height.
+     */
     syncBoardAndEvalHeight() {
-        const boardEl = document.getElementById('myBoard');
+        this._ensureDom();
         const barCont = document.querySelector('.score-bar-container');
         const wrapper = document.querySelector('.score-alignment-wrapper');
-        const scoreEl = document.getElementById(window.APP_CONST?.IDS?.EVAL_SCORE || 'evaluation-score');
-        if (!boardEl || !barCont || !wrapper) return;
-        const h = boardEl.clientHeight;
-        wrapper.style.height = `${h}px`;
-        const scoreH = scoreEl ? scoreEl.offsetHeight : 0;
-        barCont.style.height = `${h - scoreH - 8}px`;
+        const scoreEl = this.dom.evalScore;
+        if (!this.dom.boardCont || !barCont || !wrapper) return;
+
+        wrapper.style.height = 'auto';
+        
+        setTimeout(() => {
+            const h = this.dom.boardCont.clientHeight;
+            if (h > 0) {
+                // Tùy biến độ dài theo chiều rộng màn hình
+                const isMobile = window.innerWidth < 768;
+                const extraH = isMobile ? 60 : 40; // Mobile cần dài hơn để đẩy điểm số xuống thấp hẳn
+                
+                wrapper.style.height = `${h + extraH}px`;
+                const scoreH = scoreEl ? scoreEl.offsetHeight : 0;
+                if (barCont) barCont.style.height = `${h + extraH - scoreH - 10}px`;
+            }
+        }, 0);
     }
 
+    /**
+     * Renders a SVG arrow on the board indicating the best move.
+     * @param {string|null} moveUci - Move in UCI format (e.g., "e2e4").
+     */
     renderBestMoveArrow(moveUci) {
-        const boardCont = document.getElementById('myBoard');
-        if (!boardCont) return;
-        let svg = document.getElementById('arrow-container');
-        if (!svg) {
-            svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            svg.id = "arrow-container";
-            boardCont.appendChild(svg);
-        } else svg.innerHTML = '';
+        this._ensureDom();
+        if (!this.dom.boardCont) return;
+        
+        if (!this.dom.arrowCont) this.dom.arrowCont = document.getElementById('arrow-container');
+        
+        if (!this.dom.arrowCont) {
+            this.dom.arrowCont = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            this.dom.arrowCont.id = "arrow-container";
+            this.dom.boardCont.appendChild(this.dom.arrowCont);
+        } else {
+            this.dom.arrowCont.innerHTML = '';
+        }
 
         const enabled = document.getElementById('best-move-switch')?.checked;
         if (!enabled || !moveUci || moveUci.length < 4) return;
 
-        svg.setAttribute("viewBox", `0 0 ${boardCont.offsetWidth} ${boardCont.offsetHeight}`);
+        const svg = this.dom.arrowCont;
+        svg.setAttribute("viewBox", `0 0 ${this.dom.boardCont.offsetWidth} ${this.dom.boardCont.offsetHeight}`);
+        
         const fromSq = moveUci.substring(0, 2), toSq = moveUci.substring(2, 4);
-        const fromEl = boardCont.querySelector(`.square-${fromSq}`), toEl = boardCont.querySelector(`.square-${toSq}`);
+        const fromEl = this.dom.boardCont.querySelector(`.square-${fromSq}`), toEl = this.dom.boardCont.querySelector(`.square-${toSq}`);
         if (!fromEl || !toEl) return;
 
         const start = { x: fromEl.offsetLeft + fromEl.offsetWidth / 2, y: fromEl.offsetTop + fromEl.offsetHeight / 2 };
@@ -114,20 +178,41 @@ class ChessUI {
         svg.appendChild(line);
     }
 
+    /**
+     * Updates all square highlights (checks, last moves, selections).
+     * @param {Object} gameInstance - The chess.js instance.
+     * @param {Array} history - The app's moveHistory array.
+     * @param {number} curIdx - Current index in the moveHistory.
+     */
     updateAllHighlights(gameInstance, history, curIdx) {
-        document.querySelectorAll('#myBoard .square-55d63').forEach(sq => sq.classList.remove('square-selected', 'highlight-move', 'highlight-check'));
+        this._ensureDom();
+        if (!this.dom.boardCont) return;
+
+        this.dom.boardCont.querySelectorAll('.square-55d63').forEach(sq => {
+            sq.classList.remove('square-selected', 'highlight-move', 'highlight-check');
+        });
+
         if (gameInstance.in_check()) {
             const king = this._findKing(gameInstance.turn(), gameInstance);
-            document.querySelector(`#myBoard .square-${king}`)?.classList.add('highlight-check');
+            this.dom.boardCont.querySelector(`.square-${king}`)?.classList.add('highlight-check');
         }
-        const moves = gameInstance.history({verbose: true});
-        if (moves.length > 0 && curIdx === history.length - 1) {
-            const last = moves[moves.length - 1];
-            document.querySelector(`#myBoard .square-${last.from}`)?.classList.add('square-selected');
-            document.querySelector(`#myBoard .square-${last.to}`)?.classList.add('square-selected');
+
+        const moveEntry = history[curIdx];
+        if (moveEntry && moveEntry.uci) {
+            const from = moveEntry.uci.substring(0, 2);
+            const to = moveEntry.uci.substring(2, 4);
+            this.dom.boardCont.querySelector(`.square-${from}`)?.classList.add('square-selected');
+            this.dom.boardCont.querySelector(`.square-${to}`)?.classList.add('square-selected');
         }
     }
 
+    /**
+     * Utility to find the king's square on the board.
+     * @param {'w'|'b'} color - Color of the king to find.
+     * @param {Object} game - The chess.js instance.
+     * @returns {string|null} The square identifier (e.g., "e1") or null.
+     * @private
+     */
     _findKing(color, game) {
         const cols = ['a','b','c','d','e','f','g','h'], rows = ['1','2','3','4','5','6','7','8'];
         for (const c of cols) for (const r of rows) {
@@ -138,17 +223,52 @@ class ChessUI {
     }
 }
 
+/**
+ * Class for detecting and managing chess openings.
+ */
 class ChessOpening {
+    /**
+     * Create a ChessOpening instance.
+     */
+    constructor() {
+        /** @type {Array|null} Pre-processed opening dictionary */
+        this.preparedData = null;
+    }
+
+    /**
+     * Pre-processes opening data for high-performance matching.
+     * @returns {Array} List of processed opening objects.
+     * @private
+     */
+    _prepareDictionary() {
+        if (this.preparedData) return this.preparedData;
+        
+        let raw = null;
+        try {
+            if (typeof OPENINGS_DATA !== 'undefined') raw = OPENINGS_DATA;
+        } catch(e) {}
+
+        if (!raw) return [];
+        
+        this.preparedData = raw.map(op => ({
+            ...op,
+            moveArray: op.moves.replace(/\s+/g, ' ').trim().replace(/\d+\.\s+/g, '').replace(/\d+\.\.\.\s+/g, '').split(' ')
+        }));
+        return this.preparedData;
+    }
+
+    /**
+     * Detects opening from move history and updates the history metadata.
+     * @param {Array} history - The app's moveHistory array.
+     * @param {number} curIdx - Index to detect for.
+     * @returns {Object} Result containing opening name and book status.
+     */
     detectAndUpdate(history, curIdx) {
         if (!history[curIdx]) return { name: "Chưa bắt đầu", isBookMove: false };
 
-        // Kiểm tra biến OPENINGS_DATA từ phạm vi toàn cục thay vì qua window
-        let dictionary = null;
-        try {
-            if (typeof OPENINGS_DATA !== 'undefined') dictionary = OPENINGS_DATA;
-        } catch(e) {}
-
+        const dictionary = this._prepareDictionary();
         const currentMoves = history.slice(1, curIdx + 1).map(h => h.san);
+        
         if (currentMoves.length === 0) {
             history[curIdx].opening = "Chưa bắt đầu";
             history[curIdx].isBookMove = false;
@@ -156,26 +276,21 @@ class ChessOpening {
         }
 
         let best = null, maxLen = -1;
-        if (dictionary) {
-            for (const op of dictionary) {
-                const opMoves = op.moves.replace(/\s+/g, ' ').trim().replace(/\d+\.\s+/g, '').replace(/\d+\.\.\.\s+/g, '').split(' ').filter(m => m.length > 0);
-                
-                let match = true;
-                if (opMoves.length > currentMoves.length) {
+        for (const op of dictionary) {
+            const opMoves = op.moveArray;
+            if (opMoves.length > currentMoves.length) continue;
+            
+            let match = true;
+            for (let i = 0; i < opMoves.length; i++) {
+                if (opMoves[i] !== currentMoves[i]) {
                     match = false;
-                } else {
-                    for (let i = 0; i < opMoves.length; i++) {
-                        if (opMoves[i] !== currentMoves[i]) {
-                            match = false;
-                            break;
-                        }
-                    }
+                    break;
                 }
-                
-                if (match && opMoves.length > maxLen) {
-                    maxLen = opMoves.length;
-                    best = op;
-                }
+            }
+            
+            if (match && opMoves.length > maxLen) {
+                maxLen = opMoves.length;
+                best = op;
             }
         }
 
@@ -189,7 +304,26 @@ class ChessOpening {
     }
 }
 
+/**
+ * Class for interacting with Chess Engines (Stockfish WASM / API).
+ */
 class ChessEngine {
+    /**
+     * Create a ChessEngine instance.
+     */
+    constructor() {
+        /** @type {Map<string|number, number>} Cache for parsed scores */
+        this.scoreCache = new Map();
+    }
+
+    /**
+     * Requests the best move for a given FEN.
+     * @param {string} fen - Current board FEN.
+     * @param {number} level - Bot skill level (1-20).
+     * @param {number} time - Calculation time limit.
+     * @returns {Promise<Object|null>} Best move data or null.
+     * @async
+     */
     async getBestMove(fen, level, time) {
         const type = typeof selectedBotEngine !== 'undefined' ? selectedBotEngine : 'stockfish';
         if (type === 'stockfish' && window.SF_MANAGER) return await window.SF_MANAGER.getBestMove(fen, level, 500);
@@ -201,6 +335,12 @@ class ChessEngine {
         return d.success ? { move: d.move_uci, score: d.evaluation, fen: d.fen } : null;
     }
 
+    /**
+     * Requests a deep position evaluation from the server.
+     * @param {string} fen - FEN to evaluate.
+     * @returns {Promise<Object>} API response JSON.
+     * @async
+     */
     async getDeepEval(fen) {
         const resp = await fetch(window.APP_CONST?.API?.EVALUATE || '/api/game/evaluate', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -209,22 +349,59 @@ class ChessEngine {
         return await resp.json();
     }
 
+    /**
+     * Safely parses engine score strings into numeric values.
+     * @param {string|number} s - Input score.
+     * @returns {number} Parsed numerical value.
+     */
     parseScore(s) {
         if (s === null || s === undefined) return 0;
+        if (this.scoreCache.has(s)) return this.scoreCache.get(s);
+
         const scoreStr = String(s);
-        if (scoreStr.includes('M')) return scoreStr.includes('+') ? 100 : -100;
-        return parseFloat(scoreStr) || 0;
+        let val = 0;
+        if (scoreStr.includes('M')) val = scoreStr.includes('+') ? 100 : -100;
+        else val = parseFloat(scoreStr) || 0;
+
+        this.scoreCache.set(s, val);
+        return val;
     }
 }
 
+/**
+ * Main Orchestrator Class for WonderChess.
+ * Connects UI, Opening, and Engine components.
+ */
 class ChessCore {
+    /**
+     * Initialize ChessCore and attach to global game state.
+     */
     constructor() {
         this.ui = new ChessUI();
         this.engine = new ChessEngine();
         this.opening = new ChessOpening();
         this._initGlobalListeners();
+        this.dom = {
+            pgnList: null,
+            pgnCont: null,
+            notateSwitch: null
+        };
     }
 
+    /**
+     * Ensures mandatory DOM elements for the core loop are cached.
+     * @private
+     */
+    _ensureDom() {
+        if (!this.dom.pgnList) this.dom.pgnList = document.getElementById('pgn-history-list-vertical');
+        if (!this.dom.pgnCont) this.dom.pgnCont = document.getElementById('pgn-history-vertical');
+        if (!this.dom.notateSwitch) this.dom.notateSwitch = document.getElementById('move-notate-switch');
+    }
+
+    /**
+     * Initializes a new chessboard or resets current one.
+     * @param {'white'|'black'} [orientation='white'] - Board orientation.
+     */
     initBoard(orientation = 'white') {
         if (typeof board !== 'undefined' && board) try { board.destroy(); } catch(e){}
         game = new Chess(window.APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -242,6 +419,13 @@ class ChessCore {
         if (document.getElementById('flip-board-switch')?.checked) board.orientation('black');
     }
 
+    /**
+     * Event handler for piece drop on the board.
+     * @param {string} source - Start square.
+     * @param {string} target - End square.
+     * @returns {string|undefined} 'snapback' if move is invalid.
+     * @async
+     */
     async onDrop(source, target) {
         if (playerColor !== null && game.turn() !== playerColor) return 'snapback';
         let uci = source + target;
@@ -251,6 +435,11 @@ class ChessCore {
         await this.handleLocalMove(uci);
     }
 
+    /**
+     * Processes a move locally, updating state and UI.
+     * @param {string} uci - Move in UCI format.
+     * @async
+     */
     async handleLocalMove(uci) {
         if (currentFenIndex < moveHistory.length - 1) moveHistory = moveHistory.slice(0, currentFenIndex + 1);
         const san = game.history().pop();
@@ -263,6 +452,10 @@ class ChessCore {
         await this.onTurnEnd();
     }
 
+    /**
+     * Logic executed after every turn (checking game over, starting engine).
+     * @async
+     */
     async onTurnEnd() {
         this.ui.updateAllHighlights(game, moveHistory, currentFenIndex);
         this.updateUI();
@@ -296,6 +489,10 @@ class ChessCore {
         }
     }
 
+    /**
+     * Triggers AI calculation and move execution.
+     * @async
+     */
     async botGo() {
         isPlayerTurn = false;
         this.ui.renderBestMoveArrow(null);
@@ -317,34 +514,49 @@ class ChessCore {
         isPlayerTurn = true;
     }
 
+    /**
+     * Synchronizes all UI components with the current game state.
+     */
     updateUI() {
         this._syncButtons();
         const op = this.opening.detectAndUpdate(moveHistory, currentFenIndex);
-        const el = document.getElementById('opening-name');
-        if (el) el.textContent = op.name;
+        if (this.ui.dom.openingName) this.ui.dom.openingName.textContent = op.name;
         this._renderPGN();
         this.ui.renderBestMoveArrow(moveHistory[currentFenIndex]?.bestMove || null);
     }
 
+    /**
+     * Renders the vertical PGN history table.
+     * @private
+     */
     _renderPGN() {
-        const list = document.getElementById('pgn-history-list-vertical');
-        if (!list) return;
-        let html = '';
+        this._ensureDom();
+        if (!this.dom.pgnList) return;
+        
+        const htmlParts = [];
         for (let i = 1; i < moveHistory.length; i += 2) {
             const w = moveHistory[i], b = moveHistory[i + 1];
             const wH = (i === currentFenIndex) ? 'current-move-highlight' : '';
             const bH = (b && (i+1) === currentFenIndex) ? 'current-move-highlight' : '';
-            html += `<tr><td>${Math.floor((i-1)/2)+1}.</td>
-                <td class="move-cell ${wH}" data-index="${i}">${w.san} ${this._annot(w, i)}</td>
-                <td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${b ? this._annot(b, i+1) : ''}</td></tr>`;
+            
+            htmlParts.push(`<tr><td>${Math.floor((i-1)/2)+1}.</td>`);
+            htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${this._annot(w, i)}</td>`);
+            htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${b ? this._annot(b, i+1) : ''}</td></tr>`);
         }
-        list.innerHTML = html;
-        const c = document.getElementById('pgn-history-vertical');
-        if (c) c.scrollTop = c.scrollHeight;
+        
+        this.dom.pgnList.innerHTML = htmlParts.join('');
+        if (this.dom.pgnCont) this.dom.pgnCont.scrollTop = this.dom.pgnCont.scrollHeight;
     }
 
+    /**
+     * Generates annotation icons based on move quality.
+     * @param {Object} m - The move history item.
+     * @param {number} idx - Index of the move.
+     * @returns {string} HTML string containing icons.
+     * @private
+     */
     _annot(m, idx) {
-        if (!document.getElementById('move-notate-switch')?.checked) return '';
+        if (!this.dom.notateSwitch?.checked) return '';
         if (m.isBookMove) return `<span class="move-annotation" title="Book Move"><img src="static/img/icon/book.svg"></span>`;
         if (m.score === null || m.score === undefined || idx === 0 || !moveHistory[idx-1]) return '';
 
@@ -358,10 +570,7 @@ class ChessCore {
         if (isBest) return `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
         if (diff > 0.1) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
         if (diff > -0.2) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
-        
-        // Missed Win
         if (Math.abs(pre) > 2.5 && Math.abs(cur) < 0.5) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
-
         if (diff < -1.5) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
         if (diff < -0.7) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
         if (diff < -0.3) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
@@ -369,6 +578,10 @@ class ChessCore {
         return '';
     }
 
+    /**
+     * Initializes global event listeners (UI switches, keys).
+     * @private
+     */
     _initGlobalListeners() {
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('flip-board-switch')?.addEventListener('change', () => { board?.flip(); this.updateUI(); });
@@ -385,13 +598,28 @@ class ChessCore {
         });
     }
 
+    /**
+     * Handles dynamic board resizing on window change.
+     * @private
+     */
     _setupResize() {
         if (!window._boardResizeHandler) {
-            window._boardResizeHandler = () => { board?.resize(); this.ui.syncBoardAndEvalHeight(); this.updateUI(); };
+            window._boardResizeHandler = () => {
+                // Thêm một khoảng trễ nhỏ để đảm bảo Layout đã ổn định
+                setTimeout(() => {
+                    board?.resize();
+                    this.ui.syncBoardAndEvalHeight();
+                    this.updateUI();
+                }, 100);
+            };
             window.addEventListener('resize', window._boardResizeHandler);
         }
     }
 
+    /**
+     * Syncs navigation button states (enabled/disabled).
+     * @private
+     */
     _syncButtons() {
         const isF = currentFenIndex <= 0, isL = currentFenIndex >= moveHistory.length - 1;
         try {
@@ -400,22 +628,43 @@ class ChessCore {
         } catch (e) {}
     }
 
+    /**
+     * Displays a Modal when game is over.
+     * @private
+     */
     _showGameOver() {
         let t = "Ván đấu kết thúc", b = game.in_checkmate() ? `Chiếu hết! ${game.turn() === 'b' ? 'Trắng' : 'Đen'} thắng.` : "Hòa!";
         setTimeout(() => window.showGameOverModal?.(t, b), 200);
     }
 
+    /**
+     * Chessboard event for move start.
+     * @param {string} source - Square clicked.
+     * @param {string} piece - Piece identifier.
+     * @returns {boolean} True if drag is allowed.
+     */
     onDragStart(source, piece) {
         if (!isPlayerTurn || game.turn() !== piece[0]) return false;
         this.ui.updateAllHighlights(game, moveHistory, currentFenIndex);
-        game.moves({square: source, verbose: true}).forEach(m => document.querySelector(`#myBoard .square-${m.to}`)?.classList.add('highlight-move'));
+        game.moves({square: source, verbose: true}).forEach(m => {
+            const sq = this.ui.dom.boardCont?.querySelector(`.square-${m.to}`);
+            if (sq) sq.classList.add('highlight-move');
+        });
         return true;
     }
 
+    /**
+     * Board sync after snap animation.
+     */
     onSnapEnd() { if (board && board.fen() !== game.fen()) board.position(game.fen(), false); }
 }
 
+// Global Core Initialization
 const core = new ChessCore();
+
+/**
+ * Public interface for main.js communication.
+ */
 window.LOGIC_GAME = {
     initChessboard: (o) => core.initBoard(o),
     updateEvaluationBar: (s, f) => core.ui.updateEvaluationBar(s, f, game),
