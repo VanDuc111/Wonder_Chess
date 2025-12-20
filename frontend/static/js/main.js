@@ -118,6 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // 3. Xử lý chuyển đổi chế độ
             if (selectedMode === 'analyze') {
                 setAnalyzeMode();
+            } else if (selectedMode === 'play') {
+                // Chế độ 'play' được xử lý bởi setupModalBehavior để hiện Modal
+                collapseNavbar();
             }
             // =============================
         });
@@ -149,6 +152,25 @@ document.addEventListener('DOMContentLoaded', () => {
         // 5. Cập nhật UI lần cuối để lấy điểm 0.00
         updateUI(STARTING_FEN);
         handleScoreUpdate("0.00");
+
+        // 6. Đóng Navbar (Nếu đang ở Mobile/Tablet)
+        collapseNavbar();
+    }
+
+    /**
+     * Tự động đóng Navbar khi nhấn vào Menu trên Mobile/Tablet
+     */
+    function collapseNavbar() {
+        const navbarCollapse = document.getElementById('navbarNav');
+        if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+            const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+            if (bsCollapse) {
+                bsCollapse.hide();
+            } else {
+                // Fallback nếu instance chưa tồn tại
+                new bootstrap.Collapse(navbarCollapse).hide();
+            }
+        }
     }
 
     // Gắn sự kiện cho nút "Chơi với Bot" trên Navbar
