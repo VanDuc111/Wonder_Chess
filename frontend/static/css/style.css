@@ -368,7 +368,9 @@ body.allow-scroll {
 /* 5. CHESSBOARD & EVALUATION BAR            */
 /* ========================================= */
 #game-view-container {
-    align-items: stretch;
+    display: flex;
+    justify-content: center;
+    align-items: center !important; /* Căn giữa đối xứng theo trục dọc */
     transform: rotate(0deg);
     transition: transform 0.5s ease-in-out;
     margin-top: auto;
@@ -479,10 +481,9 @@ body.allow-scroll {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: var(--spacing-sm);
+    margin: 0 25px 0 10px; /* Loại bỏ margin-top, dùng margin lề trái/phải */
     transform-origin: center center;
-    margin-right: 25px;
-    margin-left: 10px;
+    transition: height 0.3s ease-out;
 }
 
 @media (min-width: 768px) {
@@ -1940,6 +1941,7 @@ body.allow-scroll {
     pointer-events: none;
     z-index: 100;
 }
+
 /* ========================================= */
 /* 12. UPLOAD DROP ZONE & PREVIEW            */
 /* ========================================= */

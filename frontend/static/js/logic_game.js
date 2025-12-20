@@ -30,6 +30,13 @@ class ChessUI {
      * @private
      */
     _ensureDom() {
+        // Kiểm tra tính hợp lệ của Cache (tránh trỏ vào các Element đã bị xóa khỏi DOM)
+        for (let key in this.dom) {
+            if (this.dom[key] && !document.contains(this.dom[key])) {
+                this.dom[key] = null;
+            }
+        }
+
         if (!this.dom.evalBar) this.dom.evalBar = document.getElementById(window.APP_CONST?.IDS?.EVAL_BAR || 'eval-white-advantage');
         if (!this.dom.evalScore) this.dom.evalScore = document.getElementById(window.APP_CONST?.IDS?.EVAL_SCORE || 'evaluation-score');
         if (!this.dom.boardCont) this.dom.boardCont = document.getElementById('myBoard');
@@ -108,20 +115,22 @@ class ChessUI {
         const barCont = document.querySelector('.score-bar-container');
         const wrapper = document.querySelector('.score-alignment-wrapper');
         const scoreEl = this.dom.evalScore;
-        if (!this.dom.boardCont || !barCont || !wrapper) return;
+        const boardArea = document.querySelector('.chess-board-area');
+        if (!boardArea || !barCont || !wrapper) return;
 
         wrapper.style.height = 'auto';
         
         setTimeout(() => {
-            const h = this.dom.boardCont.clientHeight;
+            const h = boardArea.clientHeight;
             if (h > 0) {
-                // Tùy biến độ dài theo chiều rộng màn hình
                 const isMobile = window.innerWidth < 768;
-                const extraH = isMobile ? 60 : 40; // Mobile cần dài hơn để đẩy điểm số xuống thấp hẳn
+                // Thu hẹp extraH để căn giữa đối xứng tốt hơn
+                const extraH = isMobile ? 15 : 0; 
                 
                 wrapper.style.height = `${h + extraH}px`;
                 const scoreH = scoreEl ? scoreEl.offsetHeight : 0;
-                if (barCont) barCont.style.height = `${h + extraH - scoreH - 10}px`;
+                // Thu hẹp lề dưới của thanh bar để nó không bị "đụng trần đụng sàn" quá sát
+                if (barCont) barCont.style.height = `${h + extraH - scoreH - 15}px`;
             }
         }, 0);
     }
@@ -134,11 +143,21 @@ class ChessUI {
         this._ensureDom();
         if (!this.dom.boardCont) return;
         
+        // Kiểm tra xem mũi tên cũ có còn trong DOM không (tránh trường hợp bị Chessboard() xóa mất)
+        if (this.dom.arrowCont && !document.contains(this.dom.arrowCont)) {
+            this.dom.arrowCont = null;
+        }
+
         if (!this.dom.arrowCont) this.dom.arrowCont = document.getElementById('arrow-container');
         
         if (!this.dom.arrowCont) {
             this.dom.arrowCont = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             this.dom.arrowCont.id = "arrow-container";
+            
+            Object.assign(this.dom.arrowCont.style, {
+                position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
+                pointerEvents: 'none', zIndex: '100'
+            });
             this.dom.boardCont.appendChild(this.dom.arrowCont);
         } else {
             this.dom.arrowCont.innerHTML = '';
@@ -147,35 +166,47 @@ class ChessUI {
         const enabled = document.getElementById('best-move-switch')?.checked;
         if (!enabled || !moveUci || moveUci.length < 4) return;
 
-        const svg = this.dom.arrowCont;
-        svg.setAttribute("viewBox", `0 0 ${this.dom.boardCont.offsetWidth} ${this.dom.boardCont.offsetHeight}`);
+        const boardRect = this.dom.boardCont.getBoundingClientRect();
+        this.dom.arrowCont.setAttribute("viewBox", `0 0 ${boardRect.width} ${boardRect.height}`);
         
         const fromSq = moveUci.substring(0, 2), toSq = moveUci.substring(2, 4);
         const fromEl = this.dom.boardCont.querySelector(`.square-${fromSq}`), toEl = this.dom.boardCont.querySelector(`.square-${toSq}`);
         if (!fromEl || !toEl) return;
 
-        const start = { x: fromEl.offsetLeft + fromEl.offsetWidth / 2, y: fromEl.offsetTop + fromEl.offsetHeight / 2 };
-        const end = { x: toEl.offsetLeft + toEl.offsetWidth / 2, y: toEl.offsetTop + toEl.offsetHeight / 2 };
+        const fromRect = fromEl.getBoundingClientRect();
+        const toRect = toEl.getBoundingClientRect();
+
+        // Tọa độ tương đối so với container của bàn cờ
+        const start = { 
+            x: fromRect.left - boardRect.left + fromRect.width / 2, 
+            y: fromRect.top - boardRect.top + fromRect.height / 2 
+        };
+        const end = { 
+            x: toRect.left - boardRect.left + toRect.width / 2, 
+            y: toRect.top - boardRect.top + toRect.height / 2 
+        };
+
         const dx = end.x - start.x, dy = end.y - start.y, len = Math.sqrt(dx * dx + dy * dy);
-        const ratio = (len - 10) / len;
+        const ratio = (len - 12) / len;
 
         const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
         const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
         marker.id = "arrowhead";
-        marker.setAttribute("markerWidth", "6"); marker.setAttribute("markerHeight", "5");
-        marker.setAttribute("refX", "5"); marker.setAttribute("refY", "2.5");
+        marker.setAttribute("markerWidth", "4"); marker.setAttribute("markerHeight", "4");
+        marker.setAttribute("refX", "3.5"); marker.setAttribute("refY", "2");
         marker.setAttribute("orient", "auto");
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        poly.setAttribute("points", "0 0, 6 2.5, 0 5");
+        poly.setAttribute("points", "0 0, 4 2, 0 4");
         poly.setAttribute("fill", "rgba(76, 175, 80, 0.9)");
-        marker.appendChild(poly); defs.appendChild(marker); svg.appendChild(defs);
+        marker.appendChild(poly); defs.appendChild(marker); this.dom.arrowCont.appendChild(defs);
 
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
         line.setAttribute("x1", start.x); line.setAttribute("y1", start.y);
         line.setAttribute("x2", start.x + dx * ratio); line.setAttribute("y2", start.y + dy * ratio);
-        line.setAttribute("stroke", "rgba(76, 175, 80, 0.6)"); line.setAttribute("stroke-width", "6");
+        line.setAttribute("stroke", "rgba(76, 175, 80, 0.6)"); 
+        line.setAttribute("stroke-width", "6"); 
         line.setAttribute("marker-end", "url(#arrowhead)");
-        svg.appendChild(line);
+        this.dom.arrowCont.appendChild(line);
     }
 
     /**
@@ -417,6 +448,9 @@ class ChessCore {
         this._setupResize();
         this.updateUI();
         if (document.getElementById('flip-board-switch')?.checked) board.orientation('black');
+        
+        // Kích hoạt phân tích cho nước đi đầu tiên
+        this.onTurnEnd();
     }
 
     /**
