@@ -543,6 +543,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     user_question: message,
                     fen: currentFen,
+                    current_score: moveHistory[currentFenIndex]?.score || "0.00",
+                    prev_score: moveHistory[currentFenIndex - 1]?.score || "0.00",
+                    opening_name: document.getElementById('opening-name')?.textContent || "N/A",
+                    move_count: moveHistory.length - 1,
                     pgn: pgnHistory,
                     last_move_san: lastMoveSan,
                     is_first_message: isFirstUserMessage

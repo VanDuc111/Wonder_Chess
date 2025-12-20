@@ -41,19 +41,23 @@ def chat_analysis() -> Response:
     # 3. LUÔN LUÔN lấy dữ liệu engine (cho ngữ cảnh)
     engine_results = {'search_score': '0', 'best_move': 'N/A', 'pv': 'N/A'}
     engine_error_message = None
+    
+    # Ưu tiên lấy điểm số từ frontend để đồng bộ tuyệt đối
+    frontend_score = data.get('current_score')
+    move_count = data.get('move_count', 0)
+    
     if fen:
         try:
             board = chess.Board(fen)
             if not board.is_valid():
                 engine_error_message = "Invalid FEN: Board state is illegal.."
             else:
-                # Ưu tiên gọi Stockfish để Alice có dữ liệu phân tích chuẩn nhất (GM level)
-                engine_results_from_sf = get_stockfish_move(fen, skill_level=16, time_limit=0.5)
+                # Đồng bộ trình độ Engine với hệ thống Evaluation Bar (Skill 20)
+                engine_results_from_sf = get_stockfish_move(fen, skill_level=20, time_limit=0.5)
                 
                 if engine_results_from_sf.get('success'):
                     engine_results.update(engine_results_from_sf)
                 else:
-                    # Nếu Stockfish lỗi (chưa cài trên server), dùng tạm Minimax
                     engine_results_from_find = find_best_move(fen)
                     engine_results.update(engine_results_from_find)
 
@@ -66,15 +70,25 @@ def chat_analysis() -> Response:
         engine_error_message = "FEN is empty."
 
     # 4.Định dạng điểm số
-    raw_score = engine_results.get('search_score', '0')
+    frontend_prev_score = data.get('prev_score', '0.00')
+    opening_name = data.get('opening_name', 'N/A')
+    raw_score = frontend_score if frontend_score is not None else engine_results.get('search_score', '0')
     formatted_score = raw_score
 
-    if raw_score != 'N/A' and 'M' not in str(raw_score):
-        try:
-            float_score = float(raw_score)
-            formatted_score = f"{float_score:+.2f}"
-        except:
-            formatted_score = raw_score
+    # Phân tích xu hướng (để Alice biết nước đi tốt hay xấu dựa trên chênh lệch)
+    try:
+        def parse(s):
+            s = str(s)
+            if 'M' in s: return 100 if '+' in s else -100
+            return float(s)
+        
+        cur_v = parse(formatted_score)
+        prev_v = parse(frontend_prev_score)
+        board_now = chess.Board(fen)
+        was_white_move = (board_now.turn == chess.BLACK) 
+        diff = (cur_v - prev_v) if was_white_move else (prev_v - cur_v)
+    except:
+        diff = 0
 
     # 5. Chuyển đổi nước đi tốt nhất sang SAN (UCI -> SAN)
     best_move_san = "N/A"
@@ -85,63 +99,37 @@ def chat_analysis() -> Response:
             move = board.parse_uci(best_move_uci)
             best_move_san = board.san(move)
         except Exception as e:
-            print(f"SAN Conversion Error: {e}")
             best_move_san = best_move_uci
 
-    # 6. Xây dựng Prompt
-    if engine_error_message:
-        error_instruction = f"""
-            ⚠️ **CẢNH BÁO TỪ HỆ THỐNG:** Hiện tại Engine đang gặp lỗi: "{engine_error_message}".
-            -> **NHIỆM VỤ CỦA BẠN:** Hãy thông báo khéo léo cho người dùng biết rằng hình ảnh bàn cờ có thể bị mờ, thiếu quân hoặc sai luật. Khuyên họ kiểm tra lại hoặc chụp ảnh khác.
-            -> Đừng cố phân tích sâu thế cờ nếu nó bị lỗi, hãy trả lời dựa trên kiến thức chung nếu có thể.
-            """
-    else:
-        # Nếu không lỗi, để trống (hoặc có thể thêm hướng dẫn phân tích sâu nếu muốn)
-        error_instruction = "Dữ liệu Engine hợp lệ. Hãy phân tích chi tiết dựa trên Điểm số và Nước đi tốt nhất."
+    # Chỉ hiển thị khai cuộc nếu trong 10 nước đi đầu (5 full moves)
+    opening_context = f"Dựa trên khai cuộc **{opening_name}**, " if (move_count <= 10 and opening_name != "N/A") else ""
 
+    # 6. Xây dựng Prompt
     prompt_context = f"""
-    Bạn là **Alice**, một **Trợ lý Cờ vua Cấp độ Đại kiện tướng (GM)**, với giọng điệu phân tích sắc sảo, chuyên nghiệp và "người" hơn.
+    Bạn là **Alice**, một **Trợ lý Cờ vua Đại kiện tướng (GM)** sắc sảo.
     {greeting_instruction}
 
-    **HƯỚNG DẪN PHÂN TÍCH (RẤT QUAN TRỌNG):**
+    **QUY TẮC CỐT LÕI (BẮT BUỘC):**
+    1.  **IN ĐẬM NƯỚC ĐI:** Luôn viết hoa và **in đậm** mọi nước đi (ví dụ: **e4**, **Nxh6**, **{last_move_san}**, **{best_move_san}**).
+    2.  **NGẮN GỌN (BREVITY):** Chỉ trả lời trong khoảng **4-5 câu**. Giải thích nhanh tại sao nước đi hiện tại được đánh giá như vậy.
+    3.  **KHAI CUỘC:** {opening_context}Hãy tập trung vào chiến thuật hiện tại thay vì lý thuyết khai cuộc nếu ván đấu đã trôi qua giai đoạn đầu.
+    4.  **ĐÁNH GIÁ NƯỚC ĐI:** Dựa vào chênh lệch `{diff:+.2f}`, gọi **{last_move_san}** là:
+        - **Thiên tài!!** (>1.5), **Tuyệt vời!** (>0.8), **Tốt nhất** (trùng **{best_move_san}**), **Tốt** (>0.1), **Ổn định** (>-0.2), **Bỏ lỡ thắng** (abs thắng->hòa), **Sai lầm nghiêm trọng??** (<-1.5), **Sai lầm?** (<-0.7), **Thiếu chính xác** (<-0.3).
 
-    1.  **PHÂN TÍCH HAI CHIỀU (TỐT & XẤU):**
-        * **Nếu điểm số rất TỆ** (ví dụ: `{formatted_score}` nhỏ hơn -1.5 hoặc lớn hơn 1.5): Hãy gọi nước đi trước đó (`{last_move_san}`) là một **"sai lầm nghiêm trọng" (blunder)**.
-        * **Nếu điểm số rất TỐT**: Hãy gọi nước đi trước đó (`{last_move_san}`) là một **"nước đi tuyệt vời" (brilliant move)** hoặc **"sắc sảo" (sharp move)**.
-        * **Nếu điểm số CÂN BẰNG**: Hãy gọi đó là một "nước đi phát triển tốt" hoặc "hợp lý".
-
-    2.  **KHÔNG DẬP KHUÔN:** **Tuyệt đối không** được nói câu "điểm -2.76 tương đương gần 3 Tốt". Hãy diễn giải ý nghĩa của điểm số (ví dụ: "Đen đang có lợi thế thắng rõ rệt.").
-
-    3.  **DÙNG ĐÚNG KÝ HIỆU (SAN):** Luôn sử dụng Ký hiệu Đại số Tiêu chuẩn (SAN) (ví dụ: **Nxh6**), KHÔNG dùng 'g8h6'.
-
-    **NGỮ CẢNH (Context) CHO BẠN:**
-    (AI sẽ tự quyết định có dùng cái này hay không dựa trên HƯỚNG DẪN TRẢ LỜI)
-    - Nước đi VỪA MỚI XẢY RA (SAN): **{last_move_san}**
-    - Vị trí (FEN) (SAU nước đi đó): {fen}
-    - Đánh giá thế cờ (Score): **{formatted_score}**
-    - Nước đi TỐT NHẤT tiếp theo (SAN): **{best_move_san}**
-    - Chuỗi nước đi chính (PV - có thể là UCI): {engine_results.get('pv', 'N/A')}
-    {error_instruction}
-
-    ---
-    **HƯỚG DẪN TRẢ LỜI:**
-
+    **HƯỚNG DẪN TRẢ LỜI:**
     Đọc kỹ "{user_question}":
+    - Nếu là kiến thức chung (ví dụ: "Ruy Lopez là gì?", "xin chào"): Trả lời ngắn gọn.
+    - Nếu hỏi về bàn cờ:
+        - Phân tích nước **{last_move_san}** (kèm nhãn đánh giá và IN ĐẬM).
+        - Đề cập ưu thế: **{formatted_score}** (Cân bằng/Đen ưu/Trắng ưu).
+        - Luôn gợi ý nước đi tốt nhất: **{best_move_san}**.
 
-    * **Nếu là KIẾN THỨC CHUNG** (ví dụ: "Ruy Lopez là gì?", "xin chào"):
-        Trả lời câu hỏi đó mà **KHÔNG** đề cập đến "NGỮ CẢNH" (FEN, Score, Best Move).
-
-    * **Nếu là PHÂN TÍCH BÀN CỜ** (ví dụ: "Nước nào tốt nhất?", "trắng đi gì tiếp?", "Ai đang thắng?"):
-        Sử dụng "NGỮ CẢNH" ở trên để giải thích, tuân thủ các "HƯỚNG DẪN PHÂN TÍCH".
-
-    * **TRƯỜNG HỢP ĐẶC BIỆT: Nếu hỏi về "điểm số"** (ví dụ: "giải thích điểm số?"):
-        Người dùng đã thấy con số {formatted_score}. ĐỪNG lặp lại nó.
-        Hãy tuân thủ các bước sau:
-        1. Nhìn vào "Nước đi VỪA MỚI XẢY RA ({last_move_san})".
-        2. Giải thích **tại sao** nó dẫn đến điểm số {formatted_score} (gọi nó là 'sai lầm' hoặc 'nước đi tuyệt vời').
-        3. Đề cập đến **"Nước đi TỐT NHẤT tiếp theo ({best_move_san})"**.
-    ---
-    **Câu hỏi của người dùng:** "{user_question}"
+    **THÔNG TIN:**
+    - Vừa đi: **{last_move_san}** (Diff: {diff:+.2f})
+    - Điểm: **{formatted_score}** | Tốt nhất: **{best_move_san}**
+    - Biến hóa: {engine_results.get('pv', 'N/A')}
+    
+    Câu hỏi: "{user_question}"
     """
 
     # 7. Gọi Gemini và stream phản hồi
