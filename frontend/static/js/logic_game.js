@@ -411,6 +411,7 @@ class ChessCore {
         this.ui = new ChessUI();
         this.engine = new ChessEngine();
         this.opening = new ChessOpening();
+        this.sourceSquare = null;
         this._initGlobalListeners();
         this.dom = {
             pgnList: null,
@@ -451,6 +452,65 @@ class ChessCore {
         
         // Kích hoạt phân tích cho nước đi đầu tiên
         this.onTurnEnd();
+
+        // Gắn sự kiện click vào các ô cờ (Dùng Event Delegation để hiệu quả)
+        const boardEl = $('#myBoard');
+        boardEl.off('click', '.square-55d63'); // Xóa event cũ nếu có
+        boardEl.on('click', '.square-55d63', (e) => {
+            const square = $(e.currentTarget).attr('data-square');
+            if (square) this.handleSquareClick(square);
+        });
+    }
+
+    /**
+     * Handles clicking on a square for "Click-to-Move" logic.
+     * @param {string} square - Square clicked (e.g., "e2").
+     */
+    handleSquareClick(square) {
+        if (!isPlayerTurn) return;
+
+        // 1. Nếu click vào quân cờ của phe mình -> CHỌN hoặc ĐỔI QUÂN
+        const piece = game.get(square);
+        const isMyPiece = piece && piece.color === game.turn() && (playerColor === null || piece.color === playerColor);
+
+        if (isMyPiece) {
+            // Nếu click lại đúng quân đang chọn -> Giữ nguyên (tránh nháy)
+            if (this.sourceSquare === square) return;
+
+            // Đổi sang quân mới
+            this.sourceSquare = square;
+            this.ui.updateAllHighlights(game, moveHistory, currentFenIndex);
+            
+            this.ui.dom.boardCont?.querySelector(`.square-${square}`)?.classList.add('square-selected');
+            game.moves({square: square, verbose: true}).forEach(m => {
+                this.ui.dom.boardCont?.querySelector(`.square-${m.to}`)?.classList.add('highlight-move');
+            });
+            return;
+        }
+
+        // 2. Nếu đã có quân được chọn và click vào ô khác (ô trống hoặc quân địch) -> Thử di chuyển
+        if (this.sourceSquare) {
+            let uci = this.sourceSquare + square;
+            const p = game.get(this.sourceSquare);
+            const isPromotion = p?.type === 'p' && (square[1] === '8' || square[1] === '1');
+            
+            const move = game.move({
+                from: this.sourceSquare,
+                to: square,
+                promotion: isPromotion ? 'q' : undefined
+            });
+
+            if (move) {
+                if (isPromotion) uci += 'q';
+                board.position(game.fen());
+                this.handleLocalMove(uci);
+                this.sourceSquare = null;
+            } else {
+                // Click vào ô không hợp lệ -> Hủy chọn và xóa highlight
+                this.sourceSquare = null;
+                this.ui.updateAllHighlights(game, moveHistory, currentFenIndex);
+            }
+        }
     }
 
     /**
@@ -679,7 +739,13 @@ class ChessCore {
      */
     onDragStart(source, piece) {
         if (!isPlayerTurn || game.turn() !== piece[0]) return false;
+
+        // Lưu ô bắt đầu dragging làm sourceSquare cho click-to-move
+        this.sourceSquare = source;
+
         this.ui.updateAllHighlights(game, moveHistory, currentFenIndex);
+        this.ui.dom.boardCont?.querySelector(`.square-${source}`)?.classList.add('square-selected');
+        
         game.moves({square: source, verbose: true}).forEach(m => {
             const sq = this.ui.dom.boardCont?.querySelector(`.square-${m.to}`);
             if (sq) sq.classList.add('highlight-move');
