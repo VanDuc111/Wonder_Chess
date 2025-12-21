@@ -745,6 +745,28 @@ document.addEventListener('DOMContentLoaded', () => {
     window.startWebcam = startWebcam;
     window.stopWebcam = stopWebcam;
 
+    // Hàm hiển thị lỗi
+    function showFriendlyError(statusEl, rawError) {
+        let title = "Ôi không! Alice bị lạc rồi...";
+        let message = "Kết nối tới máy chủ AI (Roboflow) gặp chút trục trặc. Bạn hãy thử lại sau giây lát nhé.";
+        
+        // Kiểm tra nếu là lỗi timeout hoặc kết nối
+        if (rawError.includes('timeout') || rawError.includes('Read timed out') || rawError.includes('Connection')) {
+            title = "Kết nối quá hạn (Timeout)";
+            message = "Alice đã cố gắng hết sức nhưng máy chủ Roboflow phản hồi quá chậm. Có lẽ do đường truyền hoặc máy chủ đang quá tải.";
+        }
+
+        statusEl.innerHTML = `
+            <div class="error-rabbit-container">
+                <img src="static/img/alice-error.png" class="error-rabbit-img" alt="Sad Alice Rabbit">
+                <div class="friendly-error-msg">
+                    <strong>${title}</strong>
+                    ${message}
+                </div>
+            </div>
+        `;
+    }
+
     // ====== LOAD DATA ======
 
     document.getElementById('confirm-load-btn').addEventListener('click', async () => {
@@ -798,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fenToLoad = data.fen;
                 } else {
                     if (loader) loader.classList.add('d-none');
-                    statusEl.textContent = `Lỗi: ${data.error} `;
+                    showFriendlyError(statusEl, data.error);
                     return;
                 }
             } else if (activeTabId === 'live-scan-pane') {
@@ -831,7 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     stopWebcam();
                 } else {
                     if (loader) loader.classList.add('d-none');
-                    statusEl.textContent = `Lỗi: ${data.error} `;
+                    showFriendlyError(statusEl, data.error);
                     return;
                 }
             }
@@ -1220,7 +1242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 console.warn("Scan lỗi:", data.error);
-                statusEl.textContent = '⚠️ Không nhận diện được quân cờ.';
+                showFriendlyError(statusEl, data.error);
             }
 
         } catch (err) {
