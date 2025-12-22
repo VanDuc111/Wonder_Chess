@@ -370,7 +370,7 @@ body.allow-scroll {
 #game-view-container {
     display: flex;
     justify-content: center;
-    align-items: center !important; /* Căn giữa đối xứng theo trục dọc */
+    align-items: center !important;
     transform: rotate(0deg);
     transition: transform 0.5s ease-in-out;
     margin-top: auto;
@@ -423,6 +423,7 @@ body.allow-scroll {
     box-sizing: border-box;
     aspect-ratio: 1 / 1;
     touch-action: none;
+    position: relative;
 }
 
 #myBoard img {
@@ -481,7 +482,7 @@ body.allow-scroll {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0 25px 0 10px; /* Loại bỏ margin-top, dùng margin lề trái/phải */
+    margin: 0 25px 0 10px;
     transform-origin: center center;
     transition: height 0.3s ease-out;
 }
@@ -514,7 +515,7 @@ body.allow-scroll {
     border-radius: 10px;
     overflow: hidden;
     position: relative;
-    height: 100%; /* Fill container */
+    height: 100%;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -727,7 +728,6 @@ body.allow-scroll {
     border-radius: 10px;
 }
 
-/* Horizontal History (Old) */
 #pgn-history-container {
     overflow-x: auto;
     overflow-y: hidden;
@@ -781,11 +781,6 @@ body.allow-scroll {
     transition: background-color 0.2s, color 0.2s;
 }
 
-.current-move-highlight {
-    background-color: var(--color-text-placeholder);
-    color: var(--color-text-light);
-    font-weight: bold;
-}
 
 /* ========================================= */
 /* 8. CHATBOT INTERFACE                      */
@@ -903,7 +898,7 @@ body.allow-scroll {
 
 #chatbot-form {
     flex-shrink: 0;
-    margin: 12px 12px 0 12px; /* Pull flush to bottom */
+    margin: 12px 12px 0 12px;
     margin-top: auto !important;
     position: relative;
     background: var(--color-input-background);
@@ -974,6 +969,8 @@ body.allow-scroll {
 /* Typing Indicator */
 .typing-indicator {
     display: flex;
+    align-items: center;
+    justify-content: flex-start;
     padding: 10px;
 }
 
@@ -1063,7 +1060,7 @@ body.allow-scroll {
     color: var(--color-text-light);
 }
 
-/* Bot Settings Modal Specifics (Legacy/Custom) */
+/* Bot Settings Modal Specifics (Modern) */
 #bot-settings-modal {
     position: fixed;
     z-index: 2000;
@@ -1072,34 +1069,26 @@ body.allow-scroll {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
+    backdrop-filter: blur(5px);
 }
 
 #bot-settings-modal .modal-content {
-    background-color: var(--color-background-start);
-    padding: var(--spacing-md);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-container);
-    width: 90%;
-    max-width: 450px;
-    box-shadow: var(--shadow-deep);
+    background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(15, 15, 26, 0.98) 100%);
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    width: 95%;
+    max-width: 480px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     position: relative;
     color: var(--color-text-light);
 }
 
-#bot-settings-modal h2 {
-    color: var(--color-primary);
-    border-bottom: 2px solid var(--color-element-background);
-    padding-bottom: var(--spacing-unit);
-    margin-top: 0;
-    margin-bottom: var(--spacing-md);
-    font-size: var(--font-size-question);
-}
-
-.modal-content .close-btn {
+#bot-settings-modal .close-btn {
     color: var(--color-text-secondary);
     float: right;
     font-size: var(--modal-close-size);
@@ -1111,64 +1100,116 @@ body.allow-scroll {
     transition: color 0.3s;
 }
 
-.modal-content .close-btn:hover { color: var(--color-text-light); }
+#bot-settings-modal .close-btn:hover { color: var(--color-text-light); }
+
+#bot-settings-modal h2 {
+    color: white;
+    font-weight: 800;
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    text-align: left;
+    letter-spacing: -0.5px;
+}
 
 .setting-group {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
 }
 
 .setting-group label {
-    font-weight: bold;
-    margin-bottom: var(--spacing-unit);
-    color: var(--color-text-light);
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.setting-group > div {
-    display: flex;
-    gap: var(--spacing-unit);
-}
-
-.setting-group button {
-    flex-grow: 1;
-    padding: var(--spacing-unit) 0;
-    border: 1px solid var(--color-border-subtle);
-    background-color: var(--color-element-background);
-    color: var(--color-text-light);
-    cursor: pointer;
-    border-radius: var(--radius-default);
-    transition: all 0.2s ease;
-    font-size: var(--font-size-base);
-}
-
-.setting-group button:hover {
-    background-color: var(--color-primary-hover);
-    border-color: var(--color-primary);
+/* Custom Select for Dark Modal */
+.form-select-custom {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
-}
-
-.setting-group button.active,
-.setting-group button.selected {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-    color: white;
-    font-weight: bold;
-    box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
-}
-
-#start-bot-game-btn {
+    padding: 12px 18px;
+    border-radius: 12px;
     width: 100%;
-    padding: var(--spacing-unit);
-    background-color: var(--color-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 18px center;
+    background-size: 14px;
+    font-size: 1rem;
+}
+
+.form-select-custom:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
+    outline: none;
+}
+
+.form-select-custom option {
+    background-color: #1a1a2e;
+    color: white;
+    padding: 10px;
+}
+
+/* Custom Range Input */
+.form-range-custom {
+    flex-grow: 1;
+    height: 6px;
+    appearance: none; 
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+}
+
+.form-range-custom::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 3px solid #1a1a2e;
+}
+
+.form-range-custom::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+}
+
+/* Button Create Game */
+.btn-create-game {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%);
     color: white;
     border: none;
-    border-radius: var(--radius-default);
-    font-size: var(--font-size-title);
-    font-weight: bold;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
     cursor: pointer;
-    margin-top: var(--spacing-unit);
-    transition: background-color 0.3s;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin-top: 10px;
+}
+
+.btn-create-game:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn-create-game:active {
+    transform: translateY(0);
 }
 
 /* Premium Modal Buttons */
@@ -1387,12 +1428,6 @@ body.allow-scroll {
     to { opacity: 1; }
 }
 
-.typing-indicator {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 5px 0;
-}
 
 .alice-loading-svg {
     width: 60px;
@@ -1481,8 +1516,7 @@ body.allow-scroll {
         justify-content: center !important;
         padding-right: 0 !important;
     }
-}
-@media (max-width: 991.98px) {
+
     body {
         height: auto !important;
         min-height: 100vh;
@@ -1545,7 +1579,6 @@ body.allow-scroll {
         padding-top: 1.2rem;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
-
 
     #chat-col {
         flex: 0 0 100%;
@@ -1654,7 +1687,7 @@ body.allow-scroll {
         font-size: 0.8rem;
         padding: 8px 2px;
         min-width: 0;
-        flex: 1 1 30%; /* Stretches more naturally */
+        flex: 1 1 30%;
     }
 
     .btn-chess-action {
@@ -1690,146 +1723,9 @@ body.allow-scroll {
     }
 }
 
-/* Bot Settings Modal Specifics (Modern) */
-#bot-settings-modal {
-    position: fixed;
-    z-index: 2000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(5px);
-}
-
-#bot-settings-modal .modal-content {
-    background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(15, 15, 26, 0.98) 100%);
-    padding: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    width: 95%;
-    max-width: 480px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    position: relative;
-    color: var(--color-text-light);
-}
-
-#bot-settings-modal h2 {
-    color: white;
-    font-weight: 800;
-    margin-bottom: 25px;
-    font-size: 1.5rem;
-    text-align: left;
-    letter-spacing: -0.5px;
-}
-
-.setting-group {
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-}
-
-.setting-group label {
-    font-weight: 600;
-    margin-bottom: 10px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Custom Select for Dark Modal */
-.form-select-custom {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    padding: 12px 18px;
-    border-radius: 12px;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 18px center;
-    background-size: 14px;
-    font-size: 1rem;
-}
-
-.form-select-custom:focus {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: var(--color-primary);
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
-    outline: none;
-}
-
-.form-select-custom option {
-    background-color: #1a1a2e;
-    color: white;
-    padding: 10px;
-}
-
-/* Custom Range Input */
-.form-range-custom {
-    flex-grow: 1;
-    height: 6px;
-    appearance: none; 
-    background: rgba(255,255,255,0.1);
-    border-radius: 5px;
-    outline: none;
-    cursor: pointer;
-}
-
-.form-range-custom::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 22px;
-    height: 22px;
-    background: var(--color-primary);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 3px solid #1a1a2e;
-}
-
-.form-range-custom::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
-}
-
-/* Button Create Game */
-.btn-create-game {
-    width: 100%;
-    padding: 16px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    margin-top: 10px;
-}
-
-.btn-create-game:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
-    filter: brightness(1.1);
-}
-
-.btn-create-game:active {
-    transform: translateY(0);
-}
 
 /* ========================================= */
-/* 9. ANALYSIS SETTINGS (Compact)            */
+/* 13. ANALYSIS SETTINGS (Compact)            */
 /* ========================================= */
 .analysis-settings-container {
     background: rgba(255, 255, 255, 0.05);
@@ -1928,9 +1824,6 @@ body.allow-scroll {
 .annot-blunder { color: #fa412d; }
 
 /* Arrow Overlay */
-#myBoard {
-    position: relative;
-}
 
 #arrow-container {
     position: absolute;
@@ -1944,7 +1837,7 @@ body.allow-scroll {
 }
 
 /* ========================================= */
-/* 12. UPLOAD DROP ZONE & PREVIEW            */
+/* 14. UPLOAD DROP ZONE & PREVIEW            */
 /* ========================================= */
 .upload-drop-zone {
     border: 2px dashed rgba(255, 255, 255, 0.2);
@@ -2056,31 +1949,8 @@ body.allow-scroll {
     box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
 }
 
-.btn-premium-confirm {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%);
-    color: white;
-    border: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-premium-confirm:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
-}
-
-.btn-premium-cancel {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--color-text-light);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.btn-premium-cancel:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-}
 /* ========================================= */
-/* 13. FRIENDLY ERROR STYLES                 */
+/* 15. ERROR STYLES                 */
 /* ========================================= */
 .error-rabbit-container {
     text-align: center;
