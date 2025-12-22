@@ -1940,6 +1940,7 @@ body.allow-scroll {
     height: 100%;
     pointer-events: none;
     z-index: 100;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
 }
 
 /* ========================================= */

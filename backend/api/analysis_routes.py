@@ -87,8 +87,13 @@ def chat_analysis() -> Response:
         board_now = chess.Board(fen)
         was_white_move = (board_now.turn == chess.BLACK) 
         diff = (cur_v - prev_v) if was_white_move else (prev_v - cur_v)
+        
+        current_turn_name = "Trắng" if board_now.turn == chess.WHITE else "Đen"
+        last_player_name = "Trắng" if was_white_move else "Đen"
     except:
         diff = 0
+        current_turn_name = "N/A"
+        last_player_name = "N/A"
 
     # 5. Chuyển đổi nước đi tốt nhất sang SAN (UCI -> SAN)
     best_move_san = "N/A"
@@ -114,19 +119,20 @@ def chat_analysis() -> Response:
     2.  **NGẮN GỌN (BREVITY):** Chỉ trả lời trong khoảng **4-5 câu**. Giải thích nhanh tại sao nước đi hiện tại được đánh giá như vậy.
     3.  **KHAI CUỘC:** {opening_context}Hãy tập trung vào chiến thuật hiện tại thay vì lý thuyết khai cuộc nếu ván đấu đã trôi qua giai đoạn đầu.
     4.  **ĐÁNH GIÁ NƯỚC ĐI:** Dựa vào chênh lệch `{diff:+.2f}`, gọi **{last_move_san}** là:
-        - **Thiên tài!!** (>1.5), **Tuyệt vời!** (>0.8), **Tốt nhất** (trùng **{best_move_san}**), **Tốt** (>0.1), **Ổn định** (>-0.2), **Bỏ lỡ thắng** (abs thắng->hòa), **Sai lầm nghiêm trọng??** (<-1.5), **Sai lầm?** (<-0.7), **Thiếu chính xác** (<-0.3).
+        - **Thiên tài!!** (>1.5), **Tuyệt vời!** (>0.8), **Tốt nhất** (Diff gần 0 hoặc dương), **Tốt** (>0.1), **Ổn định** (>-0.2), **Bỏ lỡ thắng** (abs thắng->hòa), **Sai lầm nghiêm trọng??** (<-1.5), **Sai lầm?** (<-0.7), **Thiếu chính xác** (<-0.3).
+    5.  **RÕ RÀNG LƯỢT ĐI:** Phải phân biệt rõ nước vừa đi là của {last_player_name} và nước gợi ý là của {current_turn_name}. Tránh dùng "tuy nhiên" hoặc so sánh chúng như hai phương án thay thế cho nhau.
 
     **HƯỚNG DẪN TRẢ LỜI:**
     Đọc kỹ "{user_question}":
     - Nếu là kiến thức chung (ví dụ: "Ruy Lopez là gì?", "xin chào"): Trả lời ngắn gọn.
     - Nếu hỏi về bàn cờ:
-        - Phân tích nước **{last_move_san}** (kèm nhãn đánh giá và IN ĐẬM).
-        - Đề cập ưu thế: **{formatted_score}** (Cân bằng/Đen ưu/Trắng ưu).
-        - Luôn gợi ý nước đi tốt nhất: **{best_move_san}**.
+        - Phân tích nước **{last_move_san}** của {last_player_name} (kèm nhãn đánh giá và IN ĐẬM).
+        - Đề cập ưu thế chung: **{formatted_score}** (Cân bằng/Đen ưu/Trắng ưu).
+        - Gợi ý nước đáp trả hoặc nước đi tiếp theo tốt nhất cho {current_turn_name} là **{best_move_san}**.
 
     **THÔNG TIN:**
-    - Vừa đi: **{last_move_san}** (Diff: {diff:+.2f})
-    - Điểm: **{formatted_score}** | Tốt nhất: **{best_move_san}**
+    - Vừa đi (của {last_player_name}): **{last_move_san}** (Diff: {diff:+.2f})
+    - Điểm: **{formatted_score}** | Gợi ý tiếp cho {current_turn_name}: **{best_move_san}**
     - Biến hóa: {engine_results.get('pv', 'N/A')}
     
     Câu hỏi: "{user_question}"

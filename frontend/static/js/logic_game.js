@@ -187,24 +187,24 @@ class ChessUI {
         };
 
         const dx = end.x - start.x, dy = end.y - start.y, len = Math.sqrt(dx * dx + dy * dy);
-        const ratio = (len - 12) / len;
+        const ratio = (len - 10) / len;
 
         const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
         const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
         marker.id = "arrowhead";
-        marker.setAttribute("markerWidth", "4"); marker.setAttribute("markerHeight", "4");
-        marker.setAttribute("refX", "3.5"); marker.setAttribute("refY", "2");
+        marker.setAttribute("markerWidth", "6"); marker.setAttribute("markerHeight", "6");
+        marker.setAttribute("refX", "0"); marker.setAttribute("refY", "3");
         marker.setAttribute("orient", "auto");
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        poly.setAttribute("points", "0 0, 4 2, 0 4");
-        poly.setAttribute("fill", "rgba(76, 175, 80, 0.9)");
+        poly.setAttribute("points", "0 0, 6 3, 0 6");
+        poly.setAttribute("fill", "rgba(76, 175, 80, 0.95)");
         marker.appendChild(poly); defs.appendChild(marker); this.dom.arrowCont.appendChild(defs);
 
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
         line.setAttribute("x1", start.x); line.setAttribute("y1", start.y);
         line.setAttribute("x2", start.x + dx * ratio); line.setAttribute("y2", start.y + dy * ratio);
         line.setAttribute("stroke", "rgba(76, 175, 80, 0.6)"); 
-        line.setAttribute("stroke-width", "6"); 
+        line.setAttribute("stroke-width", "4"); 
         line.setAttribute("marker-end", "url(#arrowhead)");
         this.dom.arrowCont.appendChild(line);
     }
