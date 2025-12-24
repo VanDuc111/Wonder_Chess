@@ -13,6 +13,8 @@ class ChessTimer {
         this.timerInterval = null;
         /** @type {boolean} Whether the current game has time controls */
         this.isTimedGame = false;
+        /** @type {number} The last move index that received an increment */
+        this.lastIncrementMoveIndex = -1;
         
         /** @type {Object<string, HTMLElement|null>} DOM element cache */
         this.dom = {
@@ -40,8 +42,8 @@ class ChessTimer {
      * @returns {string}
      */
     formatTime(seconds) {
-        const min = Math.floor(seconds / 60);
-        const sec = seconds % 60;
+        const min = Math.floor(seconds / (window.APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60));
+        const sec = seconds % (window.APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60);
         return `${min}:${sec < 10 ? '0' : ''}${sec}`;
     }
 
@@ -65,6 +67,7 @@ class ChessTimer {
         this.whiteTime = 0;
         this.blackTime = 0;
         this.isTimedGame = false;
+        this.lastIncrementMoveIndex = -1;
 
         this._ensureDom();
         const resetEl = (el) => {
@@ -110,25 +113,32 @@ class ChessTimer {
      * Starts/Switches the timer for the active player.
      * @param {'w'|'b'} colorToMove - Who's turn it is.
      * @param {number} increment - Seconds to add to the previous player.
+     * @param {Object} [gameInstance=null] - Optional chess.js instance for increment check.
      */
-    start(colorToMove, increment = 0) {
+    start(colorToMove, increment = 0, gameInstance = null) {
         this.stop();
 
-        // Increment Logic
-        if (this.isTimedGame && increment > 0 && typeof game !== 'undefined' && game) {
+        // Increment Logic: Add time to the player WHO JUST MOVED
+        const game = gameInstance || window.LOGIC_GAME?.getGame?.();
+        if (this.isTimedGame && increment > 0 && game) {
             const history = game.history();
-            if (history.length > 0) {
+            const moveCount = history.length;
+            
+            // Only increment if we haven't incremented for THIS specific move yet
+            if (moveCount > 0 && moveCount !== this.lastIncrementMoveIndex) {
                 if (colorToMove === 'w') {
-                    this.blackTime += increment;
+                    this.blackTime += increment; // Black just moved
                 } else {
-                    this.whiteTime += increment;
+                    this.whiteTime += increment; // White just moved
                 }
+                this.lastIncrementMoveIndex = moveCount;
                 this.updateDisplay();
             }
         }
 
         this._ensureDom();
-        if (colorToMove === 'w') {
+        const isWhite = (colorToMove === 'w');
+        if (isWhite) {
             this.dom.timerWhite?.classList.add('active');
             this.dom.timerBlack?.classList.remove('active');
         } else {
@@ -137,8 +147,7 @@ class ChessTimer {
         }
 
         this.timerInterval = setInterval(() => {
-            const isWhiteTurn = (colorToMove === 'w');
-            if (isWhiteTurn) {
+            if (isWhite) {
                 this.whiteTime--;
                 if (this.whiteTime <= 0) this._handleTimeUp('w');
             } else {

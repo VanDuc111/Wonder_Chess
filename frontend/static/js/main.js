@@ -1,7 +1,4 @@
 let board = null;
-let game = null;
-let moveHistory = [];
-let currentFenIndex = 0;
 const STARTING_FEN = (window.APP_CONST && window.APP_CONST.STARTING_FEN) ? window.APP_CONST.STARTING_FEN : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 let playerColor = null;
 let isPlayerTurn = true;
@@ -235,31 +232,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const flipSwitch = document.getElementById('flip-board-switch');
             if (flipSwitch) flipSwitch.checked = (boardOrientation === 'black');
 
-            // Khởi tạo bàn cờ
-            initChessboard(boardOrientation);
-            try {
-                updateUI(game.fen());
-            } catch (e) {
+            // 1. Khởi tạo đồng hồ TRƯỚC khi tạo bàn cờ để onTurnEnd nhận diện được biến isTimedGame
+            const timeLimitMinutes = parseInt(selectedBotTime);
+            if (timeLimitMinutes > 0) {
+                if (window.initTimers) window.initTimers(timeLimitMinutes);
+            } else {
+                if (window.resetTimers) window.resetTimers();
             }
+
+            // 2. Clear cache
             fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
 
-            const boardContainer = document.querySelector('.chess-board-area');
-
-            // Đồng hồ thời gian
-            const timeLimitMinutes = parseInt(selectedBotTime);
-
-            // Nếu timeLimitMinutes là 0, nghĩa là "Vô hạn" (Không cần đồng hồ)
-            if (timeLimitMinutes > 0) {
-                initTimers(timeLimitMinutes);
-                startTimer(game.turn());
-            } else {
-                // Đảm bảo đồng hồ không hiển thị hoặc bị reset
-                resetTimers();
-            }
-            if (playerColor === 'b') {
-                // Nếu người chơi chọn Đen, Bot (Trắng) đi trước
-                handleBotTurn();
-            }
+            // 3. Khởi tạo bàn cờ
+            initChessboard(boardOrientation);
+            updateUI();
         });
     }
 
@@ -274,9 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Hàm khởi tạo bàn cờ (Chỉ gọi khi vào màn hình chính)
-    function initChessboard(orientation = 'white') {
+    function initChessboard(orientation = 'white', fen = null) {
         if (window.LOGIC_GAME && typeof window.LOGIC_GAME.initChessboard === 'function') {
-            return window.LOGIC_GAME.initChessboard(orientation);
+            return window.LOGIC_GAME.initChessboard(orientation, fen);
         }
     }
 
@@ -386,8 +372,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.LOGIC_GAME && typeof window.LOGIC_GAME.updateButtonState === 'function') {
             return window.LOGIC_GAME.updateButtonState();
         }
-        const isFirstMove = currentFenIndex <= 0;
-        const isLastMove = currentFenIndex >= moveHistory.length - 1;
+        const hist = window.LOGIC_GAME?.getHistory() || [];
+        const idx = window.LOGIC_GAME?.getIndex() || 0;
+        const isFirstMove = idx <= 0;
+        const isLastMove = idx >= hist.length - 1;
 
         $('[data-action="first"]').prop('disabled', isFirstMove);
         $('[data-action="prev"]').prop('disabled', isFirstMove);
@@ -400,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.LOGIC_GAME && typeof window.LOGIC_GAME.clearBoard === 'function') {
             const res = window.LOGIC_GAME.clearBoard();
             try {
-                updateUI(game.fen());
+                updateUI();
             } catch (e) {
             }
             return res;
@@ -470,13 +458,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeTabId === 'pgn-pane') {
                 const pgnText = document.getElementById('pgn-input').value.trim();
                 if (pgnText) {
-                    success = game.load_pgn(pgnText);
-                    if (success) fenToLoad = game.fen();
+                    const tempGame = new Chess();
+                    success = tempGame.load_pgn(pgnText);
+                    if (success) fenToLoad = tempGame.fen();
                 }
             } else if (activeTabId === 'fen-pane') {
                 const fenText = document.getElementById('fen-input').value.trim();
                 if (fenText) {
-                    success = game.load(fenText);
+                    const tempGame = new Chess();
+                    success = tempGame.load(fenText);
                     if (success) fenToLoad = fenText;
                 }
             } else if (activeTabId === 'image-pane') {
@@ -549,14 +539,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
                     if (statusEl) statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua.';
                 } else {
-                    game.load(fenToLoad);
-                    board.position(fenToLoad);
                     fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
-                    moveHistory = [{fen: fenToLoad, score: null}];
-                    currentFenIndex = 0;
-
-                    await fetchDeepEvaluation(fenToLoad);
-                    updateUI(fenToLoad);
+                    
+                    // Sử dụng interface mới để khởi tạo board từ FEN
+                    initChessboard(board?.orientation() || 'white', fenToLoad);
+                    
+                    updateUI(); // Cập nhật UI ngay lập tức
                     if (loader) loader.classList.add('d-none');
                     if (loadDataModalInstance) loadDataModalInstance.hide();
                 }
@@ -797,13 +785,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 resetTimers();
             }
 
-            // Đồng bộ trạng thái hiển thị board (xoay nếu người chơi chọn Đen)
-            const boardContainer = document.querySelector('.chess-board-area');
             if (playerColor === 'b') {
-                if (boardContainer) boardContainer.classList.add('rotated-board');
                 handleBotTurn();
-            } else {
-                if (boardContainer) boardContainer.classList.remove('rotated-board');
             }
         });
     }
@@ -908,17 +891,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Cập nhật bàn cờ
                 const newFen = data.fen;
+                const gameInst = window.LOGIC_GAME?.getGame();
                 try {
-                    if (game.fen().split(' ')[0] !== newFen.split(' ')[0]) {
-                        game.load(newFen);
-                        board.position(newFen);
-                        // Reset lịch sử nước đi để xóa pgn-history của ván trước
-                        moveHistory = [{fen: newFen, score: null}];
-                        currentFenIndex = 0;
-
-                        // Lấy điểm sâu và cập nhật UI
-                        await fetchDeepEvaluation(newFen);
-                        updateUI(newFen);
+                    if (gameInst && gameInst.fen().split(' ')[0] !== newFen.split(' ')[0]) {
+                        // Khởi tạo lại thông qua logic_game để đảm bảo đồng bộ state (history, index)
+                        initChessboard(board?.orientation() || 'white', newFen);
+                        updateUI();
                     }
                 } catch (e) {
                     console.warn("Bỏ qua FEN lỗi từ Camera:", e.message);
@@ -972,18 +950,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = e.target.closest('button');
             if (!btn) return;
             const action = btn.getAttribute('data-action');
+            const idx = window.LOGIC_GAME?.getIndex() || 0;
+            const hist = window.LOGIC_GAME?.getHistory() || [];
+
             switch (action) {
                 case 'first':
                     loadFen(0);
                     break;
                 case 'prev':
-                    loadFen(currentFenIndex - 1);
+                    loadFen(idx - 1);
                     break;
                 case 'next':
-                    loadFen(currentFenIndex + 1);
+                    loadFen(idx + 1);
                     break;
                 case 'last':
-                    loadFen(moveHistory.length - 1);
+                    loadFen(hist.length - 1);
                     break;
                 case 'clear':
                     clearBoard();
@@ -999,7 +980,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 default:
                     break;
             }
-            updateButtonState();
         });
 
         // Keyboard navigation (Left/Right Arrows)
@@ -1010,11 +990,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (e.key === 'ArrowLeft') {
-                loadFen(currentFenIndex - 1);
-                updateButtonState();
+                const idx = window.LOGIC_GAME?.getIndex() || 0;
+                loadFen(idx - 1);
             } else if (e.key === 'ArrowRight') {
-                loadFen(currentFenIndex + 1);
-                updateButtonState();
+                const idx = window.LOGIC_GAME?.getIndex() || 0;
+                loadFen(idx + 1);
             }
         });
     }
@@ -1027,7 +1007,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const idx = parseInt(mv.getAttribute('data-index'));
             if (!isNaN(idx)) {
                 loadFen(idx);
-                updateButtonState();
             }
         });
     }

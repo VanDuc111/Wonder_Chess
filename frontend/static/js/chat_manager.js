@@ -117,14 +117,15 @@ class AliceChat {
         
         const aliceEl = this._createMessageElement('Alice');
 
-        // Context data
-        const currentFen = (typeof game !== 'undefined') ? game.fen() : "";
-        const pgn = (typeof game !== 'undefined') ? game.pgn() : "";
-        const history = (typeof game !== 'undefined') ? game.history({verbose: true}) : [];
-        const lastMoveSan = history.length > 0 ? history[history.length - 1]?.san : 'N/A';
+        // Context data từ LOGIC_GAME đã đóng gói
+        const gameInstance = window.LOGIC_GAME?.getGame();
+        const currentFen = gameInstance ? gameInstance.fen() : "";
+        const pgn = gameInstance ? gameInstance.pgn() : "";
+        const historyRaw = gameInstance ? gameInstance.history({verbose: true}) : [];
+        const lastMoveSan = historyRaw.length > 0 ? historyRaw[historyRaw.length - 1]?.san : 'N/A';
         
-        const curIdx = (typeof currentFenIndex !== 'undefined') ? currentFenIndex : 0;
-        const historyArr = (typeof moveHistory !== 'undefined') ? moveHistory : [];
+        const curIdx = window.LOGIC_GAME?.getIndex() || 0;
+        const historyArr = window.LOGIC_GAME?.getHistory() || [];
 
         try {
             const apiUri = window.APP_CONST?.API?.CHAT_ANALYSIS || '/api/analysis/chat_analysis';
@@ -135,9 +136,9 @@ class AliceChat {
                     user_question: message,
                     fen: currentFen,
                     current_score: historyArr[curIdx]?.score || "0.00",
-                    prev_score: historyArr[curIdx - 1]?.score || "0.00",
+                    prev_score: (curIdx > 0) ? (historyArr[curIdx - 1]?.score || "0.00") : "0.00",
                     opening_name: this.dom.openingName?.textContent || "N/A",
-                    move_count: historyArr.length - 1,
+                    move_count: historyArr.length > 0 ? historyArr.length - 1 : 0,
                     pgn: pgn,
                     last_move_san: lastMoveSan,
                     is_first_message: isFirst
