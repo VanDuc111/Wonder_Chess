@@ -26,11 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainAppScreen = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.MAIN_APP_SCREEN) ? window.APP_CONST.IDS.MAIN_APP_SCREEN : 'main-app-screen');
     const nicknameForm = document.getElementById('nickname-form');
     const nicknameInput = document.getElementById('nickname-input');
-    const chatbotMessages = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.CHATBOT_MESSAGES) ? window.APP_CONST.IDS.CHATBOT_MESSAGES : 'chatbot-messages');
-    const chatbotInput = document.getElementById('chatbot-input');
-    const chatbotSendButton = document.getElementById('send-chat-button');
-
     const userDisplaySpan = document.getElementById('user-display');
+    if (window.ALICE_CHAT) window.ALICE_CHAT.init();
     const loadDataModalEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.LOAD_DATA_MODAL) ? window.APP_CONST.IDS.LOAD_DATA_MODAL : 'loadDataModal');
     const videoElement = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WEBCAM_VIDEO) ? window.APP_CONST.IDS.WEBCAM_VIDEO : 'webcam-feed');
     if (loadDataModalEl) {
@@ -238,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const flipSwitch = document.getElementById('flip-board-switch');
             if (flipSwitch) flipSwitch.checked = (boardOrientation === 'black');
 
-            // Khởi tạo bàn cờ (initChessboard đã được cập nhật để tự động xoay UI đồng hồ/điểm)
+            // Khởi tạo bàn cờ
             initChessboard(boardOrientation);
             try {
                 updateUI(game.fen());
@@ -266,20 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Hàm hiển thị tin nhắn Chatbot
-    function displayChatbotMessage(text, isBot = true) {
-        const messageElement = document.createElement('div');
-
-        if (isBot) {
-            messageElement.classList.add('alice-message');
-        } else {
-            messageElement.classList.add('user-message');
-        }
-
-        messageElement.innerHTML = text;
-        chatbotMessages.appendChild(messageElement);
-        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-    }
 
     // ===== THANH ĐIỂM =====
 
@@ -440,164 +423,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ===== TÍCH HỢP AI GEMINI =====
-
-    // Hàm thêm tin nhắn vào khung chat
-    function appendMessage(sender, text) {
-        const messageDiv = document.createElement('div');
-        if (sender === 'user') {
-            messageDiv.classList.add('user-message');
-        } else {
-            messageDiv.classList.add('alice-message');
-        }
-
-        messageDiv.textContent = text;
-
-        chatbotMessages.appendChild(messageDiv);
-        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-    }
-
-    /**
-     * Tạo một bong bóng chat MỚI (thường là để chờ Alice trả lời).
-     *
-     * @param {string} sender "user" hoặc "Alice"
-     * @returns {HTMLElement} Trả về 'messageDiv' để hàm streaming có thể điền text vào.
-     */
-    function createNewMessageElement(sender) {
-
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add(sender === 'user' ? 'user-message' : 'alice-message');
-
-        if (sender === 'Alice') {
-            messageDiv.innerHTML = `
-                <div class="typing-indicator">
-                    <img src="static/img/alice-loading.svg" alt="Alice is thinking..." class="alice-loading-svg">
-                </div>
-            `;
-        } else {
-            messageDiv.textContent = '';
-        }
-
-        chatbotMessages.appendChild(messageDiv);
-        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-        return messageDiv;
-    }
-
-    document.getElementById('chatbot-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const message = chatbotInput.value.trim();
-
-        // 2. Kiểm tra khóa
-        if (!message || chatbotInput.disabled) {
-            return;
-        }
-
-        // 3. Khóa input
-        chatbotInput.disabled = true;
-        chatbotSendButton.disabled = true;
-
-        // 4. Kiểm tra tin nhắn đầu tiên
-        const isFirstUserMessage = (chatbotMessages.children.length === 1);
-
-        appendMessage('user', message);
-        chatbotInput.value = ''; //
-        const aliceMessageElement = createNewMessageElement('Alice');
-
-        // 5. Lấy FEN và lịch sử
-        const currentFen = game.fen();
-        const pgnHistory = game.pgn();
-        const history = game.history({verbose: true});
-        let lastMoveSan = 'N/A';
-        if (history.length > 0) {
-            lastMoveSan = history[history.length - 1]?.san;
-        }
-
-        // 6. Gửi yêu cầu
-        try {
-            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CHAT_ANALYSIS) ? window.APP_CONST.API.CHAT_ANALYSIS : '/api/analysis/chat_analysis', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    user_question: message,
-                    fen: currentFen,
-                    current_score: moveHistory[currentFenIndex]?.score || "0.00",
-                    prev_score: moveHistory[currentFenIndex - 1]?.score || "0.00",
-                    opening_name: document.getElementById('opening-name')?.textContent || "N/A",
-                    move_count: moveHistory.length - 1,
-                    pgn: pgnHistory,
-                    last_move_san: lastMoveSan,
-                    is_first_message: isFirstUserMessage
-                })
-            });
-            if (!response.ok) {
-                throw new Error(`Lỗi HTTP: ${response.status}. Không thể kết nối với Alice.`);
-            }
-
-            // --- XỬ LÝ STREAMING ---
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder('utf-8');
-            let done = false;
-            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-            const STREAM_DELAY_MS = 5;
-            let fullResponseText = "";
-            let isFirstChunk = true;
-
-            while (!done) {
-                const {value, done: readerDone} = await reader.read();
-                done = readerDone;
-                const chunk = decoder.decode(value, {stream: true});
-
-                for (const char of chunk) {
-                    if (isFirstChunk) {
-                        aliceMessageElement.innerHTML = '';
-                        isFirstChunk = false;
-                    }
-                    aliceMessageElement.textContent += char;
-                    fullResponseText += char;
-                    await sleep(STREAM_DELAY_MS);
-                    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-                }
-            }
-
-            const finalHtml = convertSimpleMarkdownToHtml(fullResponseText);
-            aliceMessageElement.innerHTML = finalHtml;
-
-        } catch (error) {
-            aliceMessageElement.textContent += ` [Lỗi: Không thể nhận phản hồi. ${error.message}]`;
-            console.error('Lỗi trong Fetch API hoặc JSON:', error);
-        } finally {
-            // 8. Mở khóa
-            chatbotInput.disabled = false;
-            chatbotSendButton.disabled = false;
-            chatbotInput.focus();
-        }
-    });
-
-    /**
-     * Hàm hỗ trợ chuyển đổi text Markdown đơn giản sang HTML.
-     */
-    function convertSimpleMarkdownToHtml(text) {
-        let html = text;
-
-        // 1. Chuyển đổi **Bold** (kể cả khi có dấu : ! ? bên trong)
-        // [^\s] = Bất kỳ ký tự nào KHÔNG phải khoảng trắng
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-        // 2. Chuyển đổi * Bullet Points *
-        // (^ = đầu dòng, \s* = 0 hoặc nhiều khoảng trắng, \* = dấu sao, (.*) = nội dung)
-        // (gm flags = global và multiline, để nó tìm ở mọi đầu dòng)
-        html = html.replace(/^(\s*)\* (.*?)$/gm, '<li style="margin-left: 20px;">$2</li>');
-
-        // 3. Chuyển đổi \n (xuống dòng) sang <br>
-
-        html = html.replace(/\n/g, '<br>');
-
-        // 4. Sửa lỗi <br> thừa nếu nó đứng ngay trước <li>
-        html = html.replace(/<br><li/g, '<li');
-
-        return html;
-    }
 
     // hỗ trợ hàm toàn cục
     window.showGameOverModal = showGameOverModal;
