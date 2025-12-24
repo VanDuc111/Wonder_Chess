@@ -12,10 +12,7 @@ const JS_MATE_SCORE_BASE = (window.APP_CONST && window.APP_CONST.ENGINE && windo
 const JS_MATE_DEPTH_ADJUSTMENT = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT) ? window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT : 500;
 let gameOverModalInstance = null;
 let loadDataModalInstance = null;
-let currentWebcamStream = null;
 
-// Auto scan delay (ms)
-const AUTO_SCAN_DELAY = (window.APP_CONST && window.APP_CONST.AUTO_SCAN && window.APP_CONST.AUTO_SCAN.DELAY_MS) ? window.APP_CONST.AUTO_SCAN.DELAY_MS : 5000;
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoElement = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WEBCAM_VIDEO) ? window.APP_CONST.IDS.WEBCAM_VIDEO : 'webcam-feed');
     if (loadDataModalEl) {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
-        loadDataModalEl.addEventListener('hidden.bs.modal', stopWebcam);
+        loadDataModalEl.addEventListener('hidden.bs.modal', () => window.VISION_MANAGER?.stopWebcam());
     }
 
     // Hàm chào mừng và chuyển hướng
@@ -414,30 +411,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // hỗ trợ hàm toàn cục
     window.showGameOverModal = showGameOverModal;
-    window.startWebcam = startWebcam;
-    window.stopWebcam = stopWebcam;
-
-    // Hàm hiển thị lỗi
-    function showFriendlyError(statusEl, rawError) {
-        let title = "Ôi không! Alice bị lạc rồi...";
-        let message = "Kết nối tới máy chủ AI (Roboflow) gặp chút trục trặc. Bạn hãy thử lại sau giây lát nhé.";
-        
-        // Kiểm tra nếu là lỗi timeout hoặc kết nối
-        if (rawError.includes('timeout') || rawError.includes('Read timed out') || rawError.includes('Connection')) {
-            title = "Kết nối quá hạn (Timeout)";
-            message = "Alice đã cố gắng hết sức nhưng máy chủ Roboflow phản hồi quá chậm. Có lẽ do đường truyền hoặc máy chủ đang quá tải.";
-        }
-
-        statusEl.innerHTML = `
-            <div class="error-rabbit-container">
-                <img src="static/img/alice-error.png" class="error-rabbit-img" alt="Sad Alice Rabbit">
-                <div class="friendly-error-msg">
-                    <strong>${title}</strong>
-                    ${message}
-                </div>
-            </div>
-        `;
-    }
+    window.initChessboard = initChessboard;
+    window.updateUI = updateUI;
+    window.loadFen = loadFen;
+    window.clearBoard = clearBoard;
+    window.handleBotTurn = handleBotTurn;
 
     // ====== LOAD DATA ======
 
@@ -473,68 +451,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 const imageInput = document.getElementById('image-upload-input');
                 const statusEl = document.getElementById('image-upload-status');
 
-                if (imageInput.files.length === 0) {
+                if (!imageInput || imageInput.files.length === 0) {
                     if (loader) loader.classList.add('d-none');
-                    statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
+                    if (statusEl) statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
                     return;
                 }
 
-                const file = imageInput.files[0];
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
+                const data = await window.VISION_MANAGER.analyzeUpload(imageInput.files[0]);
                 if (data.success) {
                     success = true;
                     fenToLoad = data.fen;
                 } else {
                     if (loader) loader.classList.add('d-none');
-                    showFriendlyError(statusEl, data.error);
+                    window.VISION_MANAGER.showFriendlyError(statusEl, data.error);
                     return;
                 }
             } else if (activeTabId === 'live-scan-pane') {
+                // Live scan is now handled automatically by auto-scan or performScan in VisionManager.
+                // But if user clicks 'Confirm' in the modal while on this tab, we trigger one scan.
                 const statusEl = document.getElementById('scan-status');
-                if (!currentWebcamStream) {
-                    if (loader) loader.classList.add('d-none');
-                    statusEl.textContent = 'Lỗi: Camera chưa được bật.';
-                    return;
-                }
-
-                const canvas = document.createElement('canvas');
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                const context = canvas.getContext('2d');
-                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-                const formData = new FormData();
-                formData.append('file', blob, 'webcam-scan.jpg');
-
-                const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    success = true;
-                    fenToLoad = data.fen;
-                    stopWebcam();
-                } else {
-                    if (loader) loader.classList.add('d-none');
-                    showFriendlyError(statusEl, data.error);
-                    return;
-                }
+                await window.VISION_MANAGER.performScan();
+                // Check if scan updated successfully (this is a bit tricky with async, 
+                // but let's assume we close modal manually if successful or wait for auto).
+                if (loader) loader.classList.add('d-none');
+                return; 
             }
 
             // Xử lý nạp FEN
             if (success && fenToLoad) {
-                if (!isValidFen(fenToLoad)) {
+                if (!window.VISION_MANAGER.isValidFen(fenToLoad)) {
                     if (loader) loader.classList.add('d-none');
                     const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
                     if (statusEl) statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua.';
@@ -561,117 +506,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // =======================================================
-    // LOGIC UPLOAD ẢNH (Drag & Drop + Preview)
-    // =======================================================
-    const dropZone = document.getElementById('drop-zone');
-    const imageUploadInput = document.getElementById('image-upload-input');
-    const browseBtn = document.getElementById('browse-btn');
-    const filePreview = document.getElementById('file-preview');
-    const previewImg = document.getElementById('preview-img');
-    const fileNameEl = document.getElementById('file-name');
-    const fileSizeEl = document.getElementById('file-size');
-    const removeFileBtn = document.getElementById('remove-file-btn');
 
-    if (dropZone && imageUploadInput) {
-        // Click browse button
-        if (browseBtn) {
-            browseBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                imageUploadInput.click();
-            });
-        }
 
-        // Click on drop zone (except on inner buttons)
-        dropZone.addEventListener('click', (e) => {
-            if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
-                imageUploadInput.click();
-            }
-        });
 
-        // Prevent default drag behaviors
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, e => {
-                e.preventDefault();
-                e.stopPropagation();
-            }, false);
-        });
 
-        // Highlight drop zone
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.add('dragover');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.remove('dragover');
-            }, false);
-        });
-
-        // Handle dropped files
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if (files.length > 0) {
-                imageUploadInput.files = files;
-                handleImageFiles(files[0]);
-            }
-        });
-
-        // Handle selected files
-        imageUploadInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                handleImageFiles(this.files[0]);
-            }
-        });
-
-        function handleImageFiles(file) {
-            if (!file.type.startsWith('image/')) {
-                alert("Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                fileNameEl.textContent = file.name;
-                fileSizeEl.textContent = formatBytes(file.size);
-                
-                filePreview.classList.remove('d-none');
-                dropZone.classList.add('has-file');
-                
-                // Clear any previous status message
-                const statusEl = document.getElementById('image-upload-status');
-                if (statusEl) statusEl.textContent = "Sẵn sàng để phân tích!";
-            }
-            reader.readAsDataURL(file);
-        }
-
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        }
-
-        // Handle remove button
-        if (removeFileBtn) {
-            removeFileBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                imageUploadInput.value = '';
-                previewImg.src = '';
-                filePreview.classList.add('d-none');
-                dropZone.classList.remove('has-file');
-                
-                const statusEl = document.getElementById('image-upload-status');
-                if (statusEl) statusEl.textContent = "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
-            });
-        }
-    }
 
 
 
@@ -770,17 +608,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             clearBoard();
+            const gameInst = window.LOGIC_GAME?.getGame();
             try {
-                updateUI(game.fen());
+                if (gameInst) updateUI(gameInst.fen());
             } catch (e) {
             }
 
             // Nếu đang chơi với Bot (playerColor != null) thì tái khởi động đồng hồ
             const timeLimitMinutes = parseInt(selectedBotTime);
-            if (playerColor !== null && !isNaN(timeLimitMinutes) && timeLimitMinutes > 0) {
+            if (playerColor !== null && !isNaN(timeLimitMinutes) && timeLimitMinutes > 0 && gameInst) {
                 // Thiết lập lại đồng hồ theo thời gian đã chọn và bật đồng hồ cho bên đang đi
                 initTimers(timeLimitMinutes);
-                startTimer(game.turn());
+                startTimer(gameInst.turn());
             } else {
                 resetTimers();
             }
@@ -788,158 +627,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (playerColor === 'b') {
                 handleBotTurn();
             }
-        });
-    }
-
-    /**
-     * Bật camera của người dùng và hiển thị lên thẻ <video>
-     */
-    async function startWebcam() {
-        if (currentWebcamStream) {
-            stopWebcam();
-        }
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia((window.APP_CONST && window.APP_CONST.VIDEO_CONSTRAINTS) ? window.APP_CONST.VIDEO_CONSTRAINTS : {video: {facingMode: 'environment'}});
-            videoElement.srcObject = stream;
-            currentWebcamStream = stream;
-
-        } catch (err) {
-            console.error("Lỗi bật webcam:", err);
-            document.getElementById('scan-status').textContent = 'Lỗi: Không thể truy cập camera.';
-        }
-    }
-
-    /**
-     * Tắt camera
-     */
-    function stopWebcam() {
-        if (currentWebcamStream) {
-            currentWebcamStream.getTracks().forEach(track => {
-                track.stop();
-            });
-            currentWebcamStream = null;
-        }
-    }
-
-    const liveScanTab = document.getElementById('live-scan-tab');
-    if (liveScanTab) {
-        liveScanTab.addEventListener('shown.bs.tab', function () {
-            startWebcam(); // Bật camera khi tab được chọn
-        });
-    }
-
-    // Tắt camera khi người dùng chọn các tab khác
-    document.getElementById('pgn-tab').addEventListener('shown.bs.tab', stopWebcam);
-    document.getElementById('fen-tab').addEventListener('shown.bs.tab', stopWebcam);
-    document.getElementById('image-tab').addEventListener('shown.bs.tab', stopWebcam);
-
-    // --- LOGIC AUTO SCAN ---
-    let autoScanInterval = null;
-    // const AUTO_SCAN_DELAY = 5000; // moved to top using APP_CONST
-
-    const autoScanToggle = document.getElementById('auto-scan-toggle');
-    const captureBtn = document.getElementById('capture-btn');
-
-    // Hàm thực hiện quy trình chụp và gửi
-    async function performScan() {
-        const statusEl = document.getElementById('scan-status');
-
-        if (!currentWebcamStream) {
-            statusEl.textContent = '⚠️ Camera chưa bật!';
-            if (autoScanToggle) autoScanToggle.checked = false;
-            return;
-        }
-
-        statusEl.textContent = '🔄 Đang tự động quét...';
-
-        try {
-            // 1. Chụp từ video ra canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            // 2. Chuyển sang Blob
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
-
-            // 3. Gửi lên Server
-            const formData = new FormData();
-            formData.append('file', blob, 'autocapture.jpg');
-
-            const response = await fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.IMAGE_ANALYZE) ? window.APP_CONST.API.IMAGE_ANALYZE : '/api/image/analyze_image', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                statusEl.textContent = '✅ Đã cập nhật thế cờ!';
-                statusEl.style.color = 'green';
-                const debugOverlay = document.getElementById('debug-overlay');
-                if (data.debug_image && debugOverlay) {
-                    debugOverlay.src = 'data:image/jpeg;base64,' + data.debug_image;
-                    debugOverlay.style.display = 'block';
-
-                    // Hiện ảnh debug trong 1.5 giây rồi ẩn đi để tiếp tục soi camera
-                    setTimeout(() => {
-                        debugOverlay.style.display = 'none';
-                    }, 1500);
-                }
-
-                // Cập nhật bàn cờ
-                const newFen = data.fen;
-                const gameInst = window.LOGIC_GAME?.getGame();
-                try {
-                    if (gameInst && gameInst.fen().split(' ')[0] !== newFen.split(' ')[0]) {
-                        // Khởi tạo lại thông qua logic_game để đảm bảo đồng bộ state (history, index)
-                        initChessboard(board?.orientation() || 'white', newFen);
-                        updateUI();
-                    }
-                } catch (e) {
-                    console.warn("Bỏ qua FEN lỗi từ Camera:", e.message);
-                    statusEl.textContent = '⚠️ Ảnh mờ hoặc thiếu quân Vua.';
-                }
-            } else {
-                console.warn("Scan lỗi:", data.error);
-                showFriendlyError(statusEl, data.error);
-            }
-
-        } catch (err) {
-            console.error("Lỗi Auto Scan:", err);
-        }
-
-        // Nếu vẫn đang bật Auto, gọi lần quét tiếp theo sau delay
-        // Dùng setTimeout thay vì setInterval để tránh chồng chéo request
-        if (autoScanToggle.checked) {
-            autoScanInterval = setTimeout(performScan, AUTO_SCAN_DELAY);
-        }
-    }
-
-    // Sự kiện bật/tắt công tắc
-    if (autoScanToggle) {
-        autoScanToggle.addEventListener('change', function () {
-            if (this.checked) {
-                // Bắt đầu quét
-                document.getElementById('scan-status').textContent = '🟢 Chế độ rảnh tay đã bật.';
-                performScan();
-            } else {
-                // Tắt quét
-                clearTimeout(autoScanInterval);
-                document.getElementById('scan-status').textContent = '🔴 Đã dừng quét tự động.';
-            }
-        });
-    }
-
-    // Gắn sự kiện cho nút chụp thủ công
-    if (captureBtn) {
-        captureBtn.addEventListener('click', async () => {
-            // Tắt auto nếu đang bật để tránh xung đột
-            if (autoScanToggle) autoScanToggle.checked = false;
-            clearTimeout(autoScanInterval);
-            await performScan();
         });
     }
 
@@ -954,40 +641,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const hist = window.LOGIC_GAME?.getHistory() || [];
 
             switch (action) {
-                case 'first':
-                    loadFen(0);
-                    break;
-                case 'prev':
-                    loadFen(idx - 1);
-                    break;
-                case 'next':
-                    loadFen(idx + 1);
-                    break;
-                case 'last':
-                    loadFen(hist.length - 1);
-                    break;
-                case 'clear':
-                    clearBoard();
-                    break;
+                case 'first': loadFen(0); break;
+                case 'prev': loadFen(idx - 1); break;
+                case 'next': loadFen(idx + 1); break;
+                case 'last': loadFen(hist.length - 1); break;
+                case 'clear': clearBoard(); break;
                 case 'load':
-                    if (typeof loadDataModalInstance !== 'undefined' && loadDataModalInstance) {
-                        loadDataModalInstance.show();
-                    } else {
+                    if (loadDataModalInstance) loadDataModalInstance.show();
+                    else {
                         const el = document.getElementById('loadDataModal');
                         if (el) el.style.display = 'block';
                     }
-                    break;
-                default:
                     break;
             }
         });
 
         // Keyboard navigation (Left/Right Arrows)
         document.addEventListener('keydown', function (e) {
-            // Ignore if user is typing in an input or textarea
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                return;
-            }
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             if (e.key === 'ArrowLeft') {
                 const idx = window.LOGIC_GAME?.getIndex() || 0;
@@ -1005,62 +676,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const mv = e.target.closest('.move-cell');
             if (!mv) return;
             const idx = parseInt(mv.getAttribute('data-index'));
-            if (!isNaN(idx)) {
-                loadFen(idx);
-            }
+            if (!isNaN(idx)) loadFen(idx);
         });
     }
-
-    // Chức năng: Kiểm tra tính hợp lệ của FEN
-    function isValidFen(fen) {
-        if (!fen || typeof fen !== 'string') return false;
-        try {
-            const testGame = new Chess(fen);
-            // Đảm bảo có cả hai quân Vua trên bàn cờ
-            const boardArr = testGame.board ? testGame.board() : null;
-            if (Array.isArray(boardArr)) {
-                let hasWhiteKing = false;
-                let hasBlackKing = false;
-                for (const row of boardArr) {
-                    for (const cell of row) {
-                        if (cell && cell.type === 'k') {
-                            if (cell.color === 'w') hasWhiteKing = true;
-                            if (cell.color === 'b') hasBlackKing = true;
-                        }
-                    }
-                }
-                return hasWhiteKing && hasBlackKing;
-            }
-            return true;
-        } catch (err) {
-            return false;
-        }
-    }
-
-    // Kiểm tra và khởi tạo Modal FEN không hợp lệ từ template có sẵn
-    (function initInvalidFenModalFromTemplate() {
-        const modalEl = document.getElementById('invalidFenModal');
-        if (!modalEl) {
-            // fallback: nếu không tìm thấy modal, tạo hàm rỗng
-            window.showInvalidFenModal = function (msg) {
-                alert(msg || 'FEN không hợp lệ');
-            };
-            return;
-        }
-
-        const modalInstance = new bootstrap.Modal(modalEl);
-        const retryBtn = modalEl.querySelector('#invalidFenModalRetry');
-        if (retryBtn) retryBtn.addEventListener('click', () => {
-            modalInstance.hide();
-            if (typeof performScan === 'function') performScan();
-        });
-
-        window.showInvalidFenModal = function (message) {
-            const body = modalEl.querySelector('#invalidFenModalBody');
-            if (body && message) body.textContent = message;
-            modalInstance.show();
-        };
-    })();
-
 
 });
