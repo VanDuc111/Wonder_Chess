@@ -10,18 +10,12 @@ let selectedBotEngine = 'stockfish';
 let selectedBotLevel = 10;
 let selectedBotTime = '0';
 let selectedBotIncrement = 0;
-let whiteTime = 0;
-let blackTime = 0;
-let timerInterval = null;
-let isTimedGame = false;
 
 const JS_MATE_SCORE_BASE = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_SCORE_BASE) ? window.APP_CONST.ENGINE.MATE_SCORE_BASE : 1000000;
 const JS_MATE_DEPTH_ADJUSTMENT = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT) ? window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT : 500;
 let gameOverModalInstance = null;
 let loadDataModalInstance = null;
 let currentWebcamStream = null;
-let timerWhiteEl = null;
-let timerBlackEl = null;
 
 // Auto scan delay (ms)
 const AUTO_SCAN_DELAY = (window.APP_CONST && window.APP_CONST.AUTO_SCAN && window.APP_CONST.AUTO_SCAN.DELAY_MS) ? window.APP_CONST.AUTO_SCAN.DELAY_MS : 5000;
@@ -39,9 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const userDisplaySpan = document.getElementById('user-display');
     const loadDataModalEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.LOAD_DATA_MODAL) ? window.APP_CONST.IDS.LOAD_DATA_MODAL : 'loadDataModal');
     const videoElement = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WEBCAM_VIDEO) ? window.APP_CONST.IDS.WEBCAM_VIDEO : 'webcam-feed');
-
-    timerWhiteEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.TIMER_WHITE) ? window.APP_CONST.IDS.TIMER_WHITE : 'timer-white');
-    timerBlackEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.TIMER_BLACK) ? window.APP_CONST.IDS.TIMER_BLACK : 'timer-black');
     if (loadDataModalEl) {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
         loadDataModalEl.addEventListener('hidden.bs.modal', stopWebcam);
@@ -241,23 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             playerColor = finalPlayerColor;
-            const scoreWrapper = document.querySelector('.score-alignment-wrapper');
-            if (finalPlayerColor === 'b') {
-                boardOrientation = 'black';
+            boardOrientation = (finalPlayerColor === 'b') ? 'black' : 'white';
 
-                // 1. Thêm class xoay cho thanh điểm
-                if (scoreWrapper) {
-                    scoreWrapper.classList.add('rotated-score');
-                }
-            } else {
-                boardOrientation = 'white';
+            // Cập nhật công tắc xoay bàn cờ trên UI
+            const flipSwitch = document.getElementById('flip-board-switch');
+            if (flipSwitch) flipSwitch.checked = (boardOrientation === 'black');
 
-                // 2. Xóa class xoay
-                if (scoreWrapper) {
-                    scoreWrapper.classList.remove('rotated-score');
-                }
-            }
-            //create new chessboard
+            // Khởi tạo bàn cờ (initChessboard đã được cập nhật để tự động xoay UI đồng hồ/điểm)
             initChessboard(boardOrientation);
             try {
                 updateUI(game.fen());
@@ -280,10 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (playerColor === 'b') {
                 // Nếu người chơi chọn Đen, Bot (Trắng) đi trước
-                boardContainer.classList.add('rotated-board');
                 handleBotTurn();
-            } else {
-                boardContainer.classList.remove('rotated-board');
             }
         });
     }
@@ -621,126 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
 
-    // ===== ĐỒNG HỒ THỜI GIAN ======
-
-    function formatTime(seconds) {
-        const min = Math.floor(seconds / 60);
-        const sec = seconds % 60;
-        // Đảm bảo giây luôn có 2 chữ số (ví dụ: 05)
-        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-    }
-
-    // =======================================================
-    // HÀM HELPER: CẬP NHẬT GIAO DIỆN ĐỒNG HỒ
-    // =======================================================
-    function updateTimerDisplay() {
-        if (timerWhiteEl) timerWhiteEl.textContent = formatTime(whiteTime);
-        if (timerBlackEl) timerBlackEl.textContent = formatTime(blackTime);
-    }
-
-    // =======================================================
-    // HÀM HELPER: RESET/ẨN ĐỒNG HỒ
-    // =======================================================
-    function resetTimers() {
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-        whiteTime = 0;
-        blackTime = 0;
-        isTimedGame = false;
-
-        if (timerWhiteEl) {
-            timerWhiteEl.style.display = 'none';
-            timerWhiteEl.classList.remove('active');
-            timerWhiteEl.textContent = '0:00';
-        }
-        if (timerBlackEl) {
-            timerBlackEl.style.display = 'none';
-            timerBlackEl.classList.remove('active');
-            timerBlackEl.textContent = '0:00';
-        }
-    }
-
-    // =======================================================
-    // HÀM CHÍNH: KHỞI TẠO ĐỒNG HỒ ĐẾM NGƯỢC
-    // =======================================================
-    function initTimers(minutes) {
-        resetTimers();
-
-        const initialTimeSeconds = minutes * 60;
-        whiteTime = initialTimeSeconds;
-        blackTime = initialTimeSeconds;
-        isTimedGame = true;
-
-        if (timerWhiteEl) timerWhiteEl.style.display = 'block';
-        if (timerBlackEl) timerBlackEl.style.display = 'block';
-
-        updateTimerDisplay();
-    }
-
-    // =======================================================
-    // HÀM BẮT ĐẦU VÀ CHUYỂN ĐỔI ĐỒNG HỒ
-    // =======================================================
-    function startTimer(colorToMove) {
-        if (timerInterval) {
-            clearInterval(timerInterval);
-        }
-
-        // CỘNG GIÂY TĂNG THÊM (INCREMENT)
-        // Người vừa đi xong nước (đối phương của người sắp đi) sẽ được cộng giây
-        if (isTimedGame && selectedBotIncrement > 0 && typeof game !== 'undefined' && game) {
-            const history = game.history();
-            if (history.length > 0) {
-                if (colorToMove === 'w') {
-                    blackTime += selectedBotIncrement;
-                } else {
-                    whiteTime += selectedBotIncrement;
-                }
-                updateTimerDisplay();
-            }
-        }
-
-        if (colorToMove === 'w') {
-            if (timerWhiteEl) timerWhiteEl.classList.add('active');
-            if (timerBlackEl) timerBlackEl.classList.remove('active');
-        } else { // chess.BLACK
-            if (timerWhiteEl) timerWhiteEl.classList.remove('active');
-            if (timerBlackEl) timerBlackEl.classList.add('active');
-        }
-
-        // Thiết lập bộ đếm 1 giây
-        timerInterval = setInterval(() => {
-            let currentTime;
-            let isWhiteTurn = (colorToMove === 'w');
-
-            if (isWhiteTurn) {
-                whiteTime--;
-                currentTime = whiteTime;
-            } else {
-                blackTime--;
-                currentTime = blackTime;
-            }
-
-            updateTimerDisplay();
-
-            // KIỂM TRA HẾT GIỜ (Flag)
-            if (currentTime <= 0) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                isTimedGame = false; // Game đã kết thúc
-
-                const winner = isWhiteTurn ? 'Đen' : 'Trắng';
-                const body = `Hết giờ! ${winner} thắng cuộc.`;
-                showGameOverModal("Hết giờ", body);
-            }
-        }, 1000);
-    }
-
     // hỗ trợ hàm toàn cục
-    window.startTimer = startTimer;
-    window.resetTimers = resetTimers;
-    window.initTimers = initTimers;
     window.showGameOverModal = showGameOverModal;
     window.startWebcam = startWebcam;
     window.stopWebcam = stopWebcam;

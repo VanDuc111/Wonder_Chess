@@ -449,6 +449,7 @@ class ChessCore {
         this._setupResize();
         this.updateUI();
         if (document.getElementById('flip-board-switch')?.checked) board.orientation('black');
+        this._syncOrientationUI();
         
         // Kích hoạt phân tích cho nước đi đầu tiên
         this.onTurnEnd();
@@ -553,7 +554,7 @@ class ChessCore {
     async onTurnEnd() {
         this.ui.updateAllHighlights(game, moveHistory, currentFenIndex);
         this.updateUI();
-        if (isTimedGame) clearInterval(timerInterval);
+        if (typeof TIMER_MANAGER !== 'undefined' && TIMER_MANAGER.isTimedGame) TIMER_MANAGER.stop();
         if (game.game_over()) {
             this.ui.updateEvaluationBar(0, game.fen(), game);
             this._showGameOver();
@@ -678,7 +679,11 @@ class ChessCore {
      */
     _initGlobalListeners() {
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('flip-board-switch')?.addEventListener('change', () => { board?.flip(); this.updateUI(); });
+            document.getElementById('flip-board-switch')?.addEventListener('change', () => { 
+                board?.flip(); 
+                this._syncOrientationUI();
+                this.updateUI(); 
+            });
             document.getElementById('best-move-switch')?.addEventListener('change', () => this.ui.renderBestMoveArrow(moveHistory[currentFenIndex]?.bestMove));
             document.getElementById('eval-bar-switch')?.addEventListener('change', (e) => {
                 const w = document.querySelector('.score-alignment-wrapper');
@@ -757,6 +762,20 @@ class ChessCore {
      * Board sync after snap animation.
      */
     onSnapEnd() { if (board && board.fen() !== game.fen()) board.position(game.fen(), false); }
+
+    /**
+     * Synchronizes UI components (timers, eval bar) with the board orientation.
+     * @private
+     */
+    _syncOrientationUI() {
+        if (!board) return;
+        const isFlipped = board.orientation() === 'black';
+        const boardArea = document.querySelector('.chess-board-area');
+        const scoreWrapper = document.querySelector('.score-alignment-wrapper');
+        
+        if (boardArea) boardArea.classList.toggle('rotated-board', isFlipped);
+        if (scoreWrapper) scoreWrapper.classList.toggle('rotated-score', isFlipped);
+    }
 }
 
 // Global Core Initialization
