@@ -1,0 +1,248 @@
+/* _chessboard.scss */
+
+#game-view-container {
+    display: flex;
+    justify-content: center;
+    align-items: center !important;
+    transform: rotate(0deg);
+    transition: transform 0.5s ease-in-out;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-top: var(--spacing-unit);
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.chess-board-area {
+    background: var(--color-element-background);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    border-radius: var(--radius-container);
+    width: 100%;
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+    box-sizing: border-box;
+    padding: var(--spacing-sm);
+    position: relative;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.3s ease;
+    height: auto !important; 
+    min-height: 0;
+}
+
+/* Adjust padding-right only when timers are potentially overlapping */
+@media (min-width: 577px) {
+    .chess-board-area {
+        padding-right: calc(var(--timer-width) + 25px) !important;
+    }
+}
+
+.board-relative-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+#chessboard-main-container {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+#myBoard {
+    width: 100% !important;
+    height: auto !important;
+    box-sizing: border-box;
+    aspect-ratio: 1 / 1;
+    touch-action: none;
+    position: relative;
+}
+
+#myBoard img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Timers - Base Rules */
+.timer-box {
+    background-color: var(--color-element-background);
+    color: var(--color-text-light, #ffffff);
+    padding: var(--btn-padding-sm) 0;
+    border-radius: var(--radius-sm);
+    width: var(--timer-width);
+    font-size: 0.95rem;
+    font-weight: bold;
+    font-family: monospace;
+    opacity: 0.8;
+    transition: opacity 0.3s, background-color 0.3s;
+    position: absolute;
+    z-index: 10;
+    border: 1px solid var(--color-border-subtle);
+    text-align: center;
+    box-shadow: var(--box-shadow-2);
+}
+
+.timer-box.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+    opacity: 1.0;
+}
+
+.timer-top-right {
+    top: 0;
+    right: var(--timer-offset-right);
+}
+
+.timer-bottom-right {
+    bottom: 0;
+    right: var(--timer-offset-right);
+}
+
+/* Rotated Board Timer Logic for non-mobile */
+@media (min-width: 768px) {
+    .chess-board-area.rotated-board .timer-top-right {
+        top: auto;
+        bottom: 0;
+    }
+
+    .chess-board-area.rotated-board .timer-bottom-right {
+        bottom: auto;
+        top: 0;
+    }
+}
+
+/* Evaluation Bar */
+.score-alignment-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 25px 0 10px;
+    transform-origin: center center;
+    transition: height 0.3s ease-out;
+}
+
+@media (min-width: 768px) {
+    .score-alignment-wrapper {
+        margin-right: 15px;
+    }
+}
+
+.score-alignment-wrapper.rotated-score {
+    transform: rotate(180deg);
+}
+
+.score-alignment-wrapper.rotated-score #evaluation-score {
+    transform: rotate(-180deg);
+}
+
+.score-bar-container {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+}
+
+#evaluation-bar {
+    width: 20px;
+    background: linear-gradient(to top, var(--color-eval-gradient-start) 0%, var(--color-eval-gradient-end) 100%);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.eval-advantage-bar {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background-color: var(--color-chess-white);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+#evaluation-score {
+    color: var(--color-text-light);
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-top: 8px;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    #evaluation-score {
+        font-size: 0.85rem;
+        width: 50px;
+    }
+}
+
+/* Square Highlighting & Annotations */
+.square-55d63 {
+    position: relative;
+}
+
+.highlight-move::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--move-indicator-size);
+    height: var(--move-indicator-size);
+    margin-top: calc(var(--move-indicator-size) * -0.5);
+    margin-left: calc(var(--move-indicator-size) * -0.5);
+    border-radius: 50%;
+    background-color: rgba(60, 179, 113, 0.5);
+}
+
+.square-selected {
+    box-shadow: inset 0 0 0 2000px var(--color-highlight-squared) !important;
+}
+
+.highlight-check {
+    box-shadow: inset 0 0 0 2000px var(--color-highlight-check);
+}
+
+.move-annotation {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.move-annotation img {
+    height: 18px;
+    width: auto;
+    display: inline-block;
+}
+
+.move-annotation span {
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+.annot-brilliant { color: #26c2a3; }
+.annot-great { color: #5c8bb0; }
+.annot-good { color: #95b806; }
+.annot-book { color: #d5a47d; }
+.annot-mistake { color: #ffa459; }
+.annot-blunder { color: #fa412d; }
+
+#arrow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}

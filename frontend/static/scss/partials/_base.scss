@@ -1,0 +1,46 @@
+/* _base.scss */
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-light);
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--color-background-start) 0%, var(--color-background-end) 100%);
+}
+
+body.allow-scroll {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+#main-app-screen {
+    height: 100%;
+}
+
+.main-content-row {
+    height: calc(100vh - 110px);
+    overflow-y: hidden;
+    padding-bottom: 5px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: var(--scrollbar-thin);
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--color-element-background);
+    border-radius: 3px;
+}
+
+/* Common UI Elements */
+.btn-success {
+    background: var(--color-success);
+}
+
+.btn-close {
+    filter: invert(1);
+}

@@ -1,0 +1,114 @@
+/* _openings.scss */
+
+.opening-card {
+    background: var(--color-element-background);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 12px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.opening-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+    border-color: var(--color-primary);
+}
+
+.opening-board-container {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.opening-card-body {
+    padding: 18px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.eco-badge {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.category-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border-subtle);
+    color: var(--color-text-light);
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.category-btn:hover, .category-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(60, 179, 113, 0.3);
+}
+
+.search-container {
+    max-width: 550px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border-subtle);
+    color: white;
+    border-radius: 50px;
+    padding: 14px 20px 14px 50px;
+    width: 100%;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+}
+
+.search-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(60, 179, 113, 0.15);
+}
+
+.search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+}
+
+.opening-card-col {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.opening-card-col.fade-in-visible {
+    animation: openingCardFadeIn 0.5s ease forwards;
+}
+
+@keyframes openingCardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,0 +1,55 @@
+/* _buttons.scss */
+
+.button-group-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--gap-xs);
+    padding: 0 var(--padding-xxs);
+    margin-top: var(--space-lg2);
+}
+
+.button-group-container .btn {
+    flex-grow: 1;
+    min-width: 60px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-xs);
+    padding: var(--gap-xs) 0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+    background-color: var(--color-element-background);
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+
+.button-group-container .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    background-color: #3e3e3e;
+    filter: brightness(1.1);
+    color: white;
+}
+
+.button-group-container .btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: var(--color-element-background);
+}
+
+.btn-chess-nav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.btn-chess-action {
+    background: linear-gradient(135deg, #23d5ab 0%, #23a6d5 100%);
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-chess-danger {
+    background: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%);
+}

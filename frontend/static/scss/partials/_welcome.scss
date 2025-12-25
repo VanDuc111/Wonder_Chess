@@ -1,0 +1,99 @@
+/* _welcome.scss */
+
+#welcome-screen {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background-position: center center;
+    background-image: url('/static/img/background.png');
+    background-size: cover;
+    background-attachment: fixed;
+    position: relative;
+    min-height: 100vh;
+}
+
+#welcome-screen::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: -1;
+}
+
+.welcome-container {
+    padding: var(--spacing-lg) var(--spacing-md);
+    border-radius: var(--radius-container);
+    text-align: center;
+    max-width: var(--max-content-width);
+    width: 90%;
+    background: var(--color-glass-background);
+    backdrop-filter: blur(var(--blur-strong));
+    -webkit-backdrop-filter: blur(var(--blur-strong));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--box-shadow-1);
+}
+
+.welcome-title {
+    font-size: var(--font-size-title);
+    font-weight: 700;
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--radius-container);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.welcome-question {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    opacity: 0.85;
+}
+
+#nickname-form {
+    display: block;
+}
+
+#nickname-input {
+    width: 100%;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: var(--radius-default);
+    background: #1e1e3f;
+    color: var(--color-text-light);
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+#nickname-input::placeholder {
+    color: var(--color-text-placeholder);
+}
+
+.start-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.start-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
+    filter: brightness(1.1);
+}
+
+.start-button:active {
+    transform: translateY(0);
+}

@@ -1,0 +1,43 @@
+/* style.scss */
+
+/* 1. VARIABLES & THEME CONFIGURATION */
+@import 'partials/variables';
+
+/* 2. GLOBAL STYLES & BASE LAYOUT */
+@import 'partials/base';
+
+/* 3. WELCOME SCREEN */
+@import 'partials/welcome';
+
+/* 4. NAVBAR & USER DISPLAY */
+@import 'partials/navbar';
+
+/* 5. CHESSBOARD & EVALUATION BAR */
+@import 'partials/chessboard';
+
+/* 6. CONTROL BUTTONS */
+@import 'partials/buttons';
+
+/* 7. MOVE HISTORY DISPLAY */
+@import 'partials/history';
+
+/* 8. CHATBOT INTERFACE */
+@import 'partials/chat';
+
+/* 9. MODALS & OVERLAYS */
+@import 'partials/modals';
+
+/* 10. OPENINGS PAGE */
+@import 'partials/openings';
+
+/* 11. ANIMATIONS & UTILS */
+@import 'partials/utils';
+
+/* 13. ANALYSIS SETTINGS */
+@import 'partials/analysis';
+
+/* 14. UPLOAD DROP ZONE */
+@import 'partials/upload';
+
+/* 12. RESPONSIVE DESIGN (ALWAYS LAST) */
+@import 'partials/responsive';

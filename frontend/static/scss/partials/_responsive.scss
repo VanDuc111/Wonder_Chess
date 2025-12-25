@@ -1,0 +1,293 @@
+/* _responsive.scss */
+
+/* Large Screens (Desktop) */
+@media (min-width: 992px) {
+    .main-content-row {
+        flex-wrap: nowrap !important;
+        display: flex !important;
+        align-items: stretch;
+        /* Ensure responsive height calculation works correctly */
+        height: calc(100vh - 110px) !important;
+    }
+
+    /* Game Column (Left) */
+    .main-content-row > div:first-child {
+        flex: 0 0 auto;
+        width: 45%;
+    }
+
+    /* History Column (Middle) */
+    #history-col {
+        flex: 1 1 auto;
+        min-width: 200px;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* Chat Column (Right) */
+    #chat-col {
+        flex: 0 0 auto;
+        width: 33.333333%; 
+        padding-right: var(--spacing-sm) !important;
+    }
+
+    #chat-col.shrunk {
+        flex: 0 0 48px;
+        max-width: 48px;
+        min-width: 48px;
+    }
+
+    #chat-col.expanded {
+        flex: 0 0 40%;
+        max-width: 60%;
+    }
+}
+
+/* Tablet screens (stack logically) */
+@media (max-width: 991.98px) {
+    #board-col, #history-col, #chat-col {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    .chess-board-area {
+        max-width: 500px !important; /* Larger on tablet than mobile */
+        margin: 0 auto;
+    }
+
+    #history-col {
+        margin-top: var(--spacing-sm) !important;
+    }
+
+    #chat-col {
+        margin-top: var(--spacing-sm) !important;
+    }
+
+    .history-container {
+        height: 400px;
+        margin-bottom: 15px;
+    }
+
+    .chatbot-container {
+        margin-bottom: 0 !important;
+    }
+
+    /* Đảm bảo game container không bị lệch */
+    #game-view-container {
+        justify-content: center !important;
+        padding-right: 0 !important;
+    }
+
+    body {
+        height: auto !important;
+        min-height: 100vh;
+        overflow-y: auto !important;
+    }
+
+    .main-content-row {
+        height: auto !important;
+        overflow-y: visible !important;
+        padding-bottom: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .navbar-collapse {
+        background: rgba(15, 15, 26, 0.95);
+        backdrop-filter: blur(var(--blur-strong));
+        border-radius: 20px;
+        padding: 20px;
+        margin-top: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+    }
+
+    .nav-mode-link {
+        padding: 12px 16px !important;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        border-bottom: none !important;
+        transition: all 0.2s ease;
+        text-align: center;
+        width: 100%;
+        position: relative;
+    }
+
+    .nav-mode-link.active {
+        background: rgba(60, 179, 113, 0.12) !important;
+        color: var(--color-primary) !important;
+        border-radius: 12px !important;
+    }
+
+    .nav-mode-link.active::after { display: none !important; }
+    
+    .nav-mode-link.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 20%;
+        bottom: 20%;
+        width: 4px;
+        background: var(--color-primary);
+        border-radius: 0 4px 4px 0;
+        box-shadow: 2px 0 8px var(--color-primary);
+    }
+
+    #navbar-user-section {
+        justify-content: center !important;
+        margin-top: 1.5rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #chat-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    /* Giãn rộng bong bóng chat trên mobile */
+    #chatbot-messages > div {
+        max-width: 95%;
+    }
+
+    .message-bubble {
+        max-width: 95%;
+    }
+
+    #chatbot-form {
+        margin: 10px 10px 0 10px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .chatbot-container {
+        height: 500px;
+    }
+
+    .score-alignment-wrapper {
+        margin-right: 6px !important;
+        width: 20px;
+        padding-top: 0;
+    }
+
+    #evaluation-bar {
+        width: 10px;
+        margin-top: 40px;
+    }
+
+    #evaluation-score {
+        width: 100%;
+        font-size: 0.75rem;
+        margin-top: 4px !important;
+    }
+
+    #chessboard-main-container {
+        flex: 1;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .chess-board-area {
+        padding: 5px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    #myBoard {
+        width: 100% !important;
+    }
+
+    .board-relative-wrapper {
+        margin-top: 35px !important;
+        margin-bottom: 35px !important;
+    }
+
+    /* Force mobile timer positions and prevent overlap */
+    .timer-box {
+        position: absolute;
+        right: 0 !important;
+        width: 70px !important;
+        font-size: 0.85rem !important;
+        padding: 4px 0 !important;
+        background: rgba(15, 15, 26, 0.9) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        z-index: 105 !important;
+        border-radius: 6px !important;
+        text-align: center !important;
+    }
+
+    .timer-top-right { 
+        top: -35px !important; 
+        bottom: auto !important;
+    }
+    .timer-bottom-right { 
+        bottom: -35px !important; 
+        top: auto !important;
+    }
+
+    /* Handle rotated board in mobile - keep timers outside board */
+    .chess-board-area.rotated-board .timer-top-right {
+        top: auto !important;
+        bottom: -35px !important;
+    }
+
+    .chess-board-area.rotated-board .timer-bottom-right {
+        bottom: auto !important;
+        top: -35px !important;
+    }
+
+    .analysis-controls-horizontal {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 8px 15px;
+        overflow-x: visible !important;
+    }
+
+    .custom-switch-sm {
+        margin-right: 0 !important;
+    }
+
+    .custom-switch-sm .form-check-label {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .button-group-container {
+        width: 100%;
+        padding: 0 10px;
+    }
+
+    .button-group-container .btn {
+        font-size: 0.8rem;
+        padding: 8px 2px;
+        min-width: 0;
+        flex: 1 1 30%;
+    }
+
+    .btn-chess-action {
+        flex: 1 1 45% !important;
+    }
+
+    .button-group-container .btn i {
+        display: inline-block;
+        margin-bottom: 0;
+        margin-right: 4px;
+        font-size: 1rem;
+    }
+}
+
+/* Compact Analysis Settings media query from original */
+@media (max-width: 1400px) {
+    .custom-switch-sm .form-check-label {
+        font-size: 0.72rem;
+    }
+    .analysis-controls-horizontal {
+        gap: 8px 12px;
+    }
+}
