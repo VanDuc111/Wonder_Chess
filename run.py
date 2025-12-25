@@ -1,7 +1,9 @@
 import os
 import webbrowser
 from threading import Timer
-from backend.app import app
+from backend import create_app
+
+app = create_app()
 
 def open_browser():
     """Automatically opens the browser when the server starts"""

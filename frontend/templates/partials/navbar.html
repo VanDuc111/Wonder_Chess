@@ -1,7 +1,7 @@
 <header class="row mb-3">
     <nav class="navbar navbar-expand-lg navbar-dark bg-transparent">
         <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home') }}">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
                 <img src="{{ url_for('static', filename='img/brand-logo.svg') }}" alt="WonderChess Logo" class="brand-icon me-2" style="width: 40px; height: 40px;">
                 <span class="brand-text">
                     <span class="brand-wonder">Wonder</span><span class="brand-chess">Chess</span>
@@ -15,13 +15,13 @@
             <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
                 <ul class="navbar-nav justify-content-center flex-grow-1">
                     <li class="nav-item">
-                        <a id="nav-analyze" class="nav-link nav-mode-link {{ 'active' if active_page == 'analyze' }}" href="{{ url_for('home') }}" data-mode="analyze">Phân tích</a>
+                        <a id="nav-analyze" class="nav-link nav-mode-link {{ 'active' if active_page == 'analyze' }}" href="{{ url_for('main.home') }}" data-mode="analyze">Phân tích</a>
                     </li>
                     <li class="nav-item">
-                        <a id="nav-play-bot" class="nav-link nav-mode-link {{ 'active' if active_page == 'play' }}" href="{{ url_for('home') }}" data-mode="play">Chơi với Bot</a>
+                        <a id="nav-play-bot" class="nav-link nav-mode-link {{ 'active' if active_page == 'play' }}" href="{{ url_for('main.home') }}" data-mode="play">Chơi với Bot</a>
                     </li>
                     <li class="nav-item">
-                        <a id="nav-opening" class="nav-link nav-mode-link {{ 'active' if active_page == 'openings' }}" href="{{ url_for('openings_page') }}">Khai cuộc</a>
+                        <a id="nav-opening" class="nav-link nav-mode-link {{ 'active' if active_page == 'openings' }}" href="{{ url_for('main.openings_page') }}">Khai cuộc</a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center" id="navbar-user-section">
