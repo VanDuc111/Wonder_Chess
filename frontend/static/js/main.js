@@ -49,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
         displayChatbotMessage(welcomeMessage);
 
         fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
+        
+        if (window.resetTimers) window.resetTimers();
 
         document.title = `WonderChess - Intelligent Chess Assistant System`;
 

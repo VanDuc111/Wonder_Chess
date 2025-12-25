@@ -6,7 +6,7 @@
         flex-wrap: nowrap !important;
         display: flex !important;
         align-items: stretch;
-        /* Ensure responsive height calculation works correctly */
+        /* Force height recalculation when DevTools are toggled */
         height: calc(100vh - 110px) !important;
     }
 
@@ -52,8 +52,10 @@
     }
 
     .chess-board-area {
-        max-width: 500px !important; /* Larger on tablet than mobile */
+        max-width: 500px !important;
         margin: 0 auto;
+        padding-right: calc(var(--timer-width) + 25px) !important;
+        padding-left: var(--spacing-sm) !important;
     }
 
     #history-col {
@@ -170,6 +172,7 @@
 
     .score-alignment-wrapper {
         margin-right: 6px !important;
+        margin-left: 4px !important;
         width: 20px;
         padding-top: 0;
     }
@@ -193,6 +196,7 @@
 
     .chess-board-area {
         padding: 5px !important;
+        padding-right: 5px !important;
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box;
@@ -205,9 +209,10 @@
     .board-relative-wrapper {
         margin-top: 35px !important;
         margin-bottom: 35px !important;
+        padding-right: 0 !important;
     }
 
-    /* Force mobile timer positions and prevent overlap */
+    /* Force mobile timer positions and prevent overlap/overflow */
     .timer-box {
         position: absolute;
         right: 0 !important;
@@ -230,15 +235,17 @@
         top: auto !important;
     }
 
-    /* Handle rotated board in mobile - keep timers outside board */
+    /* Handle rotated board in mobile - keep timers outside board and inner screen */
     .chess-board-area.rotated-board .timer-top-right {
         top: auto !important;
         bottom: -35px !important;
+        right: 0 !important;
     }
 
     .chess-board-area.rotated-board .timer-bottom-right {
         bottom: auto !important;
         top: -35px !important;
+        right: 0 !important;
     }
 
     .analysis-controls-horizontal {

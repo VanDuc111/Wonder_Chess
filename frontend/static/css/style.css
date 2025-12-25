@@ -70,7 +70,7 @@
   --padding-xxs: 5px;
 }
 
-/* SCSS Variables (Optional but good for SCSS internal logic) */
+/* SCSS Variables */
 /* 2. GLOBAL STYLES & BASE LAYOUT */
 /* _base.scss */
 body {
@@ -685,6 +685,10 @@ body.allow-scroll {
   color: #5c8bb0;
 }
 
+.annot-best {
+  color: #2ef771;
+}
+
 .annot-good {
   color: #95b806;
 }
@@ -693,12 +697,24 @@ body.allow-scroll {
   color: #d5a47d;
 }
 
+.annot-solid {
+  color: #8b90a1;
+}
+
+.annot-inacc {
+  color: #f4c430;
+}
+
 .annot-mistake {
   color: #ffa459;
 }
 
 .annot-blunder {
   color: #fa412d;
+}
+
+.annot-miss {
+  color: #fb41ac;
 }
 
 #arrow-container {
@@ -2215,7 +2231,7 @@ body.allow-scroll {
     -webkit-box-align: stretch;
         -ms-flex-align: stretch;
             align-items: stretch;
-    /* Ensure responsive height calculation works correctly */
+    /* Force height recalculation when DevTools are toggled */
     height: calc(100vh - 110px) !important;
   }
   /* Game Column (Left) */
@@ -2266,8 +2282,10 @@ body.allow-scroll {
             flex: 0 0 100% !important;
   }
   .chess-board-area {
-    max-width: 500px !important; /* Larger on tablet than mobile */
+    max-width: 500px !important;
     margin: 0 auto;
+    padding-right: calc(var(--timer-width) + 25px) !important;
+    padding-left: var(--spacing-sm) !important;
   }
   #history-col {
     margin-top: var(--spacing-sm) !important;
@@ -2377,6 +2395,7 @@ body.allow-scroll {
   }
   .score-alignment-wrapper {
     margin-right: 6px !important;
+    margin-left: 4px !important;
     width: 20px;
     padding-top: 0;
   }
@@ -2398,6 +2417,7 @@ body.allow-scroll {
   }
   .chess-board-area {
     padding: 5px !important;
+    padding-right: 5px !important;
     width: 100% !important;
     max-width: 100% !important;
     -webkit-box-sizing: border-box;
@@ -2409,8 +2429,9 @@ body.allow-scroll {
   .board-relative-wrapper {
     margin-top: 35px !important;
     margin-bottom: 35px !important;
+    padding-right: 0 !important;
   }
-  /* Force mobile timer positions and prevent overlap */
+  /* Force mobile timer positions and prevent overlap/overflow */
   .timer-box {
     position: absolute;
     right: 0 !important;
@@ -2431,14 +2452,16 @@ body.allow-scroll {
     bottom: -35px !important;
     top: auto !important;
   }
-  /* Handle rotated board in mobile - keep timers outside board */
+  /* Handle rotated board in mobile - keep timers outside board and inner screen */
   .chess-board-area.rotated-board .timer-top-right {
     top: auto !important;
     bottom: -35px !important;
+    right: 0 !important;
   }
   .chess-board-area.rotated-board .timer-bottom-right {
     bottom: auto !important;
     top: -35px !important;
+    right: 0 !important;
   }
   .analysis-controls-horizontal {
     -ms-flex-wrap: wrap !important;

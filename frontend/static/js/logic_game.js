@@ -598,12 +598,17 @@ class ChessCore {
                 const san = this.game.history().pop();
                 this.history.push({ fen: this.game.fen(), score: r.score, san, uci: r.move });
                 this.index = this.history.length - 1;
-                this.updateUI();
-                if (this.game.game_over()) this._showGameOver();
-                else if (typeof TIMER_MANAGER !== 'undefined' && TIMER_MANAGER.isTimedGame) TIMER_MANAGER.start(this.game.turn(), selectedBotIncrement);
+                
+                // Cập nhật khai cuộc cho nước đi của Bot
+                this.opening.detectAndUpdate(this.history, this.index);
+                
+                // Gọi onTurnEnd để xử lý kết thúc lượt (bao gồm việc trigger gợi ý cho Player)
+                await this.onTurnEnd();
             }
-        } catch (e) { console.error("Engine failure:", e); }
-        isPlayerTurn = true;
+        } catch (e) {
+            console.error("Engine failure:", e);
+            isPlayerTurn = true;
+        }
     }
 
     /**
