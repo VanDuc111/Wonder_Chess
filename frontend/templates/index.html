@@ -114,7 +114,7 @@
                     <div class="chat-header d-flex align-items-center p-3">
                         <div class="alice-avatar-container me-3">
                             <div class="alice-avatar">
-                                <img src="{{ url_for('static', filename='img/alice-avatar.png') }}" alt="Alice Avatar">
+                                <img src="{{ url_for('static', filename='img/alice-avatar.webp') }}" alt="Alice Avatar">
                             </div>
                         </div>
                         <div class="chat-info">
@@ -143,12 +143,12 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/constants.js') }}"></script>
-<script src="{{ url_for('static', filename='js/stockfish_manager.js') }}"></script>
-<script src="{{ url_for('static', filename='js/opening_data.js') }}"></script>
-<script src="{{ url_for('static', filename='js/logic_game.js') }}"></script>
-<script src="{{ url_for('static', filename='js/timer_manager.js') }}"></script>
-<script src="{{ url_for('static', filename='js/chat_manager.js') }}"></script>
-<script src="{{ url_for('static', filename='js/vision_manager.js') }}"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/constants.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/stockfish_manager.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/opening_data.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/logic_game.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/timer_manager.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/chat_manager.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/vision_manager.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 {% endblock %}

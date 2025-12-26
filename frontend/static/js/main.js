@@ -16,6 +16,14 @@ let loadDataModalInstance = null;
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // 0. Preload piece images to avoid lag on first render
+    const pieces = ['wP', 'wR', 'wN', 'wB', 'wQ', 'wK', 'bP', 'bR', 'bN', 'bB', 'bQ', 'bK'];
+    const pieceTheme = 'wikipedia';
+    pieces.forEach(p => {
+        const img = new Image();
+        img.src = `https://chessboardjs.com/img/chesspieces/${pieceTheme}/${p}.png`;
+    });
+
     const welcomeScreen = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WELCOME_SCREEN) ? window.APP_CONST.IDS.WELCOME_SCREEN : 'welcome-screen');
     const mainAppScreen = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.MAIN_APP_SCREEN) ? window.APP_CONST.IDS.MAIN_APP_SCREEN : 'main-app-screen');
     const nicknameForm = document.getElementById('nickname-form');

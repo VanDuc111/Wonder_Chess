@@ -128,7 +128,7 @@ body.allow-scroll {
   height: 100%;
   z-index: 1000;
   background-position: center center;
-  background-image: url("/static/img/background.png");
+  background-image: url("/static/img/background.webp");
   background-size: cover;
   background-attachment: fixed;
   position: relative;
