@@ -9,12 +9,13 @@
 .navbar-brand {
     font-size: 1.6rem;
     letter-spacing: -0.5px;
-    transition: var(--transition-base);
     padding: 0;
+    transition: none !important;
+    flex-shrink: 0;
 }
 
 .navbar-brand:hover {
-    transform: scale(1.05);
+    filter: brightness(1.2);
 }
 
 .brand-icon {
@@ -49,28 +50,28 @@
 }
 
 .navbar-toggler {
-    border: 1px solid var(--color-border-subtle) !important;
-    padding: 6px 12px;
-    font-size: 1rem;
-    border-radius: var(--radius-default);
-    transition: var(--transition-base);
-}
-
-.navbar-toggler:hover {
-    background-color: var(--color-element-background);
-    border-color: rgba(255, 255, 255, 0.5) !important;
-}
-
-.navbar-toggler:focus {
+    border: none !important;
+    background: transparent !important;
+    padding: 0;
+    margin: 0;
+    transition: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     box-shadow: none !important;
     outline: none !important;
-    border-color: var(--color-primary) !important;
 }
 
-.navbar-toggler-icon {
-    width: 1.3em;
-    height: 1.3em;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+.navbar-toggler-custom {
+    width: 32px;
+    height: 32px;
+    filter: brightness(0) invert(1);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.navbar-toggler:not(.collapsed) .navbar-toggler-custom {
+    transform: rotate(-90deg);
 }
 
 .nav-mode-link {

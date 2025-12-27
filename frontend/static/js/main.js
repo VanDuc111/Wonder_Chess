@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoElement = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WEBCAM_VIDEO) ? window.APP_CONST.IDS.WEBCAM_VIDEO : 'webcam-feed');
     if (loadDataModalEl) {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
-        loadDataModalEl.addEventListener('hidden.bs.modal', () => window.VISION_MANAGER?.stopWebcam());
     }
 
     // Hàm chào mừng và chuyển hướng
@@ -96,13 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
     modeLinks.forEach(link => {
         link.addEventListener('click', (event) => {
             const href = event.currentTarget.getAttribute('href');
-            // Nếu người dùng đang ở trang chủ (pathname là '/' hoặc '') và click vào link trang chủ, 
-            // chúng ta ngăn load lại trang để JS xử lý modal/mode.
             const isHomePage = window.location.pathname === '/' || window.location.pathname.endsWith('/index.html') || window.location.pathname === '';
             const isToHome = href === '/' || href === './' || href.endsWith('index.html');
 
             if (href && href !== '#' && !href.startsWith('javascript:') && !(isHomePage && isToHome)) {
-                // Let the browser navigate to the new page
+                collapseNavbar();
                 return;
             }
 

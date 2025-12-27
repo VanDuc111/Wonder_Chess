@@ -425,3 +425,37 @@
 .stat-inacc { color: #ffff00; }
 .stat-book { color: #a67c52; }
 
+/* Capture Button Circular*/
+.btn-capture-circular {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), #2e7d32);
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(76, 175, 80, 0.3);
+    transition: var(--transition-bounce);
+    outline: none;
+    padding: 0;
+}
+
+.btn-capture-circular img {
+    width: 32px;
+    height: 32px;
+    filter: brightness(0) invert(1); 
+    transition: var(--transition-base);
+}
+
+.btn-capture-circular:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(76, 175, 80, 0.5);
+    filter: brightness(1.1);
+}
+
+.btn-capture-circular:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}

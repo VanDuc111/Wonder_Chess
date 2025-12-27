@@ -86,15 +86,34 @@
 /* SCSS Variables (Mapping for compatibility and faster access in SCSS) */
 /* 2. GLOBAL STYLES & BASE LAYOUT */
 /* _base.scss */
+html, body {
+  overflow-x: hidden !important;
+  width: 100%;
+  position: relative;
+}
+
 body {
   font-family: "Roboto", sans-serif;
   margin: 0;
-  padding: 0;
+  padding: 0 !important;
   color: var(--color-text-light);
   height: 100vh;
-  overflow: hidden;
-  position: relative;
+  overflow-y: hidden;
   z-index: 0;
+  max-width: 100vw;
+  width: 100vw;
+}
+
+/* Kill Bootstrap's scrollbar-compensation padding */
+.modal-open {
+  padding-right: 0 !important;
+  overflow-y: auto !important;
+}
+
+body.modal-open #main-app-screen {
+  -webkit-filter: blur(4px);
+          filter: blur(4px);
+  pointer-events: none;
 }
 
 body::before {
@@ -111,19 +130,43 @@ body::before {
 body.allow-scroll {
   height: auto;
   min-height: 100vh;
-  overflow-y: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 #main-app-screen {
   height: 100%;
+  overflow-x: hidden;
 }
 
 .main-content-row {
   height: calc(100vh - 110px);
   overflow-y: hidden;
   padding-bottom: 5px;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
+/* Global Reset for Bootstrap Grid in Mobile to prevent horizontal scroll */
+@media (max-width: 991.98px) {
+  .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .container-fluid {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    overflow-x: hidden !important;
+  }
+  .navbar .container-fluid {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .collapse.show, .collapsing {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
 /* Scrollbars */
 ::-webkit-scrollbar {
   width: var(--scrollbar-thin);
@@ -280,14 +323,16 @@ body.allow-scroll {
 .navbar-brand {
   font-size: 1.6rem;
   letter-spacing: -0.5px;
-  -webkit-transition: var(--transition-base);
-  transition: var(--transition-base);
   padding: 0;
+  -webkit-transition: none !important;
+  transition: none !important;
+  -ms-flex-negative: 0;
+      flex-shrink: 0;
 }
 
 .navbar-brand:hover {
-  -webkit-transform: scale(1.05);
-          transform: scale(1.05);
+  -webkit-filter: brightness(1.2);
+          filter: brightness(1.2);
 }
 
 .brand-icon {
@@ -328,31 +373,42 @@ body.allow-scroll {
 }
 
 .navbar-toggler {
-  border: 1px solid var(--color-border-subtle) !important;
-  padding: 6px 12px;
-  font-size: 1rem;
-  border-radius: var(--radius-default);
-  -webkit-transition: var(--transition-base);
-  transition: var(--transition-base);
-}
-
-.navbar-toggler:hover {
-  background-color: var(--color-element-background);
-  border-color: rgba(255, 255, 255, 0.5) !important;
-}
-
-.navbar-toggler:focus {
+  border: none !important;
+  background: transparent !important;
+  padding: 0;
+  margin: 0;
+  -webkit-transition: none !important;
+  transition: none !important;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -ms-flex-negative: 0;
+      flex-shrink: 0;
   -webkit-box-shadow: none !important;
           box-shadow: none !important;
   outline: none !important;
-  border-color: var(--color-primary) !important;
 }
 
-.navbar-toggler-icon {
-  width: 1.3em;
-  height: 1.3em;
-  -webkit-filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
-          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+.navbar-toggler-custom {
+  width: 32px;
+  height: 32px;
+  -webkit-filter: brightness(0) invert(1);
+          filter: brightness(0) invert(1);
+  -webkit-transition: -webkit-transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: -webkit-transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), -webkit-transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.navbar-toggler:not(.collapsed) .navbar-toggler-custom {
+  -webkit-transform: rotate(-90deg);
+          transform: rotate(-90deg);
 }
 
 .nav-mode-link {
@@ -1907,6 +1963,56 @@ body.allow-scroll {
   color: #a67c52;
 }
 
+/* Capture Button Circular*/
+.btn-capture-circular {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), #2e7d32);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  cursor: pointer;
+  -webkit-box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(76, 175, 80, 0.3);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(76, 175, 80, 0.3);
+  -webkit-transition: var(--transition-bounce);
+  transition: var(--transition-bounce);
+  outline: none;
+  padding: 0;
+}
+
+.btn-capture-circular img {
+  width: 32px;
+  height: 32px;
+  -webkit-filter: brightness(0) invert(1);
+          filter: brightness(0) invert(1);
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
+}
+
+.btn-capture-circular:hover {
+  -webkit-transform: scale(1.1) rotate(5deg);
+          transform: scale(1.1) rotate(5deg);
+  -webkit-box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(76, 175, 80, 0.5);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(76, 175, 80, 0.5);
+  -webkit-filter: brightness(1.1);
+          filter: brightness(1.1);
+}
+
+.btn-capture-circular:active {
+  -webkit-transform: scale(0.95);
+          transform: scale(0.95);
+  -webkit-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
 /* 10. OPENINGS PAGE */
 /* _openings.scss */
 .opening-card {
@@ -2067,7 +2173,8 @@ body.allow-scroll {
   min-height: 100vh;
   height: auto !important;
   overflow-y: auto !important;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  max-width: 100vw;
 }
 
 .adventure-map-container {
@@ -2076,6 +2183,7 @@ body.allow-scroll {
   padding: 2rem 1rem 5rem;
   position: relative;
   z-index: 1;
+  overflow-x: hidden;
 }
 
 .adventure-title {
@@ -2114,6 +2222,9 @@ body.allow-scroll {
   position: absolute;
   top: 50px;
   bottom: 50px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+          transform: translateX(-50%);
   width: 4px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 2px;
@@ -2308,8 +2419,8 @@ body.allow-scroll {
             transform: translateY(100vh) translateX(0);
   }
   100% {
-    -webkit-transform: translateY(-10vh) translateX(100px);
-            transform: translateY(-10vh) translateX(100px);
+    -webkit-transform: translateY(-10vh) translateX(20px);
+            transform: translateY(-10vh) translateX(20px);
   }
 }
 
@@ -2319,8 +2430,8 @@ body.allow-scroll {
             transform: translateY(100vh) translateX(0);
   }
   100% {
-    -webkit-transform: translateY(-10vh) translateX(100px);
-            transform: translateY(-10vh) translateX(100px);
+    -webkit-transform: translateY(-10vh) translateX(20px);
+            transform: translateY(-10vh) translateX(20px);
   }
 }
 .particle:nth-child(1) {
@@ -2385,8 +2496,12 @@ body.allow-scroll {
 .ladder-step::after {
   content: "";
   position: absolute;
-  width: 150%;
-  height: 100%;
+  width: 250px;
+  height: 250px;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
   background: radial-gradient(circle, rgba(74, 158, 255, 0.05) 0%, transparent 70%);
   z-index: -2;
   pointer-events: none;
@@ -2398,6 +2513,9 @@ body.allow-scroll {
   position: absolute;
   top: 50px;
   bottom: 50px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+          transform: translateX(-50%);
   width: 6px;
   background: -webkit-gradient(linear, left top, left bottom, from(rgba(76, 175, 80, 0.3)), color-stop(rgba(138, 180, 248, 0.3)), color-stop(rgba(244, 143, 177, 0.3)), color-stop(rgba(253, 214, 99, 0.3)), to(rgba(255, 215, 0, 0.5)));
   background: linear-gradient(to bottom, rgba(76, 175, 80, 0.3), rgba(138, 180, 248, 0.3), rgba(244, 143, 177, 0.3), rgba(253, 214, 99, 0.3), rgba(255, 215, 0, 0.5));

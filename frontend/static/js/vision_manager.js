@@ -89,6 +89,62 @@ class VisionManager {
         this._initAutoScanListeners();
         this._initDragAndDropListeners();
         this._initInvalidFenModal();
+        this._initModalListeners();
+    }
+
+    /**
+     * Resets the entire Vision UI (previews, statuses, overlays).
+     */
+    resetUI() {
+        this._ensureDom();
+        
+        // 1. Reset Live Scan tab
+        if (this.dom.debugOverlay) {
+            this.dom.debugOverlay.src = '';
+            this.dom.debugOverlay.style.display = 'none';
+        }
+        if (this.dom.scanStatus) {
+            this.dom.scanStatus.textContent = 'Sẵn sàng...';
+            this.dom.scanStatus.style.color = '';
+        }
+        if (this.dom.autoScanToggle) {
+            this.dom.autoScanToggle.checked = false;
+        }
+        if (this.autoScanInterval) {
+            clearTimeout(this.autoScanInterval);
+            this.autoScanInterval = null;
+        }
+
+        // 2. Reset Image Upload tab
+        if (this.dom.imageInput) this.dom.imageInput.value = '';
+        if (this.dom.previewImg) this.dom.previewImg.src = '';
+        this.dom.filePreview?.classList.add('d-none');
+        this.dom.dropZone?.classList.remove('has-file');
+        if (this.dom.imageStatus) {
+            this.dom.imageStatus.textContent = "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
+        }
+    }
+
+    /**
+     * Listens for the parent Bootstrap modal events to manage camera and UI state.
+     * @private
+     */
+    _initModalListeners() {
+        const modalEl = document.getElementById('loadDataModal');
+        if (!modalEl) return;
+
+        // Reset and stop when hidden
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            this.stopWebcam();
+            this.resetUI();
+        });
+
+        // Auto-start if tab is active when shown
+        modalEl.addEventListener('shown.bs.modal', () => {
+            if (this.dom.liveScanTab && this.dom.liveScanTab.classList.contains('active')) {
+                this.startWebcam();
+            }
+        });
     }
 
     /**
