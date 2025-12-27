@@ -1,0 +1,280 @@
+/* _learn.scss */
+
+.learn-adventure-background {
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F0F1A 100%);
+    min-height: 100vh;
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+}
+
+.adventure-map-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem 5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.adventure-title {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+
+.adventure-subtitle {
+    color: var(--color-text-secondary);
+    font-size: 1.2rem;
+}
+
+.ladder-path {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 120px;
+    margin-top: 4rem;
+    position: relative;
+}
+
+/* Winding path line effect */
+.ladder-path::before {
+    content: '';
+    position: absolute;
+    top: 50px;
+    bottom: 50px;
+    width: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    z-index: -1;
+}
+
+.ladder-step {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ladder-step.left {
+    align-self: flex-start;
+    flex-direction: row;
+}
+
+.ladder-step.right {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.ladder-step.center {
+    align-self: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.step-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #fff;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.ladder-step:hover .step-icon {
+    transform: scale(1.1) rotate(5deg);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+}
+
+.ladder-step.finish .step-icon {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border-color: #FFF;
+    color: #1A1A2E;
+}
+
+.step-content {
+    background: var(--color-glass-background);
+    backdrop-filter: blur(var(--blur-strong));
+    padding: 1.5rem;
+    border-radius: var(--radius-container);
+    border: 1px solid var(--color-border-subtle);
+    flex-grow: 1;
+    box-shadow: var(--shadow-deep);
+}
+
+.step-content h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    color: #fff;
+    font-weight: 700;
+}
+
+.step-content p {
+    color: var(--color-text-secondary);
+    margin-bottom: 1.2rem;
+    font-size: 0.95rem;
+}
+
+.btn-adventure {
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+    border: none;
+    color: white;
+    padding: 8px 25px;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.btn-adventure:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+    color: white;
+}
+
+.btn-adventure.locked {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Path lines (Diagonal connections) */
+.path-line {
+    position: absolute;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    z-index: -1;
+}
+
+/* Magic Particles Animation */
+.magic-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: float 20s infinite linear;
+}
+
+@keyframes float {
+    0% { transform: translateY(100vh) translateX(0); }
+    100% { transform: translateY(-10vh) translateX(100px); }
+}
+
+.particle:nth-child(1) { left: 10%; animation-duration: 25s; }
+.particle:nth-child(2) { left: 30%; animation-duration: 18s; animation-delay: 2s; }
+.particle:nth-child(3) { left: 50%; animation-duration: 22s; animation-delay: 5s; }
+.particle:nth-child(4) { left: 70%; animation-duration: 27s; animation-delay: 1s; }
+.particle:nth-child(5) { left: 90%; animation-duration: 20s; animation-delay: 3s; }
+
+/* Level specific flavors */
+.level-1 .step-icon { box-shadow: 0 0 20px rgba(76, 175, 80, 0.4); }
+.level-2 .step-icon { box-shadow: 0 0 20px rgba(138, 180, 248, 0.4); }
+.level-3 .step-icon { box-shadow: 0 0 20px rgba(244, 143, 177, 0.4); }
+.level-4 .step-icon { box-shadow: 0 0 20px rgba(253, 214, 99, 0.4); }
+
+.ladder-step::after {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(74, 158, 255, 0.05) 0%, transparent 70%);
+    z-index: -2;
+    pointer-events: none;
+}
+
+/* Winding path line effect - enhanced */
+.ladder-path::before {
+    content: '';
+    position: absolute;
+    top: 50px;
+    bottom: 50px;
+    width: 6px;
+    background: linear-gradient(to bottom, 
+        rgba(76, 175, 80, 0.3), 
+        rgba(138, 180, 248, 0.3), 
+        rgba(244, 143, 177, 0.3), 
+        rgba(253, 214, 99, 0.3),
+        rgba(255, 215, 0, 0.5)
+    );
+    border-radius: 3px;
+    z-index: -1;
+    filter: blur(2px);
+}
+
+/* Modal-like appearance for step content on hover */
+.ladder-step:hover .step-content {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    transform: translateY(-5px);
+}
+
+.locked-icon {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #FF4B2B;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    border: 2px solid #1A1A2E;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .ladder-path {
+        gap: 60px;
+    }
+
+    .ladder-step {
+        flex-direction: column !important;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .ladder-step.left, .ladder-step.right {
+        align-self: center;
+    }
+    
+    .adventure-title {
+        font-size: 2.2rem;
+    }
+    
+    .step-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+}

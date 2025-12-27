@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+
+{% block title %}Học Tập - WonderChess Adventure{% endblock %}
+
+{% block body_class %}learn-adventure-background allow-scroll{% endblock %}
+
+{% block body_content %}
+<div id="main-app-screen" class="container-fluid py-3">
+    {% with active_page='learn' %}
+        {% include 'partials/navbar.html' %}
+    {% endwith %}
+
+    <div class="adventure-map-container">
+        <div class="adventure-header text-center mb-5">
+            <h1 class="adventure-title">Hành Trình Kỳ Thú</h1>
+            <p class="adventure-subtitle">Chinh phục những đỉnh cao của kỳ nghệ cờ vua</p>
+        </div>
+
+        <div class="ladder-path">
+            <!-- Level 1: Basics -->
+            <div class="ladder-step level-1 left" data-title="Khởi Đầu" data-description="Làm quen với bàn cờ và các quân cờ cơ bản.">
+                <div class="step-icon">
+                    <i class="bi bi-shield-shaded"></i>
+                </div>
+                <div class="step-content">
+                    <h3>Khởi Đầu</h3>
+                    <p>Bàn cờ và Tọa độ</p>
+                    <button class="btn btn-adventure">Bắt đầu</button>
+                </div>
+            </div>
+
+            <div class="path-line line-1"></div>
+
+            <!-- Level 2: Pawn & King -->
+            <div class="ladder-step level-2 right" data-title="Vệ Binh Hoàng Gia" data-description="Cách di chuyển của Tốt và Vua.">
+                <div class="step-icon">
+                    <i class="bi bi-person-fill"></i>
+                    <div class="locked-icon"><i class="bi bi-lock-fill"></i></div>
+                </div>
+                <div class="step-content">
+                    <h3>Vệ Binh Hoàng Gia</h3>
+                    <p>Quân Tốt và Vua</p>
+                    <button class="btn btn-adventure locked"><i class="bi bi-lock-fill"></i> Khóa</button>
+                </div>
+            </div>
+
+            <div class="path-line line-2"></div>
+
+            <!-- Level 3: Minor Pieces -->
+            <div class="ladder-step level-3 left" data-title="Kỵ Sĩ & Pháp Sư" data-description="Sức mạnh của Mã và Tượng.">
+                <div class="step-icon">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <div class="locked-icon"><i class="bi bi-lock-fill"></i></div>
+                </div>
+                <div class="step-content">
+                    <h3>Kỵ Sĩ & Pháp Sư</h3>
+                    <p>Mã và Tượng</p>
+                    <button class="btn btn-adventure locked"><i class="bi bi-lock-fill"></i> Khóa</button>
+                </div>
+            </div>
+
+             <div class="path-line line-3"></div>
+
+            <!-- Level 4: Major Pieces -->
+            <div class="ladder-step level-4 right" data-title="Pháo Đài Của Hậu" data-description="Sự thống trị của Xe và Hậu.">
+                <div class="step-icon">
+                    <i class="bi bi-gem"></i>
+                    <div class="locked-icon"><i class="bi bi-lock-fill"></i></div>
+                </div>
+                <div class="step-content">
+                    <h3>Pháo Đài Của Hậu</h3>
+                    <p>Xe và Hậu</p>
+                    <button class="btn btn-adventure locked"><i class="bi bi-lock-fill"></i> Khóa</button>
+                </div>
+            </div>
+
+            <div class="path-line line-4"></div>
+
+            <!-- Level 5: Checkmate -->
+            <div class="ladder-step level-5 center finish" data-title="Kỳ Thủ Tập Sự" data-description="Chiếu hết và kết thúc ván đấu.">
+                <div class="step-icon">
+                    <i class="bi bi-trophy-fill"></i>
+                    <div class="locked-icon"><i class="bi bi-lock-fill"></i></div>
+                </div>
+                <div class="step-content">
+                    <h3>Kỳ Thủ Tập Sự</h3>
+                    <p>Chiếu hết!</p>
+                    <button class="btn btn-adventure locked"><i class="bi bi-lock-fill"></i> Khóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating particles/effects -->
+<div class="magic-particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/constants.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Simple logic to handle step interactions for Learning Page
+        document.querySelectorAll('.ladder-step:not(.locked)').forEach(step => {
+            step.addEventListener('mouseenter', () => {
+                // Add hover magic effect or specialized sound
+            });
+        });
+    });
+</script>
+{% endblock %}

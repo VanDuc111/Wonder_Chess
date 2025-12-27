@@ -43,18 +43,23 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('userNickname', nickname);
 
         // 2. Ẩn/Hiện màn hình
-        welcomeScreen.classList.add('d-none');
-        mainAppScreen.classList.remove('d-none');
-        mainAppScreen.style.minHeight = '100vh';
+        if (welcomeScreen) welcomeScreen.classList.add('d-none');
+        if (mainAppScreen) {
+            mainAppScreen.classList.remove('d-none');
+            mainAppScreen.style.minHeight = '100vh';
+        }
 
         if (userDisplaySpan) {
             userDisplaySpan.textContent = `Chào, ${nickname}!`;
             userDisplaySpan.classList.remove('d-none');
         }
 
-        // 3. Chatbot chào mừng
-        const welcomeMessage = `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
-        displayChatbotMessage(welcomeMessage);
+        // 3. Chatbot chào mừng (Chỉ hiện nếu đang ở trang chủ/có chatbot)
+        const chatbotMessages = document.getElementById('chatbot-messages');
+        if (chatbotMessages) {
+            const welcomeMessage = `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
+            displayChatbotMessage(welcomeMessage);
+        }
 
         fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
         
@@ -62,17 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.title = `WonderChess - Intelligent Chess Assistant System`;
 
-        initChessboard();
+        // Chỉ init chessboard nếu có div bàn cờ
+        if (document.getElementById('myBoard')) {
+            initChessboard();
+        }
     }
 
     // Xử lý Form Nickname
-    nicknameForm.addEventListener('submit', (event) => {
-        event.preventDefault(); // Ngăn form gửi đi và tải lại trang
-        const nickname = nicknameInput.value.trim();
-        if (nickname) {
-            startApp(nickname);
-        }
-    });
+    if (nicknameForm) {
+        nicknameForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Ngăn form gửi đi và tải lại trang
+            const nickname = nicknameInput.value.trim();
+            if (nickname) {
+                startApp(nickname);
+            }
+        });
+    }
 
     const storedNickname = localStorage.getItem('userNickname');
     if (storedNickname) {
