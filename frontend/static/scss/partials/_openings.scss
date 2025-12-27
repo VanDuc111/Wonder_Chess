@@ -3,8 +3,8 @@
 .opening-card {
     background: var(--color-element-background);
     border: 1px solid var(--color-border-subtle);
-    border-radius: 12px;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s;
+    border-radius: var(--radius-lg);
+    transition: var(--transition-base);
     cursor: pointer;
     overflow: hidden;
     height: 100%;
@@ -31,26 +31,26 @@
 }
 
 .eco-badge {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-glass-strong);
     color: var(--color-primary);
     font-size: 0.7rem;
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
 }
 
 .category-btn {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-element-background);
     border: 1px solid var(--color-border-subtle);
     color: var(--color-text-light);
     margin-right: 10px;
     margin-bottom: 10px;
-    border-radius: 50px;
+    border-radius: var(--radius-pill);
     padding: 8px 20px;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
 }
 
 .category-btn:hover, .category-btn.active {
@@ -67,18 +67,18 @@
 }
 
 .search-input {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-element-background);
     border: 1px solid var(--color-border-subtle);
     color: white;
-    border-radius: 50px;
+    border-radius: var(--radius-pill);
     padding: 14px 20px 14px 50px;
     width: 100%;
-    transition: all 0.3s;
+    transition: var(--transition-base);
     font-size: 0.95rem;
 }
 
 .search-input:focus {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-glass-strong);
     color: white;
     outline: none;
     border-color: var(--color-primary);

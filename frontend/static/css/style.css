@@ -8,6 +8,9 @@
   --color-background-end: #0F0F1A;
   --color-element-background: rgba(255, 255, 255, 0.05);
   --color-glass-background: rgba(255, 255, 255, 0.1);
+  --color-glass-subtle: rgba(255, 255, 255, 0.03);
+  --color-glass-medium: rgba(255, 255, 255, 0.06);
+  --color-glass-strong: rgba(255, 255, 255, 0.08);
   --color-input-background: #1e1e3f;
   --color-primary: #4CAF50;
   --color-primary-hover: #45a049;
@@ -44,7 +47,10 @@
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-default: 8px;
+  --radius-lg: 12px;
   --radius-container: 15px;
+  --radius-xl: 20px;
+  --radius-pill: 50px;
   --font-size-base: 1em;
   --font-size-title: 2em;
   --font-size-question: 1.2em;
@@ -64,13 +70,19 @@
   --history-height: 45px;
   --move-indicator-size: 20px;
   --blur-strong: 15px;
+  --blur-medium: 8px;
+  --blur-subtle: 5px;
   --box-shadow-1: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
   --box-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.3);
   --gap-xs: 4px;
   --padding-xxs: 5px;
+  /* Transitions */
+  --transition-base: all 0.3s ease;
+  --transition-fast: all 0.2s ease;
+  --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* SCSS Variables */
+/* SCSS Variables (Mapping for compatibility and faster access in SCSS) */
 /* 2. GLOBAL STYLES & BASE LAYOUT */
 /* _base.scss */
 body {
@@ -127,12 +139,13 @@ body.allow-scroll {
   width: 100%;
   height: 100%;
   z-index: 1000;
-  background-position: center center;
-  background-image: url("/static/img/background.png");
-  background-size: cover;
+  background-position: top center;
+  background-image: url("/static/img/background.webp");
+  background-size: 105% 105%;
   background-attachment: fixed;
   position: relative;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 #welcome-screen::before {
@@ -142,7 +155,7 @@ body.allow-scroll {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.8) 70%, rgb(0, 0, 0) 100%);
   z-index: -1;
 }
 
@@ -254,10 +267,8 @@ body.allow-scroll {
 .navbar-brand {
   font-size: 1.6rem;
   letter-spacing: -0.5px;
-  -webkit-transition: -webkit-transform 0.3s ease;
-  transition: -webkit-transform 0.3s ease;
-  transition: transform 0.3s ease;
-  transition: transform 0.3s ease, -webkit-transform 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
   padding: 0;
 }
 
@@ -304,16 +315,16 @@ body.allow-scroll {
 }
 
 .navbar-toggler {
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid var(--color-border-subtle) !important;
   padding: 6px 12px;
   font-size: 1rem;
-  border-radius: 8px;
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  border-radius: var(--radius-default);
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
 }
 
 .navbar-toggler:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--color-element-background);
   border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -334,9 +345,9 @@ body.allow-scroll {
 .nav-mode-link {
   padding-left: 1rem !important;
   padding-right: 1rem !important;
-  border-radius: 8px;
-  -webkit-transition: background-color 0.3s, color 0.3s;
-  transition: background-color 0.3s, color 0.3s;
+  border-radius: var(--radius-default);
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
   color: var(--color-text-secondary);
   font-weight: 500;
 }
@@ -347,13 +358,13 @@ body.allow-scroll {
 }
 
 .nav-mode-link.active {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-glass-strong);
   color: white !important;
   font-weight: bold;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius-default) var(--radius-default) 0 0;
   position: relative;
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
 }
 
 .nav-mode-link.active::after {
@@ -373,7 +384,7 @@ body.allow-scroll {
   background: var(--color-glass-background);
   color: var(--color-primary) !important;
   font-weight: bold;
-  border-radius: 8px;
+  border-radius: var(--radius-default);
 }
 
 #user-display {
@@ -436,10 +447,8 @@ body.allow-scroll {
   position: relative;
   -webkit-box-shadow: var(--shadow-card);
           box-shadow: var(--shadow-card);
-  -webkit-transition: -webkit-transform 0.3s ease;
-  transition: -webkit-transform 0.3s ease;
-  transition: transform 0.3s ease;
-  transition: transform 0.3s ease, -webkit-transform 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
   height: auto !important;
   min-height: 0;
 }
@@ -588,7 +597,7 @@ body.allow-scroll {
   overflow: hidden;
   position: relative;
   height: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-subtle);
 }
 
 .eval-advantage-bar {
@@ -848,8 +857,8 @@ body.allow-scroll {
 }
 
 .history-table tbody tr {
-  -webkit-transition: background 0.2s;
-  transition: background 0.2s;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
 }
 
 .history-table tbody tr:hover {
@@ -869,10 +878,10 @@ body.allow-scroll {
 
 .history-table .move-cell {
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-default);
   padding: 6px 10px !important;
-  -webkit-transition: all 0.2s ease;
-  transition: all 0.2s ease;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
 }
 
 .history-table .move-cell:hover {
@@ -891,7 +900,7 @@ body.allow-scroll {
 
 #pgn-history-vertical {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: var(--color-border-subtle) transparent;
 }
 
 #pgn-history-vertical::-webkit-scrollbar {
@@ -899,8 +908,8 @@ body.allow-scroll {
 }
 
 #pgn-history-vertical::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background: var(--color-border-subtle);
+  border-radius: var(--radius-pill);
 }
 
 #pgn-history-container {
@@ -955,10 +964,10 @@ body.allow-scroll {
   display: inline-block;
   margin-right: 5px;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
-  -webkit-transition: background-color 0.2s, color 0.2s;
-  transition: background-color 0.2s, color 0.2s;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
 }
 
 /* 8. CHATBOT INTERFACE */
@@ -966,9 +975,9 @@ body.allow-scroll {
 .chatbot-container {
   background: -webkit-gradient(linear, left top, left bottom, from(rgba(26, 26, 46, 0.95)), to(rgba(15, 15, 26, 0.98)));
   background: linear-gradient(180deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 15, 26, 0.98) 100%);
-  -webkit-backdrop-filter: blur(20px);
-          backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(var(--radius-xl));
+          backdrop-filter: blur(var(--radius-xl));
+  border: 1px solid var(--color-glass-medium);
   height: 100%;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -983,8 +992,8 @@ body.allow-scroll {
 }
 
 .chat-header {
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--color-glass-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -1066,8 +1075,8 @@ body.allow-scroll {
   margin-bottom: 15px;
   font-size: 0.95rem;
   position: relative;
-  -webkit-animation: messageSlideIn 0.3s ease-out forwards;
-          animation: messageSlideIn 0.3s ease-out forwards;
+  -webkit-animation: messageSlideIn var(--transition-base) forwards;
+          animation: messageSlideIn var(--transition-base) forwards;
 }
 
 @-webkit-keyframes messageSlideIn {
@@ -1096,21 +1105,21 @@ body.allow-scroll {
   }
 }
 .user-message {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(135deg, var(--color-glass-background) 0%, var(--color-element-background) 100%);
   color: white;
   margin-left: auto !important;
   border-bottom-right-radius: 4px !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-glass-background);
   -webkit-box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.1);
           box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .alice-message {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, var(--color-glass-medium) 100%);
   color: white;
   margin-right: auto !important;
   border-bottom-left-radius: 4px !important;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-glass-strong);
   -webkit-box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1);
           box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -1139,9 +1148,9 @@ body.allow-scroll {
       -ms-flex-align: center;
           align-items: center;
   padding: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  border: 1px solid var(--color-border-subtle);
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
 }
 
 #chatbot-form:focus-within {
@@ -1209,8 +1218,8 @@ body.allow-scroll {
       -ms-flex-pack: center;
           justify-content: center;
   padding: 0;
-  -webkit-transition: all 0.2s ease;
-  transition: all 0.2s ease;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
 }
 
 #send-chat-button:hover {
@@ -1294,7 +1303,7 @@ body.allow-scroll {
   background: -webkit-gradient(linear, left top, left bottom, from(rgba(20, 20, 30, 0.95)), to(rgba(16, 16, 22, 0.95)));
   background: linear-gradient(180deg, rgba(20, 20, 30, 0.95), rgba(16, 16, 22, 0.95));
   color: var(--color-text-light);
-  border-radius: 20px !important;
+  border-radius: var(--radius-xl) !important;
   border: 1px solid var(--color-border-subtle);
   -webkit-box-shadow: var(--box-shadow-1);
           box-shadow: var(--box-shadow-1);
@@ -1302,7 +1311,7 @@ body.allow-scroll {
 }
 
 .modal-content.modal-dark .modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--color-glass-subtle);
 }
 
 .modal-content.modal-dark .modal-title {
@@ -1314,32 +1323,32 @@ body.allow-scroll {
 }
 
 .modal-content.modal-dark .modal-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  border-top: 1px solid var(--color-glass-subtle);
 }
 
 .modal-content.modal-dark .btn-primary {
   background: var(--color-primary);
-  border-color: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-glass-medium);
 }
 
 .modal-content.modal-dark .btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-glass-medium);
   color: var(--color-text-light);
-  border-color: rgba(255, 255, 255, 0.03);
+  border-color: var(--color-glass-subtle);
 }
 
 .modal-dark .form-control {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-element-background);
   border: 1px solid var(--color-border-subtle);
   color: white;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 12px;
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
 }
 
 .modal-dark .form-control:focus {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-glass-background);
   border-color: var(--color-primary);
   -webkit-box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.25);
           box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.25);
@@ -1378,8 +1387,8 @@ body.allow-scroll {
 #bot-settings-modal .modal-content {
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(15, 15, 26, 0.98) 100%);
   padding: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
   width: 95%;
   max-width: 480px;
   -webkit-box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
@@ -1397,8 +1406,8 @@ body.allow-scroll {
   top: var(--timer-top-offset);
   right: 20px;
   cursor: pointer;
-  -webkit-transition: color 0.3s;
-  transition: color 0.3s;
+  -webkit-transition: color var(--transition-base);
+  transition: color var(--transition-base);
 }
 
 #bot-settings-modal .close-btn:hover {
@@ -1436,15 +1445,15 @@ body.allow-scroll {
 
 /* Custom Select for Dark Modal */
 .form-select-custom {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-element-background);
+  border: 1px solid var(--color-border-subtle);
   color: white;
   padding: 12px 18px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   cursor: pointer;
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
   -moz-appearance: none;
        appearance: none;
   -webkit-appearance: none;
@@ -1456,7 +1465,7 @@ body.allow-scroll {
 }
 
 .form-select-custom:focus {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--color-glass-strong);
   border-color: var(--color-primary);
   -webkit-box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
           box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
@@ -1478,8 +1487,8 @@ body.allow-scroll {
   -webkit-appearance: none;
      -moz-appearance: none;
           appearance: none;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
+  background: var(--color-glass-background);
+  border-radius: var(--radius-sm);
   outline: none;
   cursor: pointer;
 }
@@ -1512,14 +1521,14 @@ body.allow-scroll {
   background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   -webkit-box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  -webkit-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  -webkit-transition: var(--transition-bounce);
+  transition: var(--transition-bounce);
   margin-top: 10px;
 }
 
@@ -1542,12 +1551,12 @@ body.allow-scroll {
   background: linear-gradient(135deg, var(--color-primary) 0%, #2e7d32 100%) !important;
   color: white !important;
   border: none !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   padding: 10px 24px !important;
   font-weight: 700 !important;
   text-transform: none !important;
-  -webkit-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  -webkit-transition: var(--transition-bounce) !important;
+  transition: var(--transition-bounce) !important;
   -webkit-box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
           box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
 }
@@ -1562,18 +1571,18 @@ body.allow-scroll {
 }
 
 .btn-premium-cancel {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--color-glass-background) !important;
   border: 1px solid var(--color-border-subtle) !important;
   color: rgba(255, 255, 255, 0.6) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   padding: 10px 24px !important;
   font-weight: 600 !important;
-  -webkit-transition: all 0.2s ease !important;
-  transition: all 0.2s ease !important;
+  -webkit-transition: var(--transition-fast) !important;
+  transition: var(--transition-fast) !important;
 }
 
 .btn-premium-cancel:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--color-glass-background) !important;
   color: white !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
 }
@@ -1598,9 +1607,9 @@ body.allow-scroll {
       -ms-flex-align: center;
           align-items: center;
   z-index: 1060;
-  border-radius: 20px;
-  -webkit-animation: fadeIn 0.3s ease;
-          animation: fadeIn 0.3s ease;
+  border-radius: var(--radius-xl);
+  -webkit-animation: fadeIn var(--transition-base);
+          animation: fadeIn var(--transition-base);
 }
 
 .chess-loader-svg {
@@ -1622,9 +1631,9 @@ body.allow-scroll {
 
 /* Custom Modal Tabs */
 .custom-modal-tabs {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-glass-subtle);
   padding: 6px;
-  border-radius: 50px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--color-border-subtle);
   gap: 5px;
   border-bottom: none !important;
@@ -1632,12 +1641,12 @@ body.allow-scroll {
 
 .custom-modal-tabs .nav-link {
   color: var(--color-text-secondary);
-  border-radius: 50px;
+  border-radius: var(--radius-pill);
   padding: 8px 18px;
   font-size: 0.9rem;
   font-weight: 500;
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
   border: none !important;
   background: transparent !important;
 }
@@ -1659,11 +1668,9 @@ body.allow-scroll {
 .opening-card {
   background: var(--color-element-background);
   border: 1px solid var(--color-border-subtle);
-  border-radius: 12px;
-  -webkit-transition: border-color 0.3s, -webkit-transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), -webkit-box-shadow 0.3s;
-  transition: border-color 0.3s, -webkit-transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), -webkit-box-shadow 0.3s;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s, -webkit-transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), -webkit-box-shadow 0.3s;
+  border-radius: var(--radius-lg);
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
   cursor: pointer;
   overflow: hidden;
   height: 100%;
@@ -1704,27 +1711,27 @@ body.allow-scroll {
 }
 
 .eco-badge {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-glass-strong);
   color: var(--color-primary);
   font-size: 0.7rem;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
 .category-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-element-background);
   border: 1px solid var(--color-border-subtle);
   color: var(--color-text-light);
   margin-right: 10px;
   margin-bottom: 10px;
-  border-radius: 50px;
+  border-radius: var(--radius-pill);
   padding: 8px 20px;
   font-size: 0.85rem;
-  -webkit-transition: all 0.2s ease;
-  transition: all 0.2s ease;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
 }
 
 .category-btn:hover, .category-btn.active {
@@ -1742,19 +1749,19 @@ body.allow-scroll {
 }
 
 .search-input {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-element-background);
   border: 1px solid var(--color-border-subtle);
   color: white;
-  border-radius: 50px;
+  border-radius: var(--radius-pill);
   padding: 14px 20px 14px 50px;
   width: 100%;
-  -webkit-transition: all 0.3s;
-  transition: all 0.3s;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
   font-size: 0.95rem;
 }
 
 .search-input:focus {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-glass-strong);
   color: white;
   outline: none;
   border-color: var(--color-primary);
@@ -2340,12 +2347,12 @@ body.allow-scroll {
 /* 13. ANALYSIS SETTINGS */
 /* _analysis.scss */
 .analysis-settings-container {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
+  background: var(--color-element-background);
+  border: 1px solid var(--color-glass-strong);
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
+  -webkit-backdrop-filter: blur(var(--blur-subtle));
+          backdrop-filter: blur(var(--blur-subtle));
 }
 
 .analysis-controls-horizontal {
@@ -2378,12 +2385,12 @@ body.allow-scroll {
   width: 2.2rem;
   height: 1.1rem;
   margin-left: -2.2rem;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--color-glass-background);
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2.5' fill='rgba(255,255,255,0.3)'/%3e%3c/svg%3e");
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-glass-background);
   cursor: pointer;
-  -webkit-transition: all 0.2s ease-in-out;
-  transition: all 0.2s ease-in-out;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
 }
 
 .custom-switch-sm .form-check-input:checked {
@@ -2402,15 +2409,15 @@ body.allow-scroll {
 .custom-switch-sm .form-check-label {
   cursor: pointer;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-secondary);
   -webkit-user-select: none;
      -moz-user-select: none;
       -ms-user-select: none;
           user-select: none;
   margin-left: 8px;
   white-space: nowrap;
-  -webkit-transition: color 0.2s;
-  transition: color 0.2s;
+  -webkit-transition: color var(--transition-fast);
+  transition: color var(--transition-fast);
 }
 
 .custom-switch-sm .form-check-input:checked + .form-check-label {
@@ -2430,12 +2437,12 @@ body.allow-scroll {
 /* _upload.scss */
 .upload-drop-zone {
   border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 3rem 1.5rem;
   text-align: center;
   background: rgba(255, 255, 255, 0.02);
-  -webkit-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  -webkit-transition: var(--transition-bounce);
+  transition: var(--transition-bounce);
   cursor: pointer;
   position: relative;
   min-height: 250px;
@@ -2505,14 +2512,14 @@ body.allow-scroll {
 }
 
 .drop-zone-content {
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
 }
 
 .drop-zone-content i {
   display: inline-block;
-  -webkit-transition: all 0.3s ease;
-  transition: all 0.3s ease;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
 }
 
 .upload-drop-zone.has-file .drop-zone-content {
@@ -2564,11 +2571,11 @@ body.allow-scroll {
   width: 100%;
   max-width: 320px;
   height: 180px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   -webkit-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border: 3px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid var(--color-border-subtle);
   background: #000;
 }
 
@@ -2588,7 +2595,7 @@ body.allow-scroll {
   color: #ff5f6d;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -2599,8 +2606,8 @@ body.allow-scroll {
       -ms-flex-pack: center;
           justify-content: center;
   cursor: pointer;
-  -webkit-transition: all 0.2s ease;
-  transition: all 0.2s ease;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
   z-index: 10;
 }
 

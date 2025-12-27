@@ -41,7 +41,7 @@
 }
 
 .history-table tbody tr {
-    transition: background 0.2s;
+    transition: var(--transition-fast);
 }
 
 .history-table tbody tr:hover {
@@ -61,9 +61,9 @@
 
 .history-table .move-cell {
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: var(--radius-default);
     padding: 6px 10px !important;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
 }
 
 .history-table .move-cell:hover {
@@ -81,7 +81,7 @@
 
 #pgn-history-vertical {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-color: var(--color-border-subtle) transparent;
 }
 
 #pgn-history-vertical::-webkit-scrollbar {
@@ -89,8 +89,8 @@
 }
 
 #pgn-history-vertical::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    background: var(--color-border-subtle);
+    border-radius: var(--radius-pill);
 }
 
 #pgn-history-container {
@@ -141,7 +141,7 @@
     display: inline-block;
     margin-right: 5px;
     padding: 2px 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+    transition: var(--transition-fast);
 }

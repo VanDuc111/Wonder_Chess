@@ -1,10 +1,10 @@
 /* _analysis.scss */
 
 .analysis-settings-container {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
+    background: var(--color-element-background);
+    border: 1px solid var(--color-glass-strong);
+    transition: var(--transition-base);
+    backdrop-filter: blur(var(--blur-subtle));
 }
 
 .analysis-controls-horizontal {
@@ -28,11 +28,11 @@
     width: 2.2rem;
     height: 1.1rem;
     margin-left: -2.2rem;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--color-glass-background);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2.5' fill='rgba(255,255,255,0.3)'/%3e%3c/svg%3e");
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--color-glass-background);
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: var(--transition-fast);
 }
 
 .custom-switch-sm .form-check-input:checked {
@@ -49,11 +49,11 @@
 .custom-switch-sm .form-check-label {
     cursor: pointer;
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     user-select: none;
     margin-left: 8px;
     white-space: nowrap;
-    transition: color 0.2s;
+    transition: color var(--transition-fast);
 }
 
 .custom-switch-sm .form-check-input:checked + .form-check-label {

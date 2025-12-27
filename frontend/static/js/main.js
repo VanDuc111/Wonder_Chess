@@ -438,93 +438,95 @@ document.addEventListener('DOMContentLoaded', () => {
     window.handleBotTurn = handleBotTurn;
 
     // ====== LOAD DATA ======
+    const confirmLoadBtn = document.getElementById('confirm-load-btn');
+    if (confirmLoadBtn) {
+        confirmLoadBtn.addEventListener('click', async () => {
+            let success = false;
+            let fenToLoad = null;
 
-    document.getElementById('confirm-load-btn').addEventListener('click', async () => {
-        let success = false;
-        let fenToLoad = null;
+            const activeTab = document.querySelector('.tab-pane.fade.show.active');
+            const activeTabId = activeTab ? activeTab.id : null;
+            const loader = document.getElementById('modal-loader-overlay');
 
-        const activeTab = document.querySelector('.tab-pane.fade.show.active');
-        const activeTabId = activeTab ? activeTab.id : null;
-        const loader = document.getElementById('modal-loader-overlay');
+            // Hiện loader nếu là tab xử lý ảnh
+            if (activeTabId === 'image-pane' || activeTabId === 'live-scan-pane') {
+                if (loader) loader.classList.remove('d-none');
+            }
 
-        // Hiện loader nếu là tab xử lý ảnh
-        if (activeTabId === 'image-pane' || activeTabId === 'live-scan-pane') {
-            if (loader) loader.classList.remove('d-none');
-        }
+            try {
+                if (activeTabId === 'pgn-pane') {
+                    const pgnText = document.getElementById('pgn-input').value.trim();
+                    if (pgnText) {
+                        const tempGame = new Chess();
+                        success = tempGame.load_pgn(pgnText);
+                        if (success) fenToLoad = tempGame.fen();
+                    }
+                } else if (activeTabId === 'fen-pane') {
+                    const fenText = document.getElementById('fen-input').value.trim();
+                    if (fenText) {
+                        const tempGame = new Chess();
+                        success = tempGame.load(fenText);
+                        if (success) fenToLoad = fenText;
+                    }
+                } else if (activeTabId === 'image-pane') {
+                    const imageInput = document.getElementById('image-upload-input');
+                    const statusEl = document.getElementById('image-upload-status');
 
-        try {
-            if (activeTabId === 'pgn-pane') {
-                const pgnText = document.getElementById('pgn-input').value.trim();
-                if (pgnText) {
-                    const tempGame = new Chess();
-                    success = tempGame.load_pgn(pgnText);
-                    if (success) fenToLoad = tempGame.fen();
-                }
-            } else if (activeTabId === 'fen-pane') {
-                const fenText = document.getElementById('fen-input').value.trim();
-                if (fenText) {
-                    const tempGame = new Chess();
-                    success = tempGame.load(fenText);
-                    if (success) fenToLoad = fenText;
-                }
-            } else if (activeTabId === 'image-pane') {
-                const imageInput = document.getElementById('image-upload-input');
-                const statusEl = document.getElementById('image-upload-status');
+                    if (!imageInput || imageInput.files.length === 0) {
+                        if (loader) loader.classList.add('d-none');
+                        if (statusEl) statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
+                        return;
+                    }
 
-                if (!imageInput || imageInput.files.length === 0) {
+                    const data = await window.VISION_MANAGER.analyzeUpload(imageInput.files[0]);
+                    if (data.success) {
+                        success = true;
+                        fenToLoad = data.fen;
+                    } else {
+                        if (loader) loader.classList.add('d-none');
+                        window.VISION_MANAGER.showFriendlyError(statusEl, data.error);
+                        return;
+                    }
+                } else if (activeTabId === 'live-scan-pane') {
+                    // Live scan is now handled automatically by auto-scan or performScan in VisionManager.
+                    // But if user clicks 'Confirm' in the modal while on this tab, we trigger one scan.
+                    const statusEl = document.getElementById('scan-status');
+                    await window.VISION_MANAGER.performScan();
+                    // Check if scan updated successfully (this is a bit tricky with async, 
+                    // but let's assume we close modal manually if successful or wait for auto).
                     if (loader) loader.classList.add('d-none');
-                    if (statusEl) statusEl.textContent = 'Lỗi: Vui lòng chọn một file ảnh.';
-                    return;
+                    return; 
                 }
 
-                const data = await window.VISION_MANAGER.analyzeUpload(imageInput.files[0]);
-                if (data.success) {
-                    success = true;
-                    fenToLoad = data.fen;
-                } else {
-                    if (loader) loader.classList.add('d-none');
-                    window.VISION_MANAGER.showFriendlyError(statusEl, data.error);
-                    return;
+                // Xử lý nạp FEN
+                if (success && fenToLoad) {
+                    if (!window.VISION_MANAGER.isValidFen(fenToLoad)) {
+                        if (loader) loader.classList.add('d-none');
+                        const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
+                        if (statusEl) statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua.';
+                    } else {
+                        fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
+                        
+                        // Sử dụng interface mới để khởi tạo board từ FEN
+                        initChessboard(board?.orientation() || 'white', fenToLoad);
+                        
+                        updateUI(); // Cập nhật UI ngay lập tức
+                        if (loader) loader.classList.add('d-none');
+                        if (loadDataModalInstance) loadDataModalInstance.hide();
+                    }
+                } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
+                    alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ.");
                 }
-            } else if (activeTabId === 'live-scan-pane') {
-                // Live scan is now handled automatically by auto-scan or performScan in VisionManager.
-                // But if user clicks 'Confirm' in the modal while on this tab, we trigger one scan.
-                const statusEl = document.getElementById('scan-status');
-                await window.VISION_MANAGER.performScan();
-                // Check if scan updated successfully (this is a bit tricky with async, 
-                // but let's assume we close modal manually if successful or wait for auto).
+
+            } catch (err) {
+                console.error("Lỗi confirm-load:", err);
                 if (loader) loader.classList.add('d-none');
-                return; 
+            } finally {
+                // Đảm bảo ẩn loader nếu chưa ẩn
+                if (loader) loader.classList.add('d-none');
             }
-
-            // Xử lý nạp FEN
-            if (success && fenToLoad) {
-                if (!window.VISION_MANAGER.isValidFen(fenToLoad)) {
-                    if (loader) loader.classList.add('d-none');
-                    const statusEl = document.getElementById('scan-status') || document.getElementById('image-upload-status');
-                    if (statusEl) statusEl.textContent = '⚠️ FEN không hợp lệ hoặc thiếu quân Vua.';
-                } else {
-                    fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
-                    
-                    // Sử dụng interface mới để khởi tạo board từ FEN
-                    initChessboard(board?.orientation() || 'white', fenToLoad);
-                    
-                    updateUI(); // Cập nhật UI ngay lập tức
-                    if (loader) loader.classList.add('d-none');
-                    if (loadDataModalInstance) loadDataModalInstance.hide();
-                }
-            } else if (activeTabId === 'pgn-pane' || activeTabId === 'fen-pane') {
-                alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ.");
-            }
-
-        } catch (err) {
-            console.error("Lỗi confirm-load:", err);
-            if (loader) loader.classList.add('d-none');
-        } finally {
-            // Đảm bảo ẩn loader nếu chưa ẩn
-            if (loader) loader.classList.add('d-none');
-        }
-    });
+        });
+    }
 
 
 

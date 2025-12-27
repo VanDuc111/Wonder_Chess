@@ -6,6 +6,9 @@
     --color-background-end: #0F0F1A;
     --color-element-background: rgba(255, 255, 255, 0.05);
     --color-glass-background: rgba(255, 255, 255, 0.1);
+    --color-glass-subtle: rgba(255, 255, 255, 0.03);
+    --color-glass-medium: rgba(255, 255, 255, 0.06);
+    --color-glass-strong: rgba(255, 255, 255, 0.08);
     --color-input-background: #1e1e3f;
 
     --color-primary: #4CAF50;
@@ -50,7 +53,10 @@
     --radius-xs: 4px;
     --radius-sm: 6px;
     --radius-default: 8px;
+    --radius-lg: 12px;
     --radius-container: 15px;
+    --radius-xl: 20px;
+    --radius-pill: 50px;
 
     --font-size-base: 1em;
     --font-size-title: 2em;
@@ -76,21 +82,30 @@
     --history-height: 45px;
     --move-indicator-size: 20px;
     --blur-strong: 15px;
+    --blur-medium: 8px;
+    --blur-subtle: 5px;
 
     --box-shadow-1: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     --box-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.3);
     
     --gap-xs: 4px;
     --padding-xxs: 5px;
+
+    /* Transitions */
+    --transition-base: all 0.3s ease;
+    --transition-fast: all 0.2s ease;
+    --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* SCSS Variables */
-$color-primary: #4CAF50;
-$color-success: #3cb371;
-$color-danger: #dc3545;
-$spacing-sm: 15px;
-$spacing-md: 25px;
-$spacing-lg: 40px;
-$radius-container: 15px;
-$radius-default: 8px;
-$blur-strong: 15px;
+/* SCSS Variables (Mapping for compatibility and faster access in SCSS) */
+$color-primary: var(--color-primary);
+$color-success: var(--color-success);
+$color-danger: var(--color-danger);
+$spacing-sm: var(--spacing-sm);
+$spacing-md: var(--spacing-md);
+$spacing-lg: var(--spacing-lg);
+$radius-container: var(--radius-container);
+$radius-default: var(--radius-default);
+$blur-strong: var(--blur-strong);
+$transition-base: var(--transition-base);
+$transition-bounce: var(--transition-bounce);
