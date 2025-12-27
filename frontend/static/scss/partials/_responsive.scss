@@ -6,7 +6,6 @@
         flex-wrap: nowrap !important;
         display: flex !important;
         align-items: stretch;
-        /* Force height recalculation when DevTools are toggled */
         height: calc(100vh - 110px) !important;
     }
 
@@ -75,7 +74,6 @@
         margin-bottom: 0 !important;
     }
 
-    /* Đảm bảo game container không bị lệch */
     #game-view-container {
         justify-content: center !important;
         padding-right: 0 !important;
@@ -95,26 +93,40 @@
         margin-right: 0 !important;
     }
 
+    .navbar {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+        position: relative;
+    }
+
     .navbar-collapse {
-        background: rgba(15, 15, 26, 0.95);
-        backdrop-filter: blur(var(--blur-strong));
-        border-radius: 20px;
-        padding: 20px;
-        margin-top: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-        z-index: 1000;
+        position: absolute;
+        top: 70px;
+        left: 15px;
+        right: 15px;
+        background: rgba(20, 20, 35, 0.85);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border-radius: 18px;
+        padding: 15px;
+        margin-top: 5px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+        z-index: 1100;
+        transition: all 0.3s ease;
     }
 
     .nav-mode-link {
-        padding: 12px 16px !important;
-        margin-bottom: 8px;
+        padding: 14px 20px !important;
+        margin-bottom: 6px;
         border-radius: 12px;
         border-bottom: none !important;
         transition: all 0.2s ease;
-        text-align: center;
+        text-align: left;
         width: 100%;
         position: relative;
+        display: block;
+        font-size: 1.05rem;
     }
 
     .nav-mode-link.active {
@@ -171,21 +183,29 @@
     }
 
     .score-alignment-wrapper {
-        margin-right: 6px !important;
-        margin-left: 4px !important;
+        margin-right: 8px !important;
+        margin-left: 6px !important;
         width: 20px;
         padding-top: 0;
+        height: 90vw !important; 
+        max-height: 420px; 
+        align-self: flex-start;
+        margin-top: 40px !important; 
+        display: flex;
+        flex-direction: column;
     }
 
     #evaluation-bar {
         width: 10px;
-        margin-top: 40px;
+        margin-top: 0 !important; 
+        flex-grow: 1;
     }
 
     #evaluation-score {
         width: 100%;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         margin-top: 4px !important;
+        min-height: 15px;
     }
 
     #chessboard-main-container {

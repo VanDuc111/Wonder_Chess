@@ -12,6 +12,7 @@
   --color-glass-medium: rgba(255, 255, 255, 0.06);
   --color-glass-strong: rgba(255, 255, 255, 0.08);
   --color-input-background: #1e1e3f;
+  --color-adventure-gradient: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F0F1A 100%);
   --color-primary: #4CAF50;
   --color-primary-hover: #45a049;
   --color-danger: #dc3545;
@@ -92,7 +93,19 @@ body {
   color: var(--color-text-light);
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--color-background-start) 0%, var(--color-background-end) 100%);
+  position: relative;
+  z-index: 0;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-adventure-gradient);
+  z-index: -2;
 }
 
 body.allow-scroll {
@@ -866,36 +879,40 @@ body.allow-scroll {
 }
 
 .history-table td {
-  padding: 8px 4px;
+  padding: 6px 8px;
   vertical-align: middle;
+  border: none !important;
 }
 
 .history-table .move-number-cell {
   color: var(--color-text-secondary);
   text-align: center;
   font-size: 0.8rem;
+  width: 40px;
+  opacity: 0.7;
+  background: transparent !important; /* Ensure no background for numbers */
 }
 
 .history-table .move-cell {
   cursor: pointer;
   border-radius: var(--radius-default);
-  padding: 6px 10px !important;
+  padding: 6px 12px !important;
   -webkit-transition: var(--transition-fast);
   transition: var(--transition-fast);
+  background: transparent;
 }
 
 .history-table .move-cell:hover {
-  background: rgba(76, 175, 80, 0.1);
-  color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .history-table .current-move-highlight {
-  background: rgba(76, 175, 80, 0.15) !important;
+  background: rgba(76, 175, 80, 0.2) !important;
   color: var(--color-primary) !important;
   font-weight: 700;
-  border-radius: 8px !important;
-  -webkit-box-shadow: inset 0 0 0 1px rgba(76, 175, 80, 0.3);
-          box-shadow: inset 0 0 0 1px rgba(76, 175, 80, 0.3);
+  border-radius: 6px !important;
+  -webkit-box-shadow: inset 0 0 0 1px rgba(76, 175, 80, 0.4);
+          box-shadow: inset 0 0 0 1px rgba(76, 175, 80, 0.4);
 }
 
 #pgn-history-vertical {
@@ -1819,7 +1836,7 @@ body.allow-scroll {
 /* 15. LEARN PAGE */
 /* _learn.scss */
 .learn-adventure-background {
-  background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F0F1A 100%);
+  background: var(--color-adventure-gradient);
   min-height: 100vh;
   height: auto !important;
   overflow-y: auto !important;
@@ -2034,7 +2051,17 @@ body.allow-scroll {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: -1; /* Place behind all content child elements */
+  display: none;
+}
+
+.learn-adventure-background {
+  position: relative;
   z-index: 0;
+}
+
+.learn-adventure-background .magic-particles {
+  display: block;
 }
 
 .particle {
@@ -2721,28 +2748,41 @@ body.allow-scroll {
     margin-left: 0 !important;
     margin-right: 0 !important;
   }
+  .navbar {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    position: relative; /* Base for absolute collapse */
+  }
   .navbar-collapse {
-    background: rgba(15, 15, 26, 0.95);
-    -webkit-backdrop-filter: blur(var(--blur-strong));
-            backdrop-filter: blur(var(--blur-strong));
-    border-radius: 20px;
-    padding: 20px;
-    margin-top: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    -webkit-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-    z-index: 1000;
+    position: absolute;
+    top: 70px;
+    left: 15px;
+    right: 15px;
+    background: rgba(20, 20, 35, 0.85); /* Slightly darker for contrast */
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-radius: 18px;
+    padding: 15px;
+    margin-top: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    -webkit-box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+    z-index: 1100;
+    -webkit-transition: all 0.3s ease;
+    transition: all 0.3s ease;
   }
   .nav-mode-link {
-    padding: 12px 16px !important;
-    margin-bottom: 8px;
+    padding: 14px 20px !important;
+    margin-bottom: 6px;
     border-radius: 12px;
     border-bottom: none !important;
     -webkit-transition: all 0.2s ease;
     transition: all 0.2s ease;
-    text-align: center;
+    text-align: left; /* Aligned to left as requested */
     width: 100%;
     position: relative;
+    display: block;
+    font-size: 1.05rem;
   }
   .nav-mode-link.active {
     background: rgba(60, 179, 113, 0.12) !important;
@@ -2796,19 +2836,35 @@ body.allow-scroll {
     height: 500px;
   }
   .score-alignment-wrapper {
-    margin-right: 6px !important;
-    margin-left: 4px !important;
+    margin-right: 8px !important;
+    margin-left: 6px !important;
     width: 20px;
     padding-top: 0;
+    height: 90vw !important;
+    max-height: 420px;
+    -ms-flex-item-align: start;
+        align-self: flex-start;
+    margin-top: 40px !important;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
   }
   #evaluation-bar {
     width: 10px;
-    margin-top: 40px;
+    margin-top: 0 !important;
+    -webkit-box-flex: 1;
+        -ms-flex-positive: 1;
+            flex-grow: 1;
   }
   #evaluation-score {
     width: 100%;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     margin-top: 4px !important;
+    min-height: 15px;
   }
   #chessboard-main-container {
     -webkit-box-flex: 1;

@@ -647,7 +647,7 @@ class ChessCore {
             const wH = (i === this.index) ? 'current-move-highlight' : '';
             const bH = (b && (i+1) === this.index) ? 'current-move-highlight' : '';
             
-            htmlParts.push(`<tr><td>${Math.floor((i-1)/2)+1}.</td>`);
+            htmlParts.push(`<tr><td class="move-number-cell">${Math.floor((i-1)/2)+1}.</td>`);
             htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${this._annot(w, i)}</td>`);
             htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${b ? this._annot(b, i+1) : ''}</td></tr>`);
         }
