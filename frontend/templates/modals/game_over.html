@@ -1,19 +1,37 @@
 <div class="modal fade" id="gameOverModal" tabindex="-1" aria-labelledby="gameOverModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-dark">
-
+        <div class="modal-content modal-dark gameOver-wonderland">
+            
             <div class="modal-header border-0">
-                <h5 class="modal-title" id="gameOverModalTitle">Ván đấu kết thúc</h5>
+                <h5 class="modal-title fw-bold" id="gameOverModalTitle">Ván đấu kết thúc</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
             </div>
 
-            <div class="modal-body" id="gameOverModalBody">
+            <div class="modal-body text-center py-4" id="gameOverModalBodyContainer">
+                <div id="gameOverModalBody" class="fs-5 mb-4 text-white"></div>
+                
+                <div class="stats-wrapper" style="min-height: 120px; position: relative;">
+                    <!-- Shuffling Icons Effect -->
+                    <div id="game-over-stats-shuffler" class="wonderland-stats-shuffler">
+                        <div class="shuffling-icons">
+                            <img src="static/img/icon/brilliant.svg" class="shuffle-icon">
+                            <img src="static/img/icon/best.svg" class="shuffle-icon">
+                            <img src="static/img/icon/good.svg" class="shuffle-icon">
+                            <img src="static/img/icon/blunder.svg" class="shuffle-icon">
+                        </div>
+                        <p class="small text-white-50 mt-2">Đang phân tích thế trận...</p>
+                    </div>
+
+                    <div id="game-over-stats" class="stats-grid d-none">
+                        <!-- Final Stats Injected Here -->
+                    </div>
+                </div>
             </div>
 
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-success" id="modalNewGameBtn">Chơi ván mới</button>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-premium-cancel" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-premium-confirm" id="modalNewGameBtn">Chơi ván mới</button>
             </div>
 
         </div>

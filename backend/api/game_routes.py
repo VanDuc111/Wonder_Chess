@@ -147,8 +147,8 @@ def get_engine_score() -> Response:
         return jsonify({'success': False, 'error': 'FEN is required.'}), 400
 
     try:
-        # Sử dụng Stockfish để đánh giá (0.2s để đảm bảo độ chính xác vượt trội)
-        results = get_stockfish_move(fen, skill_level=20, time_limit=0.2)
+        # Sử dụng Stockfish để đánh giá
+        results = get_stockfish_move(fen, skill_level=20, time_limit=0.5)
 
         if results.get('success'):
             return jsonify({

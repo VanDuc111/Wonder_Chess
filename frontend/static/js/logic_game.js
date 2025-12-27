@@ -537,7 +537,8 @@ class ChessCore {
      */
     async handleLocalMove(uci) {
         if (this.index < this.history.length - 1) this.history = this.history.slice(0, this.index + 1);
-        const san = this.game.history().pop();
+        const history = this.game.history();
+        const san = history[history.length - 1];
         const newEntry = { fen: this.game.fen(), score: null, san, uci };
         this.history.push(newEntry);
         this.index = this.history.length - 1;
@@ -595,7 +596,8 @@ class ChessCore {
             const r = await this.engine.getBestMove(this.game.fen(), selectedBotLevel || 10, selectedBotTime);
             if (r) {
                 this.game.move(r.move, { sloppy: true });
-                const san = this.game.history().pop();
+                const history = this.game.history();
+                const san = history[history.length - 1];
                 this.history.push({ fen: this.game.fen(), score: r.score, san, uci: r.move });
                 this.index = this.history.length - 1;
                 
@@ -677,11 +679,11 @@ class ChessCore {
         if (diff > 0.8) return `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
         if (isBest) return `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
         if (diff > 0.1) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
-        if (diff > -0.2) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
+        if (diff > -0.3) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
         if (Math.abs(pre) > 2.5 && Math.abs(cur) < 0.5) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
         if (diff < -1.5) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
         if (diff < -0.7) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
-        if (diff < -0.3) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
+        if (diff <= -0.3) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
 
         return '';
     }
@@ -751,7 +753,110 @@ class ChessCore {
      */
     _showGameOver() {
         let t = "Ván đấu kết thúc", b = this.game.in_checkmate() ? `Chiếu hết! ${this.game.turn() === 'b' ? 'Trắng' : 'Đen'} thắng.` : "Hòa!";
-        setTimeout(() => window.showGameOverModal?.(t, b), 200);
+        
+        if (window.showGameOverModal) {
+            // Hiện kết quả ngay lập tức
+            window.showGameOverModal(t, b);
+            
+            const shuffler = document.getElementById('game-over-stats-shuffler');
+            const statsGrid = document.getElementById('game-over-stats');
+            
+            if (shuffler) shuffler.classList.remove('d-none');
+            if (statsGrid) statsGrid.classList.add('d-none');
+
+            // hiệu ứng xáo trộn icon
+            setTimeout(() => {
+                const stats = this._calculatePlayerStats();
+                this._renderPlayerStats(stats);
+                
+                if (shuffler) shuffler.classList.add('d-none');
+                if (statsGrid) {
+                    statsGrid.classList.remove('d-none');
+                    statsGrid.style.opacity = '0';
+                    statsGrid.style.transition = 'opacity 0.6s ease';
+                    setTimeout(() => statsGrid.style.opacity = '1', 10);
+                }
+            }, 2500); 
+        }
+    }
+
+    /**
+     * Calculates move quality statistics for the human player.
+     * @private
+     */
+    _calculatePlayerStats() {
+        const isWhite = (playerColor === 'w' || playerColor === null);
+        const counts = {
+            brilliant: 0, best: 0, good: 0, solid: 0, 
+            blunder: 0, mistake: 0, inacc: 0, great: 0,
+            book: 0
+        };
+
+        for (let i = 1; i < this.history.length; i++) {
+            const isWhiteTurn = (i % 2 !== 0);
+            if (isWhiteTurn === isWhite) {
+                const m = this.history[i];
+                if (!this.history[i-1]) continue;
+
+                if (m.isBookMove) {
+                    counts.book++;
+                    continue;
+                }
+                
+                if (m.score === null) continue;
+
+                const cur = this.engine.parseScore(m.score);
+                const pre = this.engine.parseScore(this.history[i-1].score);
+                const diff = isWhiteTurn ? (cur - pre) : (pre - cur);
+                const isBest = (this.history[i-1].bestMove === m.uci);
+
+                if (diff > 1.5) counts.brilliant++;
+                else if (diff > 0.8) counts.great++;
+                else if (isBest) counts.best++;
+                else if (diff > 0.1) counts.good++;
+                else if (diff > -0.3) counts.solid++;
+                else if (diff < -1.5) counts.blunder++;
+                else if (diff < -0.7) counts.mistake++;
+                else if (diff <= -0.3) counts.inacc++;
+            }
+        }
+        return counts;
+    }
+
+    /**
+     * Renders top 3 stats to the modal, filtering out zero values.
+     * @private
+     */
+    _renderPlayerStats(counts) {
+        const statsGrid = document.getElementById('game-over-stats');
+        if (!statsGrid) return;
+
+        const all = [
+            { label: 'Thiên tài', val: counts.brilliant, class: 'stat-brilliant', priority: 100 },
+            { label: 'Sai lầm nghiêm trọng', val: counts.blunder, class: 'stat-blunder', priority: 90 },
+            { label: 'Tốt nhất', val: counts.best, class: 'stat-best', priority: 80 },
+            { label: 'Lý thuyết', val: counts.book, class: 'stat-book', priority: 75 },
+            { label: 'Tuyệt vời', val: counts.great, class: 'stat-good', priority: 70 },
+            { label: 'Tốt', val: counts.good, class: 'stat-good', priority: 60 },
+            { label: 'Vững chắc', val: counts.solid, class: 'stat-solid', priority: 50 },
+            { label: 'Sai lầm', val: counts.mistake, class: 'stat-mistake', priority: 40 },
+            { label: 'Không chính xác', val: counts.inacc, class: 'stat-inacc', priority: 30 }
+        ];
+
+        // CHỈ giữ lại các chỉ số có giá trị > 0
+        let filtered = all.filter(i => i.val > 0).sort((a, b) => b.priority - a.priority).slice(0, 3);
+        
+        // Nếu không có bất kỳ chỉ số nào > 0 (hiếm gặp), hiển thị Tốt nhất, Tốt, Vững chắc mặc định là 0
+        if (filtered.length === 0) {
+            filtered = all.filter(i => ['Tốt nhất', 'Tốt', 'Vững chắc'].includes(i.label)).slice(0, 3);
+        }
+
+        statsGrid.innerHTML = filtered.map(i => `
+            <div class="stat-item">
+                <span class="stat-value ${i.class}">${i.val}</span>
+                <span class="stat-label">${i.label}</span>
+            </div>
+        `).join('');
     }
 
     /**

@@ -118,14 +118,20 @@ class AliceChat {
         const aliceEl = this._createMessageElement('Alice');
 
         // Context data từ LOGIC_GAME đã đóng gói
-        const gameInstance = window.LOGIC_GAME?.getGame();
-        const currentFen = gameInstance ? gameInstance.fen() : "";
-        const pgn = gameInstance ? gameInstance.pgn() : "";
-        const historyRaw = gameInstance ? gameInstance.history({verbose: true}) : [];
-        const lastMoveSan = historyRaw.length > 0 ? historyRaw[historyRaw.length - 1]?.san : 'N/A';
-        
         const curIdx = window.LOGIC_GAME?.getIndex() || 0;
         const historyArr = window.LOGIC_GAME?.getHistory() || [];
+        const currentFen = historyArr[curIdx]?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        
+        // Lấy PGN và nước đi cuối từ history array (ổn định hơn gameInstance)
+        const lastMoveSan = historyArr[curIdx]?.san || 'N/A';
+        
+        // Reconstruct PGN up to the current index
+        let pgn = "";
+        for (let i = 1; i <= curIdx; i++) {
+            if (i % 2 !== 0) pgn += `${Math.floor(i / 2) + 1}. `;
+            pgn += `${historyArr[i].san} `;
+        }
+        pgn = pgn.trim();
 
         try {
             const apiUri = window.APP_CONST?.API?.CHAT_ANALYSIS || '/api/analysis/chat_analysis';

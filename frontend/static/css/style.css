@@ -890,7 +890,7 @@ body.allow-scroll {
   font-size: 0.8rem;
   width: 40px;
   opacity: 0.7;
-  background: transparent !important; /* Ensure no background for numbers */
+  background: transparent !important;
 }
 
 .history-table .move-cell {
@@ -1680,6 +1680,233 @@ body.allow-scroll {
   color: white !important;
 }
 
+/* Game Over Wonderland Enhancement */
+.gameOver-wonderland {
+  border: 1px solid var(--color-primary) !important;
+  -webkit-box-shadow: 0 0 40px rgba(76, 175, 80, 0.25) !important;
+          box-shadow: 0 0 40px rgba(76, 175, 80, 0.25) !important;
+}
+
+.wonderland-spinner {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto;
+}
+
+.spinner-circle {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  -webkit-animation: spin 1s linear infinite;
+          animation: spin 1s linear infinite;
+}
+
+.spinner-piece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  color: var(--color-primary);
+  -webkit-filter: drop-shadow(0 0 5px var(--color-primary));
+          filter: drop-shadow(0 0 5px var(--color-primary));
+}
+
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+.wonderland-stats-shuffler {
+  padding: 20px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+
+.shuffling-icons {
+  position: relative;
+  width: 50px;
+  height: 50px;
+}
+
+.shuffle-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  -webkit-animation: shuffleToggle 2s infinite;
+          animation: shuffleToggle 2s infinite;
+}
+
+/* Create a sequential appearance for 4 icons */
+.shuffle-icon:nth-child(1) {
+  -webkit-animation-delay: 0s;
+          animation-delay: 0s;
+}
+
+.shuffle-icon:nth-child(2) {
+  -webkit-animation-delay: 0.5s;
+          animation-delay: 0.5s;
+}
+
+.shuffle-icon:nth-child(3) {
+  -webkit-animation-delay: 1s;
+          animation-delay: 1s;
+}
+
+.shuffle-icon:nth-child(4) {
+  -webkit-animation-delay: 1.5s;
+          animation-delay: 1.5s;
+}
+
+@-webkit-keyframes shuffleToggle {
+  0%, 20% {
+    opacity: 0;
+    -webkit-transform: scale(0.5) rotate(-20deg);
+            transform: scale(0.5) rotate(-20deg);
+  }
+  25%, 45% {
+    opacity: 1;
+    -webkit-transform: scale(1.1) rotate(0deg);
+            transform: scale(1.1) rotate(0deg);
+  }
+  50%, 100% {
+    opacity: 0;
+    -webkit-transform: scale(1.5) rotate(20deg);
+            transform: scale(1.5) rotate(20deg);
+  }
+}
+
+@keyframes shuffleToggle {
+  0%, 20% {
+    opacity: 0;
+    -webkit-transform: scale(0.5) rotate(-20deg);
+            transform: scale(0.5) rotate(-20deg);
+  }
+  25%, 45% {
+    opacity: 1;
+    -webkit-transform: scale(1.1) rotate(0deg);
+            transform: scale(1.1) rotate(0deg);
+  }
+  50%, 100% {
+    opacity: 0;
+    -webkit-transform: scale(1.5) rotate(20deg);
+            transform: scale(1.5) rotate(20deg);
+  }
+}
+.stats-grid {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: distribute;
+      justify-content: space-around;
+  gap: 10px;
+  margin: 10px 15px;
+  padding: 20px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.stat-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.stat-brilliant {
+  color: #26c2fb;
+  text-shadow: 0 0 12px rgba(38, 194, 251, 0.6);
+}
+
+.stat-best {
+  color: #4CAF50;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+}
+
+.stat-good {
+  color: #97cc22;
+}
+
+.stat-solid {
+  color: #aaa;
+}
+
+.stat-blunder {
+  color: #ff3333;
+  text-shadow: 0 0 12px rgba(255, 51, 51, 0.6);
+}
+
+.stat-mistake {
+  color: #ffa500;
+}
+
+.stat-inacc {
+  color: #ffff00;
+}
+
+.stat-book {
+  color: #a67c52;
+}
+
 /* 10. OPENINGS PAGE */
 /* _openings.scss */
 .opening-card {
@@ -2051,7 +2278,7 @@ body.allow-scroll {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: -1; /* Place behind all content child elements */
+  z-index: -1;
   display: none;
 }
 
@@ -2660,7 +2887,6 @@ body.allow-scroll {
     -webkit-box-align: stretch;
         -ms-flex-align: stretch;
             align-items: stretch;
-    /* Force height recalculation when DevTools are toggled */
     height: calc(100vh - 110px) !important;
   }
   /* Game Column (Left) */
@@ -2729,7 +2955,6 @@ body.allow-scroll {
   .chatbot-container {
     margin-bottom: 0 !important;
   }
-  /* Đảm bảo game container không bị lệch */
   #game-view-container {
     -webkit-box-pack: center !important;
         -ms-flex-pack: center !important;
@@ -2751,14 +2976,14 @@ body.allow-scroll {
   .navbar {
     padding-left: 15px !important;
     padding-right: 15px !important;
-    position: relative; /* Base for absolute collapse */
+    position: relative;
   }
   .navbar-collapse {
     position: absolute;
     top: 70px;
     left: 15px;
     right: 15px;
-    background: rgba(20, 20, 35, 0.85); /* Slightly darker for contrast */
+    background: rgba(20, 20, 35, 0.85);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     border-radius: 18px;
@@ -2778,7 +3003,7 @@ body.allow-scroll {
     border-bottom: none !important;
     -webkit-transition: all 0.2s ease;
     transition: all 0.2s ease;
-    text-align: left; /* Aligned to left as requested */
+    text-align: left;
     width: 100%;
     position: relative;
     display: block;
