@@ -19,24 +19,30 @@ load_dotenv()
 
 # --- CẤU HÌNH ---
 API_KEY = os.getenv("ROBOFLOW_API_KEY")
-MODEL_ID = os.getenv("ROBOFLOW_PROJECT_ID")
+ROBOFLOW_CHESS_PIECES_MODEL_ID = os.getenv("ROBOFLOW_CHESS_PIECES_MODEL_ID")
+ROBOFLOW_BOARD_MODEL_ID = os.getenv("ROBOFLOW_BOARD_MODEL_ID")
 
 try:
-    MODEL_VERSION = int(os.getenv("ROBOFLOW_VERSION", 1))
+    ROBOFLOW_CHESS_PIECES_VERSION = int(os.getenv("ROBOFLOW_CHESS_PIECES_VERSION", 1))
 except:
-    MODEL_VERSION = 1
+    ROBOFLOW_CHESS_PIECES_VERSION = 1
+
+try:
+    ROBOFLOW_BOARD_VERSION = int(os.getenv("ROBOFLOW_BOARD_VERSION", 1))
+except:
+    ROBOFLOW_BOARD_VERSION = 1
 
 CLASS_TO_FEN = {
     # Quân Đen
     "bp": "p", "br": "r", "bn": "n", "bb": "b", "bq": "q", "bk": "k",
-    "bkn": "n", # Mã đen mới
+    "bkn": "n",
     "black-pawn": "p", "black-rook": "r", "black-knight": "n", "black-bishop": "b", "black-queen": "q", "black-king": "k",
     "black_pawn": "p", "black_rook": "r", "black_knight": "n", "black_bishop": "b", "black_queen": "q", "black_king": "k",
     "bP": "p", "bR": "r", "bN": "n", "bB": "b", "bQ": "q", "bK": "k", "bKN": "n",
 
     # Quân Trắng
     "wp": "P", "wr": "R", "wn": "N", "wb": "B", "wq": "Q", "wk": "K",
-    "wkn": "N", # Mã trắng mới
+    "wkn": "N",
     "white-pawn": "P", "white-rook": "R", "white-knight": "N", "white-bishop": "B", "white-queen": "Q", "white-king": "K",
     "white_pawn": "P", "white_rook": "R", "white_knight": "N", "white_bishop": "B", "white_queen": "Q", "white_king": "K",
     "wP": "P", "wR": "R", "wN": "N", "wB": "B", "wQ": "Q", "wK": "K", "wKN": "N",
@@ -58,51 +64,47 @@ def analyze_image_to_fen(image_path):
     if img is None:
         return None, None, "Lỗi đọc ảnh."
 
-    h, w = img.shape[:2]
-    max_dim = 1024
+    h, w = img.shape[:2] # Chiều cao, chiều rộng 
+    max_dim = 1024 
     if max(h, w) > max_dim:
         scale = max_dim / max(h, w)
         new_w, new_h = int(w * scale), int(h * scale)
-        img = cv2.resize(img, (new_w, new_h))
+        img = cv2.resize(img, (new_w, new_h)) # Resize ảnh
         cv2.imwrite(image_path, img)
         h, w = new_h, new_w
 
-    # 2. Gọi Roboflow (AI Detect)
+    # 2. Gọi Roboflow (Quy trình 2 Model)
     try:
-        if not API_KEY or not MODEL_ID:
-            return None, None, "Thiếu cấu hình Roboflow API Key hoặc Project ID."
+        if not API_KEY or not ROBOFLOW_CHESS_PIECES_MODEL_ID or not ROBOFLOW_BOARD_MODEL_ID:
+            return None, None, "Thiếu cấu hình Roboflow API Key hoặc Model IDs."
 
         rf = Roboflow(api_key=API_KEY)
-        project = rf.workspace().project(MODEL_ID)
-        model = project.version(MODEL_VERSION).model
 
-        prediction = model.predict(image_path, confidence=10, overlap=30).json()
-        predictions = prediction.get("predictions", [])
-
-        if not predictions:
-            print(f"❌ Roboflow v{MODEL_VERSION} không tìm thấy kết quả.")
-            return None, None, "AI không tìm thấy quân cờ hoặc bàn cờ."
+        # --- BƯỚC A: TÌM BÀN CỜ (Model chessboard) ---
+        print(f"- Bước 1: Đang tìm bàn cờ (Model: {ROBOFLOW_BOARD_MODEL_ID[:5]}... v{ROBOFLOW_BOARD_VERSION})...")
+        board_project = rf.workspace().project(ROBOFLOW_BOARD_MODEL_ID)
+        board_model = board_project.version(ROBOFLOW_BOARD_VERSION).model
+        board_prediction = board_model.predict(image_path, confidence=40).json()
+        board_results = board_prediction.get("predictions", [])
         
-        # Log detected classes
-        print(f" Detected: {list(set([p['class'] for p in predictions]))}")
+        board_box = None
+        if board_results:
+            # Lấy kết quả có độ tin cậy cao nhất
+            board_box = sorted(board_results, key=lambda x: x['confidence'], reverse=True)[0]
+            print(f"✅ Đã tìm thấy bàn cờ (Conf: {board_box['confidence']:.2f})")
+
+        # --- BƯỚC B: TÌM QUÂN CỜ (Model chess-pieces) ---
+        print(f"- Bước 2: Đang nhận diện quân cờ (Model: {ROBOFLOW_CHESS_PIECES_MODEL_ID[:5]}... v{ROBOFLOW_CHESS_PIECES_VERSION})...")
+        piece_project = rf.workspace().project(ROBOFLOW_CHESS_PIECES_MODEL_ID)
+        piece_model = piece_project.version(ROBOFLOW_CHESS_PIECES_VERSION).model
+        piece_prediction = piece_model.predict(image_path, confidence=30, overlap=30).json()
+        piece_preds = piece_prediction.get("predictions", [])
+        
+        print(f"✅ Tìm thấy {len(piece_preds)} quân cờ.")
 
     except Exception as e:
-        print(f"❌ Lỗi kết nối Roboflow: {str(e)}")
-        return None, None, f"Lỗi kết nối Roboflow: {str(e)}"
-
-    # Tách riêng quân cờ và bàn cờ
-    piece_preds = []
-    board_box = None
-
-    BOARD_ALIASES = ['chessboard', 'board', 'chess-board', 'chess_board', 'table']
-    for p in predictions:
-        cls_name = p['class'].lower()
-        if any(alias in cls_name for alias in BOARD_ALIASES):
-            # Nếu tìm thấy nhiều bàn cờ, lấy cái có confidence cao nhất hoặc to nhất
-            if board_box is None or p['confidence'] > board_box['confidence']:
-                board_box = p
-        else:
-            piece_preds.append(p)
+        print(f"❌ Lỗi Roboflow: {str(e)}")
+        return None, None, f"Lỗi Roboflow: {str(e)}"
 
     # Biến lưu tọa độ cắt (Offset)
     offset_x = 0
@@ -128,7 +130,7 @@ def analyze_image_to_fen(image_path):
         x2 = int(bx + bw / 2)
         y2 = int(by + bh / 2)
 
-        # --- SỬA LỖI AN TOÀN (SAFE CROP) ---
+        # --- SAFE CROP ---
         # 1. Giới hạn tọa độ trong khung hình (Clamp)
         x1 = max(0, min(x1, w - 1))
         y1 = max(0, min(y1, h - 1))
@@ -141,9 +143,14 @@ def analyze_image_to_fen(image_path):
 
         if crop_w > 10 and crop_h > 10:  
             try:
-                # Thêm padding 5% để OpenCV dễ tìm góc viền bàn cờ hơn
-                pad_w = int(crop_w * 0.05)
-                pad_h = int(crop_h * 0.05)
+                # --- PHÁN ĐOÁN NHANH 2D/3D ĐỂ ÁP PADDING ---
+                initial_aspect = crop_w / crop_h
+                is_likely_2d = 0.90 < initial_aspect < 1.10 and board_box['confidence'] > 0.7
+                
+                # 2D chỉ cần 2% lề (để lấy đủ viền), 3D cần 15%
+                p_ratio = 0.02 if is_likely_2d else 0.15
+                pad_w = int(crop_w * p_ratio)
+                pad_h = int(crop_h * p_ratio)
                 
                 # Tính toán tọa độ cắt mới có lề
                 nx1 = max(0, x1 - pad_w)
@@ -172,20 +179,12 @@ def analyze_image_to_fen(image_path):
                     use_perspective = True
                     M, side_len = get_board_mapping_matrix(corners, w, h)
 
-                    # --- NHẬN DIỆN CHẾ ĐỘ 2D/SCREENSHOT ---
-                    aspect_ratio = (x2 - x1) / (y2 - y1)
-                    if 0.92 < aspect_ratio < 1.08 and board_box['confidence'] > 0.7:
-                        print(f"💡 Chế độ: Bàn cờ 2D/Screenshot (Aspect: {aspect_ratio:.2f}).")
+                    # --- NHẬN DIỆN CHẾ ĐỘ 2D/3D ---
+                    if is_likely_2d:
+                        print(f"Chế độ: Bàn cờ 2D/Screenshot (Aspect: {initial_aspect:.2f}).")
                         is_2d_mode = True
-                        # Khử lề 2% cho 2D để bỏ qua nhãn tọa độ
-                        m_w, m_h = w * 0.02, h * 0.02
-                        corners = np.array([
-                            [m_w, m_h], [w - m_w, m_h], 
-                            [w - m_w, h - m_h], [m_w, h - m_h]
-                        ], dtype="float32")
-                        M, side_len = get_board_mapping_matrix(corners, w, h)
                     else:
-                        print(f"💡 Chế độ: Bàn cờ 3D/Ảnh thực tế (Aspect: {aspect_ratio:.2f}).")
+                        print(f"Chế độ: Bàn cờ 3D/Ảnh thực tế (Aspect: {initial_aspect:.2f}).")
                         is_2d_mode = False
 
                     # Dịch chuyển tọa độ quân cờ về hệ tọa độ ảnh cắt
@@ -297,7 +296,7 @@ def analyze_image_to_fen(image_path):
         else:
             # Ảnh 3D dùng chân (Bottom)
             ref_x = p["x"]
-            ref_y = p["y"] + (p["height"] / 2) * 0.9 
+            ref_y = p["y"] + (p["height"] / 2) * 1.05 
         
         row, col = -1, -1
 

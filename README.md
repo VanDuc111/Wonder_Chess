@@ -111,10 +111,14 @@ This project represents a comprehensive software engineering effort to design an
    Create a `.env` file in the root directory:
 
    ```env
-   GOOGLE_API_KEY=your_google_gemini_api_key
-   ROBOFLOW_API_KEY=your_roboflow_private_key
-   ROBOFLOW_PROJECT_ID=your_model_id
-   ROBOFLOW_VERSION=5
+   GEMINI_API_KEY=your_key_here
+
+   ROBOFLOW_API_KEY=your_key_here
+   ROBOFLOW_CHESS_PIECES_MODEL_ID=your_id_here
+   ROBOFLOW_CHESS_PIECES_VERSION=1
+
+   ROBOFLOW_BOARD_MODEL_ID=your_id_here
+   ROBOFLOW_BOARD_VERSION=1
    ```
 
 6. **Run the Application**
