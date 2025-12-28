@@ -244,6 +244,14 @@
         z-index: 105 !important;
         border-radius: 6px !important;
         text-align: center !important;
+        transition: all 0.3s ease;
+
+        &.active {
+            background: var(--color-primary) !important;
+            border-color: var(--color-primary) !important;
+            box-shadow: 0 0 15px var(--color-primary) !important;
+            opacity: 1 !important;
+        }
     }
 
     .timer-top-right { 

@@ -3244,6 +3244,15 @@ body.allow-scroll {
     z-index: 105 !important;
     border-radius: 6px !important;
     text-align: center !important;
+    -webkit-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+  }
+  .timer-box.active {
+    background: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    -webkit-box-shadow: 0 0 15px var(--color-primary) !important;
+            box-shadow: 0 0 15px var(--color-primary) !important;
+    opacity: 1 !important;
   }
   .timer-top-right {
     top: -35px !important;

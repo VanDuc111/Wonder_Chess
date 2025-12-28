@@ -421,6 +421,7 @@ class ChessCore {
         this.index = 0;
 
         this._initGlobalListeners();
+        this._setupResize();
         this.dom = {
             pgnList: null,
             pgnCont: null,
