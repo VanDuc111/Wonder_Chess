@@ -431,7 +431,7 @@ class VisionManager {
 
         statusEl.innerHTML = `
             <div class=\"error-rabbit-container\">
-                <img src=\"static/img/alice-error.png\" class=\"error-rabbit-img\" alt=\"Sad Alice\">
+                <img src=\"static/img/alice-error.webp\" class=\"error-rabbit-img\" alt=\"Sad Alice\">
                 <div class=\"friendly-error-msg\">
                     <strong>${title}</strong><br>${message}
                 </div>

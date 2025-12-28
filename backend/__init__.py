@@ -1,16 +1,19 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask
+from flask_compress import Compress
 
 def create_app():
     # Load environment variables
     load_dotenv()
     
     # Initialize Flask app
-    # We set instance_relative_config=True to allow for per-instance configuration
     app = Flask(__name__,
                 static_folder='../frontend/static',
                 template_folder='../frontend/templates')
+                
+    # Enable Gzip compression
+    Compress(app)
     
     # Register Blueprints
     from backend.api.main_routes import main_bp

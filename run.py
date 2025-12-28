@@ -10,13 +10,14 @@ def open_browser():
     webbrowser.open_new("http://127.0.0.1:5000")
 
 if __name__ == "__main__":
-    # Force debug mode to True
-    app.debug = True
+    # Configure for deployment (Render uses PORT env var)
+    port = int(os.environ.get("PORT", 5000))
+    debug_mode = os.environ.get("FLASK_DEBUG", "True").lower() == "true"
     
-    # 1. If reloader is active (child process), open the browser
-    # 2. If debug is OFF (no child process), open the browser immediately
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+    # Only open browser if running locally on port 5000 and not in a production environment
+    is_render = os.environ.get("RENDER") is not None
+    if not is_render and (os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not debug_mode):
         Timer(1.5, open_browser).start()
     
-    # Start the Flask server with the configured debug mode
-    app.run(host="0.0.0.0", port=5000, debug=app.debug)
+    # Start the Flask server
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
