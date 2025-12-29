@@ -33,6 +33,18 @@
     </style>
     
     {% block extra_css %}{% endblock %}
+
+    <script>
+        (function() {
+            const nickname = localStorage.getItem('userNickname');
+            const isWelcomePage = window.location.pathname === '/welcome';
+            if (!nickname && !isWelcomePage) {
+                window.location.href = '/welcome';
+            } else if (nickname && isWelcomePage) {
+                window.location.href = '/';
+            }
+        })();
+    </script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
 

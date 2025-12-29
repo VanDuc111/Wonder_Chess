@@ -13,3 +13,7 @@ def openings_page():
 @main_bp.route('/learn')
 def learn_page():
     return render_template('learn.html')
+
+@main_bp.route('/welcome')
+def welcome_page():
+    return render_template('welcome.html')

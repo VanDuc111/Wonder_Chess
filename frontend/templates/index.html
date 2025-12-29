@@ -5,18 +5,7 @@
 {% block title %}WonderChess - Intelligent Chess Assistant System{% endblock %}
 
 {% block body_content %}
-<div id="welcome-screen" class="d-flex justify-content-center align-items-center vh-100">
-    <div class="welcome-container">
-        <h1 class="welcome-title">Chào Mừng Đến Với WonderChess</h1>
-        <p class="welcome-question">Tôi có thể gọi bạn là gì?</p>
-        <form id="nickname-form">
-            <input type="text" id="nickname-input" placeholder="Nhập nickname của bạn..." required>
-            <button type="submit" class="start-button">Bắt Đầu!</button>
-        </form>
-    </div>
-</div>
-
-<div id="main-app-screen" class="container-fluid py-3 px-0 px-md-3 d-none">
+<div id="main-app-screen" class="container-fluid py-3 px-0 px-md-3">
     {% with active_page='analyze' %}
         {% include 'partials/navbar.html' %}
     {% endwith %}

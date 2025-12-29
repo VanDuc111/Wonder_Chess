@@ -24,10 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = `https://chessboardjs.com/img/chesspieces/${pieceTheme}/${p}.png`;
     });
 
-    const welcomeScreen = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WELCOME_SCREEN) ? window.APP_CONST.IDS.WELCOME_SCREEN : 'welcome-screen');
-    const mainAppScreen = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.MAIN_APP_SCREEN) ? window.APP_CONST.IDS.MAIN_APP_SCREEN : 'main-app-screen');
-    const nicknameForm = document.getElementById('nickname-form');
-    const nicknameInput = document.getElementById('nickname-input');
     const userDisplaySpan = document.getElementById('user-display');
     if (window.ALICE_CHAT) window.ALICE_CHAT.init();
     const loadDataModalEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.LOAD_DATA_MODAL) ? window.APP_CONST.IDS.LOAD_DATA_MODAL : 'loadDataModal');
@@ -36,28 +32,22 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
     }
 
-    // Hàm chào mừng và chuyển hướng
-    function startApp(nickname) {
-        // 1. Lưu Nickname
-        localStorage.setItem('userNickname', nickname);
-
-        // 2. Ẩn/Hiện màn hình
-        if (welcomeScreen) welcomeScreen.classList.add('d-none');
-        if (mainAppScreen) {
-            mainAppScreen.classList.remove('d-none');
-            mainAppScreen.style.minHeight = '100vh';
-        }
-
+    // Initialize application state
+    function initApp(nickname) {
         if (userDisplaySpan) {
             userDisplaySpan.textContent = `Chào, ${nickname}!`;
             userDisplaySpan.classList.remove('d-none');
         }
 
-        // 3. Chatbot chào mừng (Chỉ hiện nếu đang ở trang chủ/có chatbot)
+        // Chatbot welcome message (only on page with chatbot)
         const chatbotMessages = document.getElementById('chatbot-messages');
-        if (chatbotMessages) {
+        if (chatbotMessages && !sessionStorage.getItem('alice_welcomed')) {
             const welcomeMessage = `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
-            displayChatbotMessage(welcomeMessage);
+            // Check if displayChatbotMessage is defined (usually in chat_manager.js)
+            if (typeof displayChatbotMessage === 'function') {
+                displayChatbotMessage(welcomeMessage);
+                sessionStorage.setItem('alice_welcomed', 'true');
+            }
         }
 
         fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
@@ -66,26 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.title = `WonderChess - Intelligent Chess Assistant System`;
 
-        // Chỉ init chessboard nếu có div bàn cờ
+        // Only init chessboard if on index page
         if (document.getElementById('myBoard')) {
             initChessboard();
         }
     }
 
-    // Xử lý Form Nickname
-    if (nicknameForm) {
-        nicknameForm.addEventListener('submit', (event) => {
-            event.preventDefault(); // Ngăn form gửi đi và tải lại trang
-            const nickname = nicknameInput.value.trim();
-            if (nickname) {
-                startApp(nickname);
-            }
-        });
-    }
-
     const storedNickname = localStorage.getItem('userNickname');
     if (storedNickname) {
-        startApp(storedNickname);
+        initApp(storedNickname);
     }
 
     // ===== QUẢN LÝ CÁC CHẾ ĐỘ TRÊN NAVBAR =====
