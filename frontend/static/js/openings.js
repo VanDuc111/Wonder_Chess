@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const boardId = `board-${index}`;
             const cardHtml = `
                 <div class="col-12 col-sm-6 col-md-4 col-lg-3 opening-card-col" data-index="${index}">
-                    <div class="opening-card" onclick="alert('Tính năng chi tiết &quot;${op.name}&quot; đang được phát triển!')">
+                    <div class="opening-card js-opening-card" data-fen="${op.fen}" data-name="${op.name}" data-eco="${op.eco}">
                         <div class="opening-board-container p-3">
                             <div id="${boardId}" style="width: 100%"></div>
                         </div>
@@ -105,6 +105,51 @@ document.addEventListener('DOMContentLoaded', function () {
             updateVisibility();
         });
     });
+
+    // Delegate click event for opening cards
+    gridEl.addEventListener('click', function(e) {
+        const card = e.target.closest('.js-opening-card');
+        if (card) {
+            const name = card.getAttribute('data-name');
+            // Create URL-friendly slug from name
+            const slug = name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric chars with hyphens
+                .replace(/(^-|-$)+/g, '');   // Remove leading/trailing hyphens
+            
+            triggerRabbitHole(slug, card);
+        }
+    });
+
+    function triggerRabbitHole(slug, cardElement) {
+        const overlay = document.getElementById('rabbit-hole-overlay');
+        
+        // Visual feedback on the card immediately
+        cardElement.classList.add('sucking-in');
+        
+        // Activate overlay
+        overlay.classList.add('active');
+        
+        // Add random floating chess pieces for effect
+        const pieces = ['♔', '♕', '♖', '♗', '♘', '♙', '♚', '♛', '♜', '♝', '♞', '♟'];
+        for(let i=0; i<20; i++) {
+            const span = document.createElement('span');
+            span.classList.add('floating-piece');
+            span.textContent = pieces[Math.floor(Math.random() * pieces.length)];
+            
+            // Random positioning
+            span.style.left = `${Math.random() * 100}vw`;
+            span.style.top = `${Math.random() * 100}vh`;
+            span.style.animationDelay = `${Math.random() * 0.5}s`;
+            span.style.fontSize = `${2 + Math.random() * 4}rem`;
+            
+            overlay.appendChild(span);
+        }
+
+        // Redirect after animation with clean slug URL
+        setTimeout(() => {
+            window.location.href = `/?op=${slug}`;
+        }, 1800); 
+    }
 
     // Initial load
     initAllCards();

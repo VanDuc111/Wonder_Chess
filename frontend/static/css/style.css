@@ -2716,6 +2716,147 @@ body.allow-scroll {
   font-family: monospace;
 }
 
+/* Alice in Wonderland Rabbit Hole Effect - User Refactor Request */
+.rabbit-hole-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  -webkit-transition: opacity 0.5s ease;
+  transition: opacity 0.5s ease;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  overflow: hidden;
+}
+
+.rabbit-hole-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.rabbit-hole-tunnel {
+  position: absolute;
+  width: 200vw;
+  height: 200vw;
+  background: repeating-radial-gradient(circle, #2a2a2a 0, #000 10%, #3d1e5e 20%, #000 30%);
+  border-radius: 50%;
+  -webkit-transform-origin: center;
+          transform-origin: center;
+  opacity: 0;
+  -webkit-transform: scale(0) rotate(0deg);
+          transform: scale(0) rotate(0deg);
+}
+
+.rabbit-hole-overlay.active .rabbit-hole-tunnel {
+  -webkit-animation: fallDown 2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          animation: fallDown 2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  opacity: 1;
+}
+
+/* Chess pieces floating in the void */
+.floating-piece {
+  position: absolute;
+  font-size: 3rem;
+  color: rgba(255, 255, 255, 0.6);
+  opacity: 0;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.rabbit-hole-overlay.active .floating-piece {
+  -webkit-animation: floatPass 1.5s ease-in forwards;
+          animation: floatPass 1.5s ease-in forwards;
+}
+
+@-webkit-keyframes fallDown {
+  0% {
+    -webkit-transform: scale(0) rotate(0deg);
+            transform: scale(0) rotate(0deg);
+    -webkit-filter: blur(10px);
+            filter: blur(10px);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: scale(3) rotate(720deg);
+            transform: scale(3) rotate(720deg); /* Spin and zoom massively */
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+  }
+}
+
+@keyframes fallDown {
+  0% {
+    -webkit-transform: scale(0) rotate(0deg);
+            transform: scale(0) rotate(0deg);
+    -webkit-filter: blur(10px);
+            filter: blur(10px);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: scale(3) rotate(720deg);
+            transform: scale(3) rotate(720deg); /* Spin and zoom massively */
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+  }
+}
+@-webkit-keyframes floatPass {
+  0% {
+    -webkit-transform: translateZ(-1000px) scale(0);
+            transform: translateZ(-1000px) scale(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: translateZ(500px) scale(2);
+            transform: translateZ(500px) scale(2);
+    opacity: 0;
+  }
+}
+@keyframes floatPass {
+  0% {
+    -webkit-transform: translateZ(-1000px) scale(0);
+            transform: translateZ(-1000px) scale(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: translateZ(500px) scale(2);
+            transform: translateZ(500px) scale(2);
+    opacity: 0;
+  }
+}
+/* Add specialized transitions for the cards to get sucked in */
+.opening-card.sucking-in {
+  -webkit-transition: opacity 0.5s ease-in, -webkit-transform 0.5s ease-in;
+  transition: opacity 0.5s ease-in, -webkit-transform 0.5s ease-in;
+  transition: transform 0.5s ease-in, opacity 0.5s ease-in;
+  transition: transform 0.5s ease-in, opacity 0.5s ease-in, -webkit-transform 0.5s ease-in;
+  -webkit-transform: scale(0) rotate(180deg);
+          transform: scale(0) rotate(180deg);
+  opacity: 0;
+  -webkit-filter: blur(10px);
+          filter: blur(10px);
+}
+
 /* 13. ANALYSIS SETTINGS */
 /* _analysis.scss */
 .analysis-settings-container {

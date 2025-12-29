@@ -446,10 +446,63 @@ class ChessCore {
      */
     initBoard(orientation = 'white', fen = null) {
         if (typeof board !== 'undefined' && board) try { board.destroy(); } catch(e){}
-        const startFen = fen || window.APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        this.game = new Chess(startFen);
-        this.history = [{ fen: this.game.fen(), score: "0.00" }];
-        this.index = 0;
+
+        // Check for 'op' param (opening slug)
+        // Standardized on "slugs" for clean, unique URLs (e.g. /?op=sicilian-defense)
+        const urlParams = new URLSearchParams(window.location.search);
+        const opSlug = urlParams.get('op');
+        
+        // Legacy/Fallback check for ECO if users type it manually
+        const opEco = urlParams.get('eco');
+        
+        let foundOp = null;
+        
+        if (typeof OPENINGS_DATA !== 'undefined') {
+            if (opSlug) {
+                // Helper to slugify name matching the frontend/openings.js logic
+                const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                foundOp = OPENINGS_DATA.find(o => slugify(o.name) === opSlug);
+            } else if (opEco) {
+                foundOp = OPENINGS_DATA.find(o => o.eco === opEco);
+            }
+        }
+
+        if (foundOp) {
+            // Setup game from Opening Data
+            this.game = new Chess();
+            this.history = [{ fen: this.game.fen(), score: "0.00" }];
+            this.index = 0;
+
+            // Clean moves string: "1. e4 e5 2. Nf3" -> ["e4", "e5", "Nf3"]
+            const cleanMoves = foundOp.moves.replace(/\d+\./g, '').replace(/\.\.\./g, '').split(/\s+/).filter(m => m.length > 0);
+            
+            for (const m of cleanMoves) {
+                const moveResult = this.game.move(m);
+                if (moveResult) {
+                    const uci = moveResult.from + moveResult.to + (moveResult.promotion || '');
+                    this.history.push({ 
+                        fen: this.game.fen(), 
+                        score: null, 
+                        san: moveResult.san, 
+                        uci: uci, 
+                        isBookMove: true 
+                    });
+                }
+            }
+            this.index = this.history.length - 1;
+            
+            // Allow board to init with this final FEN
+            fen = this.game.fen();
+        } else {
+            // Fallback to FEN param or default
+            const urlFen = urlParams.get('fen');
+            if (!fen && urlFen) fen = decodeURIComponent(urlFen);
+            
+            const startFen = fen || window.APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            this.game = new Chess(startFen);
+            this.history = [{ fen: this.game.fen(), score: "0.00" }];
+            this.index = 0;
+        }
         
         board = Chessboard('myBoard', {
             draggable: true, position: this.game.fen(), pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png',
@@ -461,8 +514,14 @@ class ChessCore {
         if (document.getElementById('flip-board-switch')?.checked) board.orientation('black');
         this._syncOrientationUI();
         
-        this.onTurnEnd();
+        // Trigger generic turn end to ensure state is consistent
+        this.updateUI(); 
         
+        // Explicitly set opening name in UI if loaded from ECO
+        if (foundOp) {
+             if (this.ui.dom.openingName) this.ui.dom.openingName.textContent = foundOp.name;
+        }
+
         const boardEl = $('#myBoard');
         boardEl.off('click', '.square-55d63'); 
         boardEl.on('click', '.square-55d63', (e) => {
