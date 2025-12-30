@@ -284,33 +284,30 @@ def analyze_image_to_fen(image_path):
                 cv2.line(debug_img, (int(board_x1 + i * sq_w), int(board_y1)), 
                          (int(board_x1 + i * sq_w), int(board_y1 + board_size)), (0, 255, 0), 1)
 
+    # --- LOGIC MAPPING VÀ XỬ LÝ XUNG ĐỘT QUÂN CỜ ---
+    
+    # 1. Thu thập tất cả ứng viên hợp lệ (Mapped detections)
+    mapped_detections = []
     for p in piece_preds:
         class_name = p["class"]
         conf = p.get("confidence", 0)
 
-        # Lấy điểm quy chiếu để xác định ô cờ
+        # Lấy điểm quy chiếu (Bottom point cho 3D, Center cho 2D)
         if is_2d_mode:
-            # Ảnh 2D dùng tâm (Center)
-            ref_x = p["x"]
-            ref_y = p["y"]
+            ref_x, ref_y = p["x"], p["y"]
         else:
-            # Ảnh 3D dùng chân (Bottom)
             ref_x = p["x"]
             ref_y = p["y"] + (p["height"] / 2) * 1.05 
         
         row, col = -1, -1
-
         if use_perspective:
             row, col = map_point_to_grid(ref_x, ref_y, M, side_len)
         else:
-            rel_x = ref_x - board_x1
-            rel_y = ref_y - board_y1
-            col = int(rel_x // sq_w)
-            row = int(rel_y // sq_h)
-            row = max(0, min(7, row))
-            col = max(0, min(7, col))
+            rel_x, rel_y = ref_x - board_x1, ref_y - board_y1
+            col, row = int(rel_x // sq_w), int(rel_y // sq_h)
+            row, col = max(0, min(7, row)), max(0, min(7, col))
 
-        # Tìm ký tự FEN
+        # Tìm ký tự FEN thông qua CLASS_TO_FEN
         fen_char = '?'
         for k, v in CLASS_TO_FEN.items():
             if k.lower() == class_name.lower():
@@ -318,37 +315,51 @@ def analyze_image_to_fen(image_path):
                 break
 
         if fen_char != '?':
-            # LOGIC XỬ LÝ XUNG ĐỘT Ô CỜ
-            pos = (row, col)
-            is_king = fen_char.lower() == 'k'
-            
-            should_place = False
-            if pos not in occupied_squares:
-                should_place = True
-            else:
-                existing_char = occupied_squares[pos]['char']
-                existing_conf = occupied_squares[pos]['conf']
-                existing_is_king = existing_char.lower() == 'k'
-                
-                # 1. Quân Vua cũ luôn thắng (trừ khi quân mới cũng là vua và conf cao hơn)
-                if existing_is_king and not is_king:
-                    should_place = False
-                # 2. Quân Vua mới thắng quân thường cũ
-                elif is_king and not existing_is_king:
-                    should_place = True
-                # 3. Cùng loại (Vua-Vua hoặc Thường-Thường) -> Thắng nhờ Confidence
-                elif conf > existing_conf:
-                    should_place = True
-            
-            if should_place:
-                occupied_squares[pos] = {'char': fen_char, 'conf': conf}
-                board_grid[row][col] = fen_char
-                print(f"  - Mapped {class_name} ({fen_char}) to [r:{row}, c:{col}] (Conf: {conf:.2f})")
-            else:
-                print(f"  - ⚠️ Skipped {class_name} at [r:{row}, c:{col}] - overlap with higher priority {occupied_squares[pos]['char']}")
-        else:
-            print(f"  - ⚠️ Unsupported piece class: {class_name}")
+            mapped_detections.append({
+                'row': row, 'col': col, 
+                'char': fen_char, 'conf': conf, 
+                'class': class_name,
+                'x': p['x'], 'y': p['y'] # Giữ lại tọa độ để vẽ debug
+            })
 
+    # 2. Quy tắc SẮT ĐÁ: Mỗi màu chỉ có duy nhất 1 quân Vua (King)
+    # Tìm kiếm quân vua có Confidence cao nhất toàn bàn cờ cho mỗi màu
+    best_kings = {'K': None, 'k': None}
+    for det in mapped_detections:
+        char = det['char']
+        if char in ['K', 'k']:
+            if best_kings[char] is None or det['conf'] > best_kings[char]['conf']:
+                best_kings[char] = det
+
+    # 3. Đổ dữ liệu vào board_grid với xử lý xung đột ô cờ
+    # Thứ tự ưu tiên: Quân Vua lên đầu, sau đó giảm dần theo Confidence
+    sorted_detections = sorted(mapped_detections, 
+                               key=lambda x: (x['char'].lower() == 'k', x['conf']), 
+                               reverse=True)
+
+    final_placements = {} # (row, col) -> det metadata
+    for det in sorted_detections:
+        row, col, char, conf = det['row'], det['col'], det['char'], det['conf']
+        pos = (row, col)
+        
+        # BỎ QUA nếu là quân vua "dỏm" (đã có quân vua cùng màu khác có Conf cao hơn ở vị trí khác)
+        if char in ['K', 'k'] and det != best_kings[char]:
+            print(f"  - ⚠️ Ignored duplicate King {char} at [r:{row}, c:{col}] (Conf: {conf:.2f})")
+            continue
+            
+        # XỬ LÝ XUNG ĐỘT TẠI MỘT Ô (Square Level Conflict)
+        if pos not in final_placements:
+            final_placements[pos] = det
+            board_grid[row][col] = char
+            print(f"  - Mapped {det['class']} ({char}) to [r:{row}, c:{col}] (Conf: {conf:.2f})")
+        else:
+            existing = final_placements[pos]
+            # Vì ta đã sắp xếp Vua và Conf cao lên đầu, các đống đè sau thường là nhiễu
+            print(f"  - ⚠️ Overlap at [r:{row}, c:{col}]: {char} vs {existing['char']}. Kept {existing['char']}")
+
+    # 5. Vẽ Box và nhãn Debug (Vẽ dựa trên piece_preds gốc để đảm bảo đầy đủ)
+    for p in piece_preds:
+        class_name = p["class"]
         x, y = int(p['x']), int(p['y'])
         w_p, h_p = int(p['width']), int(p['height'])
 
