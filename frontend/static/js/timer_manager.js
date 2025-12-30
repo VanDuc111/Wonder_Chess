@@ -165,9 +165,12 @@ class ChessTimer {
      */
     _handleTimeUp(color) {
         this.stop();
+        this._ensureDom();
         this.isTimedGame = false;
         const winner = (color === 'w') ? 'Đen' : 'Trắng';
-        if (window.showGameOverModal) {
+        if (window.LOGIC_GAME && window.LOGIC_GAME.showGameOver) {
+            window.LOGIC_GAME.showGameOver("Hết giờ", `Hết giờ! ${winner} thắng cuộc.`);
+        } else if (window.showGameOverModal) {
             window.showGameOverModal("Hết giờ", `Hết giờ! ${winner} thắng cuộc.`);
         }
     }

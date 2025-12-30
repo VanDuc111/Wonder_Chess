@@ -238,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 3. Khởi tạo bàn cờ
             initChessboard(boardOrientation);
-            updateUI();
         });
     }
 
@@ -376,32 +375,28 @@ document.addEventListener('DOMContentLoaded', () => {
         $('[data-action="last"]').prop('disabled', isLastMove);
     }
 
-    // Hàm thiết lập lại trò chơi về trạng thái ban đầu
+    // Hàm thiết lập lại trò chơi về trạng thái ban đầu (Hard Reset)
     function clearBoard() {
-        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.clearBoard === 'function') {
-            const res = window.LOGIC_GAME.clearBoard();
-            try {
-                updateUI();
-            } catch (e) {
-            }
-            return res;
+        // Xóa các tham số trên URL (như ?op=... hay ?eco=...)
+        if (window.history.pushState) {
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.pushState({path: newUrl}, '', newUrl);
         }
-        if (!board) {
-            console.error("Lỗi: Board chưa được khởi tạo.");
+
+        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.clearBoard === 'function') {
+            fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
+            
+            // Ép buộc khởi tạo về vị trí ban đầu (STARTING_FEN)
+            initChessboard(board?.orientation() || 'white', STARTING_FEN);
+            updateUI(); 
             return;
         }
+
+        if (!board) return;
         const currentOrientation = board.orientation();
         fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
 
-        initChessboard(currentOrientation);
-        const scoreWrapper = document.querySelector('.score-alignment-wrapper');
-        if (scoreWrapper) {
-            if (playerColor === 'b') {
-                scoreWrapper.classList.add('rotated-score');
-            } else {
-                scoreWrapper.classList.remove('rotated-score');
-            }
-        }
+        initChessboard(currentOrientation, STARTING_FEN);
     }
 
 

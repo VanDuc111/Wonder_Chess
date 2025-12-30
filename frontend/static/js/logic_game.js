@@ -467,7 +467,8 @@ class ChessCore {
             }
         }
 
-        if (foundOp) {
+        // Only load opening from URL if no specific FEN was requested as an argument
+        if (!fen && foundOp) {
             // Setup game from Opening Data
             this.game = new Chess();
             this.history = [{ fen: this.game.fen(), score: "0.00" }];
@@ -510,14 +511,13 @@ class ChessCore {
             onDrop: this.onDrop.bind(this), onDragStart: this.onDragStart.bind(this), onSnapEnd: this.onSnapEnd.bind(this)
         });
         
-        this.updateUI();
         if (document.getElementById('flip-board-switch')?.checked) board.orientation('black');
         this._syncOrientationUI();
         
-        // Trigger generic turn end to ensure state is consistent
-        this.updateUI(); 
+        // Trigger turn end to ensure state is consistent and handle bot moves if necessary
+        this.onTurnEnd(); 
         
-        // Explicitly set opening name in UI if loaded from ECO
+        // Explicitly set opening name in UI if loaded from Opening Data
         if (foundOp) {
              if (this.ui.dom.openingName) this.ui.dom.openingName.textContent = foundOp.name;
         }
@@ -809,10 +809,13 @@ class ChessCore {
 
     /**
      * Displays a Modal when game is over.
+     * @param {string|null} [title=null] - Optional override for modal title.
+     * @param {string|null} [message=null] - Optional override for modal body.
      * @private
      */
-    _showGameOver() {
-        let t = "Ván đấu kết thúc", b = this.game.in_checkmate() ? `Chiếu hết! ${this.game.turn() === 'b' ? 'Trắng' : 'Đen'} thắng.` : "Hòa!";
+    _showGameOver(title = null, message = null) {
+        let t = title || "Ván đấu kết thúc";
+        let b = message || (this.game.in_checkmate() ? `Chiếu hết! ${this.game.turn() === 'b' ? 'Trắng' : 'Đen'} thắng.` : "Hòa!");
         
         if (window.showGameOverModal) {
             // Hiện kết quả ngay lập tức
@@ -997,6 +1000,7 @@ window.LOGIC_GAME = {
     renderBestMoveArrow: (m) => core.ui.renderBestMoveArrow(m),
     handleScoreUpdate: (s, f) => core.ui.updateEvaluationBar(s, f, core.game),
     findKingSquare: (c) => core.ui._findKing(c, core.game),
+    showGameOver: (t, m) => core._showGameOver(t, m),
     onDragStart: (s, p, po, o) => core.onDragStart(s, p, po, o),
     onSnapEnd: () => core.onSnapEnd(),
     // Expose core properties for debugging or main.js compatibility
