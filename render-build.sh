@@ -2,27 +2,27 @@
 # exit on error
 set -o errexit
 
-# 1. Cài đặt các thư viện Python
+# 1. Install Python dependencies
 pip install -r requirements.txt
 
-# 2. Tạo thư mục chứa engine nếu chưa có
+# 2. Create engines directory if it doesn't exist
 mkdir -p backend/engines
 
-# 3. Tải Stockfish phiên bản Linux (x86-64)
-# Chúng ta sẽ tải bản binary đã build sẵn cho Linux
+# 3. Download Stockfish for Linux (x86-64)
+# Downloading pre-built binary for Linux
 STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar"
 
-echo "--- Đang tải Stockfish cho Linux (Render) ---"
+echo "--- Downloading Stockfish for Linux ---"
 curl -L $STOCKFISH_URL -o stockfish.tar
 
-# 4. Giải nén và di chuyển vào đúng thư mục
+# 4. Extract and move to the correct directory
 tar -xvf stockfish.tar
-# Tìm file thực thi trong thư mục vừa giải nén và chuyển nó vào backend/engines/stockfish
+# Find the executable in the extracted folder and move it to backend/engines/stockfish
 find . -name "stockfish-ubuntu-x86-64-avx2" -exec mv {} backend/engines/stockfish \;
 
-# 5. Cấp quyền thực thi cho file
+# 5. Set executable permissions
 chmod +x backend/engines/stockfish
 
-# 6. Dọn dẹp
+# 6. Cleanup
 rm stockfish.tar
-echo "--- Cài đặt Stockfish hoàn tất ---"
+echo "--- Stockfish installation complete ---"

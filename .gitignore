@@ -1,13 +1,13 @@
-# Thư mục môi trường ảo
+# Virtual environment directories
 venv/
 /venv/
 *.venv/
 
-# Thư mục cache của Python
+# Python cache directories
 __pycache__/
 *.pyc
 
-# Thư mục cấu hình của PyCharm
+# IDE configuration directories
 .idea/
 
 .env
@@ -15,7 +15,7 @@ __pycache__/
 
 .vscode/
 
-# Thư mục test debug
+# Debug and Test results
 tests/debug/
 
 tests/debug_results/
