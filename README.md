@@ -65,64 +65,64 @@ This project represents a comprehensive software engineering effort to design an
 
 ---
 
-## CẤU TRÚC THƯ MỤC DỰ ÁN / PROJECT STRUCTURE
+## PROJECT STRUCTURE
 
 ```
 Wonder_Chess/
 │
-├── backend/                    # Backend - Xử lý logic phía server
-│   ├── api/                    # API Routes - Các endpoint REST API
-│   │   ├── main_routes.py      # Routes chính (trang chủ, welcome)
-│   │   ├── game_routes.py      # Routes xử lý game (di chuyển, reset)
-│   │   ├── analysis_routes.py  # Routes phân tích (đánh giá vị trí, gợi ý nước đi)
-│   │   └── image_routes.py     # Routes xử lý hình ảnh (số hóa bàn cờ)
+├── backend/                    # Backend - Server-side logic processing
+│   ├── api/                    # API Routes - REST API endpoints
+│   │   ├── main_routes.py      # Main routes (home, welcome)
+│   │   ├── game_routes.py      # Game handling routes (moves, reset)
+│   │   ├── analysis_routes.py  # Analysis routes (position evaluation, move suggestions)
+│   │   └── image_routes.py     # Image processing routes (board digitization)
 │   │
-│   ├── engines/                # Chess Engines - Các engine cờ vua
-│   │   ├── stockfish_engine.py # Tích hợp Stockfish engine
-│   │   └── minimax.py          # Custom Minimax engine với Alpha-Beta pruning
+│   ├── engines/                # Chess Engines
+│   │   ├── stockfish_engine.py # Stockfish engine integration
+│   │   └── minimax.py          # Custom Minimax engine with Alpha-Beta pruning
 │   │
-│   └── services/               # Business Logic - Các service xử lý nghiệp vụ
-│       ├── gemini_service.py   # Tích hợp Google Gemini AI (Alice)
-│       ├── image_to_fen.py     # Chuyển đổi hình ảnh thành FEN
+│   └── services/               # Business Logic - Service layer
+│       ├── gemini_service.py   # Google Gemini AI integration (Alice)
+│       ├── image_to_fen.py     # Image to FEN conversion
 │       ├── vision_core.py      # Computer vision core logic
-│       └── piece_templates/    # Templates nhận diện quân cờ
+│       └── piece_templates/    # Piece recognition templates
 │
-├── frontend/                   # Frontend - Giao diện người dùng
+├── frontend/                   # Frontend - User interface
 │   ├── static/                 # Static files
 │   │   ├── css/                # Stylesheets
 │   │   ├── js/                 # JavaScript files
-│   │   ├── img/                # Images và assets
+│   │   ├── img/                # Images and assets
 │   │   └── scss/               # SCSS source files
 │   │
 │   └── templates/              # HTML Templates
-│       ├── index.html          # Trang chơi cờ chính
-│       ├── welcome.html        # Trang chào mừng
-│       ├── learn.html          # Trang học cờ
-│       ├── openings.html       # Trang tra cứu khai cuộc
-│       ├── layout.html         # Layout template chung
+│       ├── index.html          # Main chess playing page
+│       ├── welcome.html        # Welcome page
+│       ├── learn.html          # Learning page
+│       ├── openings.html       # Opening reference page
+│       ├── layout.html         # Base layout template
 │       ├── modals/             # Modal components
 │       └── partials/           # Partial templates (header, footer, etc.)
 │
-├── tests/                      # Tests - Tài liệu test và test cases
-│   ├── test_cases.md           # Các test cases cho dự án
-│   └── pgns.md                 # PGN files mẫu để test
+├── tests/                      # Tests - Test documentation and test cases
+│   ├── test_cases.md           # Project test cases
+│   └── pgns.md                 # Sample PGN files for testing
 │
-├── run.py                      # Entry point - File chạy ứng dụng
-├── requirements.txt            # Dependencies - Danh sách thư viện Python
-├── render-build.sh             # Build script cho Render deployment
-└── README.md                   # Tài liệu hướng dẫn
+├── run.py                      # Entry point - Application startup file
+├── requirements.txt            # Dependencies - Python package list
+├── render-build.sh             # Build script for Render deployment
+└── README.md                   # Documentation guide
 ```
 
-### Mô tả chi tiết các thư mục chính:
+### Main Directory Descriptions:
 
-- **`backend/`**: Chứa toàn bộ logic xử lý phía server, bao gồm API routes, chess engines và các services nghiệp vụ
-- **`frontend/`**: Chứa giao diện người dùng với HTML templates, CSS, JavaScript và các static assets
-- **`tests/`**: Chứa tài liệu test cases và dữ liệu mẫu để kiểm thử ứng dụng
-- **`backend/api/`**: Định nghĩa các REST API endpoints cho game, analysis và image processing
-- **`backend/engines/`**: Tích hợp các chess engines (Stockfish và custom Minimax)
-- **`backend/services/`**: Các services xử lý AI, computer vision và business logic
-- **`frontend/static/`**: Files tĩnh (CSS, JS, images) phục vụ cho giao diện
-- **`frontend/templates/`**: HTML templates sử dụng Jinja2 template engine
+- **`backend/`**: Contains all server-side logic, including API routes, chess engines, and business services
+- **`frontend/`**: Contains the user interface with HTML templates, CSS, JavaScript, and static assets
+- **`tests/`**: Contains test case documentation and sample data for testing the application
+- **`backend/api/`**: Defines REST API endpoints for game, analysis, and image processing
+- **`backend/engines/`**: Integrates chess engines (Stockfish and custom Minimax)
+- **`backend/services/`**: Services handling AI, computer vision, and business logic
+- **`frontend/static/`**: Static files (CSS, JS, images) for the interface
+- **`frontend/templates/`**: HTML templates using Jinja2 template engine
 
 ---
 
