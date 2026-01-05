@@ -65,6 +65,67 @@ This project represents a comprehensive software engineering effort to design an
 
 ---
 
+## CẤU TRÚC THƯ MỤC DỰ ÁN / PROJECT STRUCTURE
+
+```
+Wonder_Chess/
+│
+├── backend/                    # Backend - Xử lý logic phía server
+│   ├── api/                    # API Routes - Các endpoint REST API
+│   │   ├── main_routes.py      # Routes chính (trang chủ, welcome)
+│   │   ├── game_routes.py      # Routes xử lý game (di chuyển, reset)
+│   │   ├── analysis_routes.py  # Routes phân tích (đánh giá vị trí, gợi ý nước đi)
+│   │   └── image_routes.py     # Routes xử lý hình ảnh (số hóa bàn cờ)
+│   │
+│   ├── engines/                # Chess Engines - Các engine cờ vua
+│   │   ├── stockfish_engine.py # Tích hợp Stockfish engine
+│   │   └── minimax.py          # Custom Minimax engine với Alpha-Beta pruning
+│   │
+│   └── services/               # Business Logic - Các service xử lý nghiệp vụ
+│       ├── gemini_service.py   # Tích hợp Google Gemini AI (Alice)
+│       ├── image_to_fen.py     # Chuyển đổi hình ảnh thành FEN
+│       ├── vision_core.py      # Computer vision core logic
+│       └── piece_templates/    # Templates nhận diện quân cờ
+│
+├── frontend/                   # Frontend - Giao diện người dùng
+│   ├── static/                 # Static files
+│   │   ├── css/                # Stylesheets
+│   │   ├── js/                 # JavaScript files
+│   │   ├── img/                # Images và assets
+│   │   └── scss/               # SCSS source files
+│   │
+│   └── templates/              # HTML Templates
+│       ├── index.html          # Trang chơi cờ chính
+│       ├── welcome.html        # Trang chào mừng
+│       ├── learn.html          # Trang học cờ
+│       ├── openings.html       # Trang tra cứu khai cuộc
+│       ├── layout.html         # Layout template chung
+│       ├── modals/             # Modal components
+│       └── partials/           # Partial templates (header, footer, etc.)
+│
+├── tests/                      # Tests - Tài liệu test và test cases
+│   ├── test_cases.md           # Các test cases cho dự án
+│   └── pgns.md                 # PGN files mẫu để test
+│
+├── run.py                      # Entry point - File chạy ứng dụng
+├── requirements.txt            # Dependencies - Danh sách thư viện Python
+├── render-build.sh             # Build script cho Render deployment
+└── README.md                   # Tài liệu hướng dẫn
+```
+
+### Mô tả chi tiết các thư mục chính:
+
+- **`backend/`**: Chứa toàn bộ logic xử lý phía server, bao gồm API routes, chess engines và các services nghiệp vụ
+- **`frontend/`**: Chứa giao diện người dùng với HTML templates, CSS, JavaScript và các static assets
+- **`tests/`**: Chứa tài liệu test cases và dữ liệu mẫu để kiểm thử ứng dụng
+- **`backend/api/`**: Định nghĩa các REST API endpoints cho game, analysis và image processing
+- **`backend/engines/`**: Tích hợp các chess engines (Stockfish và custom Minimax)
+- **`backend/services/`**: Các services xử lý AI, computer vision và business logic
+- **`frontend/static/`**: Files tĩnh (CSS, JS, images) phục vụ cho giao diện
+- **`frontend/templates/`**: HTML templates sử dụng Jinja2 template engine
+
+---
+
 ## INSTALLATION AND SETUP
 
 ### Prerequisites
