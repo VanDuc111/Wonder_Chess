@@ -24,3 +24,6 @@ tests/debug_results/
 *.exe
 *.bin
 backend/engines/stockfish.exe
+
+# Private documentation
+MO_TA_DU_AN.md

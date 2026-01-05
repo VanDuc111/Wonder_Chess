@@ -13,6 +13,8 @@ class AliceChat {
             sendBtn: null,
             openingName: null
         };
+        /** @type {Array<{sender: string, text: string, isHtml: boolean}>} Chat history */
+        this.history = JSON.parse(localStorage.getItem('alice_chat_history')) || [];
     }
 
     /**
@@ -35,14 +37,40 @@ class AliceChat {
         if (this.dom.form) {
             this.dom.form.addEventListener('submit', (e) => this._handleSubmit(e));
         }
+        this._loadHistory();
+    }
+
+    /**
+     * Loads chat history from localStorage.
+     * @private
+     */
+    _loadHistory() {
+        if (!this.dom.messages) return;
+        this.dom.messages.innerHTML = '';
+        this.history.forEach(msg => {
+            if (msg.isHtml) {
+                this.displayMessage(msg.text, msg.sender === 'Alice', false);
+            } else {
+                this._appendMessage(msg.sender, msg.text, false);
+            }
+        });
+    }
+
+    /**
+     * Saves current history to localStorage.
+     * @private
+     */
+    _saveHistory() {
+        localStorage.setItem('alice_chat_history', JSON.stringify(this.history));
     }
 
     /**
      * Renders a message in the chat window.
      * @param {string} text - Message content (HTML allowed).
      * @param {boolean} [isBot=true] - Whether the message is from Alice.
+     * @param {boolean} [shouldSave=true] - Whether to save to history.
      */
-    displayMessage(text, isBot = true) {
+    displayMessage(text, isBot = true, shouldSave = true) {
         this._ensureDom();
         if (!this.dom.messages) return;
 
@@ -52,15 +80,21 @@ class AliceChat {
         
         this.dom.messages.appendChild(msgEl);
         this.dom.messages.scrollTop = this.dom.messages.scrollHeight;
+
+        if (shouldSave) {
+            this.history.push({sender: isBot ? 'Alice' : 'user', text: text, isHtml: true});
+            this._saveHistory();
+        }
     }
 
     /**
      * Internal helper to append a plain text message.
      * @param {'user'|'Alice'} sender 
      * @param {string} text 
+     * @param {boolean} [shouldSave=true]
      * @private
      */
-    _appendMessage(sender, text) {
+    _appendMessage(sender, text, shouldSave = true) {
         this._ensureDom();
         const msgEl = document.createElement('div');
         msgEl.classList.add(sender === 'user' ? 'user-message' : 'alice-message');
@@ -68,6 +102,11 @@ class AliceChat {
         
         this.dom.messages?.appendChild(msgEl);
         if (this.dom.messages) this.dom.messages.scrollTop = this.dom.messages.scrollHeight;
+
+        if (shouldSave) {
+            this.history.push({sender: sender, text: text, isHtml: false});
+            this._saveHistory();
+        }
     }
 
     /**
@@ -177,6 +216,10 @@ class AliceChat {
             }
 
             aliceEl.innerHTML = this.mdToHtml(fullText);
+            
+            // Lưu câu trả lời hoàn chỉnh của Alice vào history
+            this.history.push({sender: 'Alice', text: aliceEl.innerHTML, isHtml: true});
+            this._saveHistory();
 
         } catch (err) {
             console.error('Alice Chat Error:', err);
