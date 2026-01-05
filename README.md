@@ -65,6 +65,67 @@ This project represents a comprehensive software engineering effort to design an
 
 ---
 
+## PROJECT STRUCTURE
+
+```
+Wonder_Chess/
+│
+├── backend/                    # Backend - Server-side logic processing
+│   ├── api/                    # API Routes - REST API endpoints
+│   │   ├── main_routes.py      # Main routes (home, welcome)
+│   │   ├── game_routes.py      # Game handling routes (moves, reset)
+│   │   ├── analysis_routes.py  # Analysis routes (position evaluation, move suggestions)
+│   │   └── image_routes.py     # Image processing routes (board digitization)
+│   │
+│   ├── engines/                # Chess Engines
+│   │   ├── stockfish_engine.py # Stockfish engine integration
+│   │   └── minimax.py          # Custom Minimax engine with Alpha-Beta pruning
+│   │
+│   └── services/               # Business Logic - Service layer
+│       ├── gemini_service.py   # Google Gemini AI integration (Alice)
+│       ├── image_to_fen.py     # Image to FEN conversion
+│       ├── vision_core.py      # Computer vision core logic
+│       └── piece_templates/    # Piece recognition templates
+│
+├── frontend/                   # Frontend - User interface
+│   ├── static/                 # Static files
+│   │   ├── css/                # Stylesheets
+│   │   ├── js/                 # JavaScript files
+│   │   ├── img/                # Images and assets
+│   │   └── scss/               # SCSS source files
+│   │
+│   └── templates/              # HTML Templates
+│       ├── index.html          # Main chess playing page
+│       ├── welcome.html        # Welcome page
+│       ├── learn.html          # Learning page
+│       ├── openings.html       # Opening reference page
+│       ├── layout.html         # Base layout template
+│       ├── modals/             # Modal components
+│       └── partials/           # Partial templates (header, footer, etc.)
+│
+├── tests/                      # Tests - Test documentation and test cases
+│   ├── test_cases.md           # Project test cases
+│   └── pgns.md                 # Sample PGN files for testing
+│
+├── run.py                      # Entry point - Application startup file
+├── requirements.txt            # Dependencies - Python package list
+├── render-build.sh             # Build script for Render deployment
+└── README.md                   # Documentation guide
+```
+
+### Main Directory Descriptions:
+
+- **`backend/`**: Contains all server-side logic, including API routes, chess engines, and business services
+- **`frontend/`**: Contains the user interface with HTML templates, CSS, JavaScript, and static assets
+- **`tests/`**: Contains test case documentation and sample data for testing the application
+- **`backend/api/`**: Defines REST API endpoints for game, analysis, and image processing
+- **`backend/engines/`**: Integrates chess engines (Stockfish and custom Minimax)
+- **`backend/services/`**: Services handling AI, computer vision, and business logic
+- **`frontend/static/`**: Static files (CSS, JS, images) for the interface
+- **`frontend/templates/`**: HTML templates using Jinja2 template engine
+
+---
+
 ## INSTALLATION AND SETUP
 
 ### Prerequisites
