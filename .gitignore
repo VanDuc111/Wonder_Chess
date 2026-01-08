@@ -16,9 +16,11 @@ __pycache__/
 .vscode/
 
 # Debug and Test results
-tests/debug/
+tests/debug/*
+!tests/debug/.gitkeep
 
-tests/debug_results/
+tests/debug_results/*
+!tests/debug_results/.gitkeep
 
 # Binaries and Engines
 *.exe

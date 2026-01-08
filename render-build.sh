@@ -9,7 +9,6 @@ pip install -r requirements.txt
 mkdir -p backend/engines
 
 # 3. Download Stockfish for Linux (x86-64)
-# Downloading pre-built binary for Linux
 STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar"
 
 echo "--- Downloading Stockfish for Linux ---"
