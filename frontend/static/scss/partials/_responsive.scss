@@ -183,16 +183,20 @@
     }
 
     .score-alignment-wrapper {
-        margin-right: 8px !important;
-        margin-left: 6px !important;
+        position: absolute;
+        left: 5px;
+        right: auto;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
         width: 20px;
         padding-top: 0;
-        height: 90vw !important; 
-        max-height: 420px; 
+        height: 80vw !important; 
+        max-height: 400px; 
         align-self: flex-start;
         margin-top: 40px !important; 
         display: flex;
         flex-direction: column;
+        z-index: 1000;
     }
 
     #evaluation-bar {
@@ -209,9 +213,10 @@
     }
 
     #chessboard-main-container {
-        flex: 1;
         min-width: 0;
         max-width: 100%;
+        padding-left: 35px !important;
+        position: relative;
     }
 
     .chess-board-area {

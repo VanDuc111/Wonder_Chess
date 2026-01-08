@@ -488,7 +488,14 @@ body.allow-scroll {
   margin-bottom: auto;
   padding-top: var(--spacing-unit);
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: visible !important;
+}
+@media (min-width: 992px) {
+  #game-view-container {
+    -webkit-box-pack: end;
+        -ms-flex-pack: end;
+            justify-content: flex-end;
+  }
 }
 
 .chess-board-area {
@@ -534,11 +541,13 @@ body.allow-scroll {
 }
 
 #chessboard-main-container {
-  -webkit-box-flex: 1;
-      -ms-flex: 1;
-          flex: 1;
-  min-width: 0;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
   width: 100%;
+  max-width: var(--max-content-width);
+  min-width: 0;
+  position: relative;
 }
 
 #myBoard {
@@ -609,6 +618,10 @@ body.allow-scroll {
 }
 /* Evaluation Bar */
 .score-alignment-wrapper {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  margin-right: 15px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -619,18 +632,15 @@ body.allow-scroll {
   -webkit-box-align: center;
       -ms-flex-align: center;
           align-items: center;
-  margin: 0 25px 0 10px;
   -webkit-transform-origin: center center;
           transform-origin: center center;
-  -webkit-transition: height 0.3s ease-out;
-  transition: height 0.3s ease-out;
+  -webkit-transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease;
+  z-index: 999;
+  pointer-events: auto;
+  width: 30px;
 }
 
-@media (min-width: 768px) {
-  .score-alignment-wrapper {
-    margin-right: 15px;
-  }
-}
 .score-alignment-wrapper.rotated-score {
   -webkit-transform: rotate(180deg);
           transform: rotate(180deg);
@@ -3320,12 +3330,15 @@ body.allow-scroll {
     height: 500px;
   }
   .score-alignment-wrapper {
-    margin-right: 8px !important;
-    margin-left: 6px !important;
+    position: absolute;
+    left: 5px;
+    right: auto;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
     width: 20px;
     padding-top: 0;
-    height: 90vw !important;
-    max-height: 420px;
+    height: 80vw !important;
+    max-height: 400px;
     -ms-flex-item-align: start;
         align-self: flex-start;
     margin-top: 40px !important;
@@ -3336,6 +3349,7 @@ body.allow-scroll {
     -webkit-box-direction: normal;
         -ms-flex-direction: column;
             flex-direction: column;
+    z-index: 1000;
   }
   #evaluation-bar {
     width: 10px;
@@ -3351,11 +3365,10 @@ body.allow-scroll {
     min-height: 15px;
   }
   #chessboard-main-container {
-    -webkit-box-flex: 1;
-        -ms-flex: 1;
-            flex: 1;
     min-width: 0;
     max-width: 100%;
+    padding-left: 35px !important;
+    position: relative;
   }
   .chess-board-area {
     padding: 5px !important;

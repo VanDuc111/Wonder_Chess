@@ -14,18 +14,17 @@
         <!-- Column 1: Chessboard -->
         <div id="board-col" class="col-12 col-md-6 col-lg-5">
             <div id="game-view-container" class="d-flex justify-content-center align-items-stretch">
-                <div class="score-alignment-wrapper" style="display: none;">
-                    <div class="score-bar-container">
-                        <div id="evaluation-bar" class="evaluation-bar">
-                            <div id="eval-white-advantage" class="eval-advantage-bar"></div>
+                <div id="chessboard-main-container">
+                    <div class="score-alignment-wrapper" style="display: none;">
+                        <div class="score-bar-container">
+                            <div id="evaluation-bar" class="evaluation-bar">
+                                <div id="eval-white-advantage" class="eval-advantage-bar"></div>
+                            </div>
+                        </div>
+                        <div id="evaluation-score" class="text-center mt-2 fw-bold" style="color: var(--color-text-light);">
+                            0.00
                         </div>
                     </div>
-                    <div id="evaluation-score" class="text-center mt-2 fw-bold" style="color: var(--color-text-light);">
-                        0.00
-                    </div>
-                </div>
-
-                <div id="chessboard-main-container">
                     <div class="chess-board-area rounded-3">
                         <div class="board-relative-wrapper position-relative">
                             <div id="timer-black" class="timer-box timer-top-right" style="display: none;">0:00</div>

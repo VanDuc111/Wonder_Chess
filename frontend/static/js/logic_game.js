@@ -762,7 +762,11 @@ class ChessCore {
             document.getElementById('best-move-switch')?.addEventListener('change', () => this.ui.renderBestMoveArrow(this.history[this.index]?.bestMove));
             document.getElementById('eval-bar-switch')?.addEventListener('change', (e) => {
                 const w = document.querySelector('.score-alignment-wrapper');
-                if (w) { w.style.display = e.target.checked ? 'flex' : 'none'; board?.resize(); if(e.target.checked) setTimeout(()=>this.ui.syncBoardAndEvalHeight(), 50); }
+                if (w) { 
+                    w.style.display = e.target.checked ? 'flex' : 'none'; 
+                    // No board?.resize() needed now as container width is fixed
+                    if(e.target.checked) this.ui.syncBoardAndEvalHeight(); 
+                }
             });
             document.getElementById('move-notate-switch')?.addEventListener('change', () => this._renderPGN());
         });
