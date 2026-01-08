@@ -5,6 +5,11 @@ from backend import create_app
 
 app = create_app()
 
+with app.app_context():
+    from backend import db
+    from backend import models
+    db.create_all()
+
 def open_browser():
     """Automatically opens the browser when the server starts"""
     webbrowser.open_new("http://127.0.0.1:5000")
