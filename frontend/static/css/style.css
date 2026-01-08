@@ -1080,10 +1080,47 @@ body.allow-scroll {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
   -webkit-box-align: center;
       -ms-flex-align: center;
           align-items: center;
-  padding: 1rem;
+  padding: 0.85rem 1rem;
+  position: relative;
+  z-index: 10;
+}
+
+.chat-actions .reset-btn {
+  text-decoration: none;
+  -webkit-transition: var(--transition-base);
+  transition: var(--transition-base);
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  border-radius: 8px;
+}
+.chat-actions .reset-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white !important;
+  -webkit-transform: rotate(45deg);
+          transform: rotate(45deg);
+}
+.chat-actions .reset-btn i {
+  font-size: 1.25rem;
+}
+.chat-actions .form-check-input {
+  cursor: pointer;
+}
+.chat-actions .form-check-input:hover {
+  -webkit-filter: brightness(1.2);
+          filter: brightness(1.2);
 }
 
 .alice-avatar-container {
@@ -1378,6 +1415,132 @@ body.allow-scroll {
           animation: fadeIn 0.4s ease-out forwards;
   -webkit-filter: drop-shadow(0 0 5px rgba(156, 39, 176, 0.3));
           filter: drop-shadow(0 0 5px rgba(156, 39, 176, 0.3));
+}
+
+/* Custom Reset Confirmation UI */
+.chat-body-wrapper {
+  position: relative;
+  -webkit-box-flex: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  overflow: hidden;
+}
+
+.blur-filter {
+  -webkit-filter: blur(8px);
+          filter: blur(8px);
+  pointer-events: none;
+  -webkit-transition: -webkit-filter 0.3s ease;
+  transition: -webkit-filter 0.3s ease;
+  transition: filter 0.3s ease;
+  transition: filter 0.3s ease, -webkit-filter 0.3s ease;
+}
+
+.chat-reset-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  background: rgba(15, 15, 26, 0.4);
+  -webkit-animation: fadeIn 0.3s ease-out;
+          animation: fadeIn 0.3s ease-out;
+}
+
+.reset-confirm-card {
+  background: rgba(30, 30, 50, 0.95);
+  border: 1px solid var(--color-glass-medium);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  max-width: 85%;
+  -webkit-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  -webkit-transform: scale(0.9);
+          transform: scale(0.9);
+  -webkit-animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+          animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.reset-confirm-card h6 {
+  color: white;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.reset-confirm-card p {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+@-webkit-keyframes popIn {
+  to {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+  }
+}
+
+@keyframes popIn {
+  to {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+  }
+}
+.reset-actions {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  gap: 12px;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+.reset-actions .btn {
+  padding: 8px 20px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  -webkit-transition: all 0.2s;
+  transition: all 0.2s;
+}
+.reset-actions .btn-confirm {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+}
+.reset-actions .btn-confirm:hover {
+  -webkit-filter: brightness(1.2);
+          filter: brightness(1.2);
+  -webkit-transform: translateY(-2px);
+          transform: translateY(-2px);
+}
+.reset-actions .btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.reset-actions .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* 9. MODALS & OVERLAYS */

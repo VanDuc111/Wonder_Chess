@@ -27,6 +27,14 @@ class AliceChat {
         if (!this.dom.form) this.dom.form = document.getElementById('chatbot-form');
         if (!this.dom.sendBtn) this.dom.sendBtn = document.getElementById('send-chat-button');
         if (!this.dom.openingName) this.dom.openingName = document.getElementById('opening-name');
+        if (!this.dom.resetBtn) this.dom.resetBtn = document.getElementById('reset-chat-btn');
+        if (!this.dom.coachSwitch) this.dom.coachSwitch = document.getElementById('coach-mode-switch');
+        
+        // New UI Elements
+        if (!this.dom.bodyWrapper) this.dom.bodyWrapper = document.querySelector('.chat-body-wrapper');
+        if (!this.dom.resetOverlay) this.dom.resetOverlay = document.getElementById('chat-reset-overlay');
+        if (!this.dom.confirmBtn) this.dom.confirmBtn = document.getElementById('confirm-reset-chat');
+        if (!this.dom.cancelBtn) this.dom.cancelBtn = document.getElementById('cancel-reset-chat');
     }
 
     /**
@@ -37,7 +45,75 @@ class AliceChat {
         if (this.dom.form) {
             this.dom.form.addEventListener('submit', (e) => this._handleSubmit(e));
         }
+        if (this.dom.resetBtn) {
+            this.dom.resetBtn.addEventListener('click', () => this.clearChat());
+        }
+        
+        // Custom Overlay Listeners
+        if (this.dom.confirmBtn) {
+            this.dom.confirmBtn.addEventListener('click', () => this._handleResetConfirmed());
+        }
+        if (this.dom.cancelBtn) {
+            this.dom.cancelBtn.addEventListener('click', () => this._handleResetCancelled());
+        }
+
         this._loadHistory();
+    }
+
+    /**
+     * Shows the custom reset confirmation overlay with blur effect.
+     */
+    clearChat() {
+        this._ensureDom();
+        // Áp dụng hiệu ứng làm mờ cho tin nhắn và form nhập
+        this.dom.messages?.classList.add('blur-filter');
+        this.dom.form?.classList.add('blur-filter');
+        // Hiện overlay xác nhận
+        this.dom.resetOverlay?.classList.remove('d-none');
+    }
+
+    /**
+     * Actual reset logic after user confirms.
+     * @private
+     */
+    _handleResetConfirmed() {
+        this.history = [];
+        this._saveHistory();
+        if (this.dom.messages) {
+            this.dom.messages.innerHTML = '';
+        }
+        this._hideResetUI();
+
+        // Get nickname from UI if available
+        const userDisplay = document.getElementById('user-display');
+        let nickname = 'bạn';
+        if (userDisplay && userDisplay.textContent) {
+            nickname = userDisplay.textContent.replace('Chào, ', '').replace('!', '').trim();
+        }
+
+        // Hiển thị lời chào mặc định sau khi xóa sạch
+        setTimeout(() => {
+            const welcomeMsg = `Chào bạn${nickname !== 'bạn' ? ', ' + nickname : ''}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
+            this.displayMessage(welcomeMsg, true, true);
+        }, 300);
+    }
+
+    /**
+     * Cancels reset and restores UI.
+     * @private
+     */
+    _handleResetCancelled() {
+        this._hideResetUI();
+    }
+
+    /**
+     * Common helper to clean up reset UI.
+     * @private
+     */
+    _hideResetUI() {
+        this.dom.messages?.classList.remove('blur-filter');
+        this.dom.form?.classList.remove('blur-filter');
+        this.dom.resetOverlay?.classList.add('d-none');
     }
 
     /**

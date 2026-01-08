@@ -102,24 +102,50 @@
                 <div class="chatbot-container p-0 rounded-3 w-100 d-flex flex-column overflow-hidden">
                     <!-- Chat Header -->
                     <div class="chat-header d-flex align-items-center p-3">
-                        <div class="alice-avatar-container me-3">
-                            <div class="alice-avatar">
-                                <img src="{{ url_for('static', filename='img/alice-avatar.webp') }}" alt="Alice Avatar">
+                        <div class="alice-identity d-flex align-items-center">
+                            <div class="alice-avatar-container me-3">
+                                <div class="alice-avatar">
+                                    <img src="{{ url_for('static', filename='img/alice-avatar.webp') }}" alt="Alice Avatar">
+                                </div>
+                            </div>
+                            <div class="chat-info">
+                                <h6 class="text-white mb-0 fw-bold">Alice</h6>
+                                <small class="text-white-50">Trợ lý cờ vua</small>
                             </div>
                         </div>
-                        <div class="chat-info">
-                            <h6 class="text-white mb-0 fw-bold">Alice</h6>
-                            <small class="text-white-50">Trợ lý cờ vua</small>
+
+                        <div class="chat-actions ms-auto d-flex align-items-center gap-3">
+                            <div class="form-check form-switch custom-switch-sm mb-0" title="Chế độ Huấn luyện viên">
+                                <input class="form-check-input" type="checkbox" id="coach-mode-switch">
+                            </div>
+                            <button class="btn btn-link text-white-50 p-1 reset-btn" id="reset-chat-btn" title="Làm mới trò chuyện">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div id="chatbot-messages" class="flex-grow-1 p-3" style="overflow-y: auto;"></div>
-                    <form id="chatbot-form" class="mt-auto">
-                        <input type="text" id="chatbot-input" placeholder="Hỏi Alice về cờ vua...">
-                        <button class="btn" type="submit" id="send-chat-button">
-                            <i class="bi bi-arrow-up"></i>
-                        </button>
-                    </form>
+                    <div class="chat-body-wrapper">
+                        <div id="chatbot-messages" class="flex-grow-1 p-3" style="overflow-y: auto;"></div>
+                        
+                        <form id="chatbot-form" class="mt-auto">
+                            <input type="text" id="chatbot-input" placeholder="Hỏi Alice về cờ vua...">
+                            <button class="btn" type="submit" id="send-chat-button">
+                                <i class="bi bi-arrow-up"></i>
+                            </button>
+                        </form>
+
+                        <!-- Custom Confirmation Overlay -->
+                        <div id="chat-reset-overlay" class="chat-reset-overlay d-none">
+                            <div class="reset-confirm-card">
+                                <h6>Xóa trò chuyện?</h6>
+                                <p>Alice sẽ bắt đầu cuộc trò chuyện mới.</p>
+                                <div class="reset-actions">
+                                    <button id="confirm-reset-chat" class="btn btn-confirm">Xóa sạch</button>
+                                    <button id="cancel-reset-chat" class="btn btn-cancel">Hủy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

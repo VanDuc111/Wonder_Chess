@@ -125,6 +125,12 @@ def chat_analysis() -> Response:
     2. **Nếu người dùng hỏi về THẾ TRẬN HIỆN TẠI hoặc đặt câu hỏi chung chung/không rõ ràng:**
        - Hãy áp dụng các **QUY TẮC PHÂN TÍCH** dưới đây để hỗ trợ người dùng.
 
+    **HƯỚNG DẪN RIÊNG CHO KHAI CUỘC:**
+    - Nếu câu hỏi liên quan đến khai cuộc (ví dụ: "Đây là khai cuộc gì?"):
+        - Hãy xác định tên: **{opening_name}**.
+        - Liệt kê chuỗi nước đi dẫn đến trạng thái này từ PGN: {pgn if pgn else 'N/A'}.
+        - Giải thích mục tiêu chiến lược của khai cuộc này (ví dụ: chiếm trung tâm, phát triển quân).
+
     **QUY TẮC PHÂN TÍCH (Chỉ áp dụng khi phân tích ván đấu):**
     - **IN ĐẬM NƯỚC ĐI:** Luôn viết hoa và **in đậm** mọi nước đi (ví dụ: **e4**, **Nxh6**, **{last_move_san}**, **{best_move_san}**).
     - **NGẮN GỌN:** Trả lời trong khoảng **4-5 câu**.
@@ -136,6 +142,7 @@ def chat_analysis() -> Response:
         - Gợi ý nước tốt nhất cho {current_turn_name} là **{best_move_san}**.
 
     **DỮ LIỆU CỦA VÁN ĐẤU HIỆN TẠI (Tham khảo nếu cần):**
+    - Lịch sử (PGN): {pgn if pgn else 'N/A'}
     - Vừa đi (của {last_player_name}): **{last_move_san}** (Chênh lệch: {diff:+.2f})
     - Điểm số engine: **{formatted_score}**
     - Gợi ý nước tiếp: **{best_move_san}**
