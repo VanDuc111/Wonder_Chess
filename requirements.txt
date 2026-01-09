@@ -1,6 +1,7 @@
 ﻿# --- Backend Framework ---
 Flask==3.1.2
 flask-compress==1.23
+Flask-SQLAlchemy==3.1.1
 gunicorn==23.0.0
 
 # --- Chess Logic ---
@@ -19,3 +20,4 @@ protobuf # Dependency for AI services
 # --- Utilities ---
 python-dotenv==1.1.1
 requests==2.32.5
+psycopg2-binary==2.9.11
