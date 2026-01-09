@@ -317,6 +317,134 @@ class AliceChat {
     }
 
     /**
+     * Checks if Alice should proactively comment based on current game state.
+     * Triggered by logic_game.js after evaluation update.
+     */
+    checkCoachComment() {
+        this._ensureDom();
+        if (!this.dom.coachSwitch?.checked) return;
+
+        const curIdx = window.LOGIC_GAME?.getIndex() || 0;
+        const historyArr = window.LOGIC_GAME?.getHistory() || [];
+        if (curIdx === 0 || !historyArr[curIdx]) return;
+
+        const currentMove = historyArr[curIdx];
+        const prevMove = historyArr[curIdx - 1];
+        
+        // 1. Trigger: Khai cuộc ở nước thứ 5 (Full move 5 = half-move 10)
+        const openingName = this.dom.openingName?.textContent || "N/A";
+        if (curIdx === 10 && openingName !== "N/A" && openingName !== "Khởi đầu") {
+            this._handleCoachComment("phân tích khai cuộc này một cách chuyên sâu");
+            return;
+        }
+
+        // 2. Trigger: Nước đi chất lượng đột biến (Blunder/Mistake/Brilliant/Great)
+        if (currentMove.score !== null && prevMove.score !== null) {
+            const curVal = this.parseScore(currentMove.score);
+            const prevVal = this.parseScore(prevMove.score);
+            const diff = (curIdx % 2 !== 0) ? (curVal - prevVal) : (prevVal - curVal);
+
+            let triggerReason = "";
+            if (diff > 1.5) triggerReason = "khen ngợi nước đi thiên tài này";
+            else if (diff > 0.8) triggerReason = "nhận xét đây là một nước đi rất tốt";
+            else if (diff < -1.5) triggerReason = "phê bình sai lầm nghiêm trọng này";
+            else if (diff < -0.7) triggerReason = "chỉ ra đây là một sai lầm và tại sao";
+
+            if (triggerReason) {
+                this._handleCoachComment(triggerReason);
+            }
+        }
+    }
+
+    /**
+     * Special API call for proactive coach comments.
+     * @param {string} specificInstruction - What Alice should focus on.
+     * @private
+     */
+    async _handleCoachComment(specificInstruction) {
+        if (this.dom.input?.disabled) return; // Tránh gọi chồng chéo khi đang phân tích
+
+        this._setLoading(true);
+        const aliceEl = this._createMessageElement('Alice');
+
+        const curIdx = window.LOGIC_GAME?.getIndex() || 0;
+        const historyArr = window.LOGIC_GAME?.getHistory() || [];
+        const currentFen = historyArr[curIdx]?.fen || "";
+        const lastMoveSan = historyArr[curIdx]?.san || 'N/A';
+        
+        let pgn = "";
+        for (let i = 1; i <= curIdx; i++) {
+            if (i % 2 !== 0) pgn += `${Math.floor(i / 2) + 1}. `;
+            pgn += `${historyArr[i].san} `;
+        }
+
+        const coachQuestion = `Dưới vai trò huấn luyện viên, hãy ${specificInstruction} cho nước đi **${lastMoveSan}** vừa thực hiện.`;
+
+        try {
+            const apiUri = window.APP_CONST?.API?.CHAT_ANALYSIS || '/api/analysis/chat_analysis';
+            const response = await fetch(apiUri, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_question: coachQuestion,
+                    fen: currentFen,
+                    current_score: historyArr[curIdx]?.score || "0.00",
+                    prev_score: (curIdx > 0) ? (historyArr[curIdx - 1]?.score || "0.00") : "0.00",
+                    opening_name: this.dom.openingName?.textContent || "N/A",
+                    move_count: curIdx,
+                    pgn: pgn.trim(),
+                    last_move_san: lastMoveSan,
+                    is_first_message: false
+                })
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let fullText = "", isFirstChunk = true;
+
+            while (true) {
+                const {value, done} = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, {stream: true});
+                if (!chunk) continue;
+
+                for (const char of chunk) {
+                    if (isFirstChunk) { aliceEl.innerHTML = ''; isFirstChunk = false; }
+                    aliceEl.textContent += char;
+                    fullText += char;
+                    this.dom.messages.scrollTop = this.dom.messages.scrollHeight;
+                }
+            }
+
+            if (!fullText) {
+                aliceEl.remove();
+            } else {
+                aliceEl.innerHTML = this.mdToHtml(fullText);
+                this.history.push({sender: 'Alice', text: aliceEl.innerHTML, isHtml: true});
+                this._saveHistory();
+            }
+
+        } catch (err) {
+            console.error('Coach Comment Error:', err);
+            if (aliceEl) aliceEl.remove(); // Xóa message lỗi nếu là auto-comment để không gây rác
+        } finally {
+            this._setLoading(false);
+        }
+    }
+
+    /**
+     * Helper to parse score string (e.g., "+0.50", "M2").
+     */
+    parseScore(s) {
+        if (!s) return 0;
+        const str = s.toString();
+        if (str.includes('M')) return str.includes('+') ? 100 : -100;
+        return parseFloat(str) || 0;
+    }
+
+    /**
      * Simple Markdown to HTML converter.
      * @param {string} text 
      * @returns {string}

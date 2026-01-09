@@ -1117,10 +1117,21 @@ body.allow-scroll {
 }
 .chat-actions .form-check-input {
   cursor: pointer;
+  margin-left: 0 !important;
 }
 .chat-actions .form-check-input:hover {
   -webkit-filter: brightness(1.2);
           filter: brightness(1.2);
+}
+.chat-actions label {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  letter-spacing: 0.5px;
+}
+.chat-actions label:hover {
+  color: white !important;
 }
 
 .alice-avatar-container {

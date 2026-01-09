@@ -632,6 +632,11 @@ class ChessCore {
                 if (savedIdx === this.index) {
                     this.ui.renderBestMoveArrow(d.engine_results.best_move);
                     this._renderPGN();
+                    
+                    // Trigger Alice Coach Mode nếu đang bật
+                    if (window.ALICE_CHAT) {
+                        window.ALICE_CHAT.checkCoachComment();
+                    }
                 }
             }
         });

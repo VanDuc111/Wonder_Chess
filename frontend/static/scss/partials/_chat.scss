@@ -42,8 +42,17 @@
 
     .form-check-input {
         cursor: pointer;
+        margin-left: 0 !important;
         &:hover {
             filter: brightness(1.2);
+        }
+    }
+
+    label {
+        user-select: none;
+        letter-spacing: 0.5px;
+        &:hover {
+            color: white !important;
         }
     }
 }
