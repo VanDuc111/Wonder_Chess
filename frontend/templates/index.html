@@ -27,9 +27,20 @@
                     </div>
                     <div class="chess-board-area rounded-3">
                         <div class="board-relative-wrapper position-relative">
-                            <div id="timer-black" class="timer-box timer-top-right" style="display: none;">0:00</div>
+                            <!-- Black's timer and captured pieces (pieces black captured) -->
+                            <div class="captured-timer-row captured-top">
+                                <div id="captured-by-black" class="captured-pieces"></div>
+                                <div id="timer-black" class="timer-box" style="display: none;">0:00</div>
+                            </div>
+                            
+                            <!-- Chessboard -->
                             <div id="myBoard" style="width: 100%;"></div>
-                            <div id="timer-white" class="timer-box timer-bottom-right" style="display: none;">0:00</div>
+                            
+                            <!-- White's timer and captured pieces (pieces white captured) -->
+                            <div class="captured-timer-row captured-bottom">
+                                <div id="timer-white" class="timer-box" style="display: none;">0:00</div>
+                                <div id="captured-by-white" class="captured-pieces"></div>
+                            </div>
                         </div>
 
                         <div class="button-group-container mt-3">
@@ -168,6 +179,8 @@
 <script src="{{ url_for('static', filename='js/logic_game.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/timer_manager.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/chat_manager.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/captured_pieces.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/captured_pieces_integration.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/vision_manager.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 {% endblock %}

@@ -605,6 +605,12 @@ class ChessCore {
         this.opening.detectAndUpdate(this.history, this.index);
         this.ui.renderBestMoveArrow(null);
         this.updateUI();
+        
+        // Update captured pieces display
+        if (window.updateCapturedPieces) {
+            window.updateCapturedPieces(this.game);
+        }
+        
         await this.onTurnEnd();
     }
 
@@ -657,9 +663,22 @@ class ChessCore {
     async botGo() {
         isPlayerTurn = false;
         this.ui.renderBestMoveArrow(null);
+        
+        const startTime = Date.now();
+        const MIN_THINKING_TIME = 1200; // Minimum 800ms for bot to "think"
+        
         try {
             const r = await this.engine.getBestMove(this.game.fen(), selectedBotLevel || 10, selectedBotTime);
             if (r) {
+                // Calculate remaining time to wait
+                const elapsed = Date.now() - startTime;
+                const remainingWait = Math.max(0, MIN_THINKING_TIME - elapsed);
+                
+                // Wait minimum time so timer can run
+                if (remainingWait > 0) {
+                    await new Promise(resolve => setTimeout(resolve, remainingWait));
+                }
+                
                 this.game.move(r.move, { sloppy: true });
                 const history = this.game.history();
                 const san = history[history.length - 1];
@@ -668,6 +687,12 @@ class ChessCore {
                 
                 // Cập nhật khai cuộc cho nước đi của Bot
                 this.opening.detectAndUpdate(this.history, this.index);
+                
+                // Update UI and captured pieces
+                this.updateUI();
+                if (window.updateCapturedPieces) {
+                    window.updateCapturedPieces(this.game);
+                }
                 
                 // Gọi onTurnEnd để xử lý kết thúc lượt (bao gồm việc trigger gợi ý cho Player)
                 await this.onTurnEnd();
@@ -982,6 +1007,11 @@ class ChessCore {
             this.game.load(this.history[i].fen);
             board.position(this.history[i].fen);
             this.updateUI();
+            
+            // Update captured pieces when navigating history
+            if (window.updateCapturedPieces) {
+                window.updateCapturedPieces(this.game);
+            }
         }
     }
 }
@@ -1002,7 +1032,12 @@ window.LOGIC_GAME = {
     handleBotTurn: () => core.botGo(),
     updateUI: () => core.updateUI(),
     loadFen: (i) => core.loadFen(i),
-    clearBoard: () => { fetch('/api/game/clear_cache', {method:'POST'}); core.initBoard(board?.orientation()); core.ui.renderBestMoveArrow(null); },
+    clearBoard: () => { 
+        fetch('/api/game/clear_cache', {method:'POST'}); 
+        core.initBoard(board?.orientation()); 
+        core.ui.renderBestMoveArrow(null); 
+        if (window.clearCapturedPieces) window.clearCapturedPieces();
+    },
     updateAllHighlights: () => core.ui.updateAllHighlights(core.game, core.history, core.index),
     updatePgnHistory: () => core._renderPGN(),
     fetchDeepEvaluation: (f) => core.engine.getDeepEval(f),
