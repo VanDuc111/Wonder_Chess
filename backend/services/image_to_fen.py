@@ -388,9 +388,12 @@ def analyze_image_to_fen(image_path):
         cv2.imwrite(debug_path, debug_img)
         print(f" Đã lưu ảnh debug: {debug_path}")
 
-        # 2. Dọn dẹp ảnh cũ (> 24h)
+        # 2. Dọn dẹp ảnh cũ (> 24h), giữ lại .gitkeep
         now = time.time()
         for f in os.listdir(debug_dir):
+            # Skip .gitkeep files
+            if f == '.gitkeep':
+                continue
             f_path = os.path.join(debug_dir, f)
             if os.path.isfile(f_path) and now - os.path.getmtime(f_path) > 86400: # 24h
                 os.remove(f_path)

@@ -12,6 +12,7 @@
 .button-group-container .btn {
     flex-grow: 1;
     min-width: 60px;
+    max-width: 120px;
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-xs);
     padding: var(--gap-xs) 0;
@@ -24,6 +25,11 @@
     box-shadow: var(--shadow-card);
     position: relative;
     overflow: hidden;
+}
+
+.button-group-container .btn-chess-action {
+    flex-grow: 0;
+    flex-shrink: 0;
 }
 
 .button-group-container .btn:hover {
@@ -52,4 +58,69 @@
 
 .btn-chess-danger {
     background: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%);
+}
+
+/* Mobile Layout - Organized Grid */
+@media (max-width: 576.98px) {
+    .button-group-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--gap-xs);
+    }
+    
+    .button-group-container .btn {
+        max-width: none;
+        width: 100%;
+    }
+    
+    /* Row 1: 4 Navigation buttons (First, Prev, Next, Last) */
+    .button-group-container .btn[data-action="first"] {
+        order: 1;
+        grid-column: 1;
+    }
+    
+    .button-group-container .btn[data-action="prev"] {
+        order: 2;
+        grid-column: 2;
+    }
+    
+    .button-group-container .btn[data-action="next"] {
+        order: 3;
+        grid-column: 3;
+    }
+    
+    .button-group-container .btn[data-action="last"] {
+        order: 4;
+        grid-column: 4;
+    }
+    
+    /* Row 2: 4 Action buttons (Load, Edit, Clear, Settings) */
+    .button-group-container #load-pgn-btn {
+        order: 5;
+        grid-column: 1;
+    }
+    
+    .button-group-container #edit-board-btn {
+        order: 6;
+        grid-column: 2;
+    }
+    
+    .button-group-container .btn[data-action="clear"] {
+        order: 7;
+        grid-column: 3;
+    }
+    
+    /* Settings button is handled by settings_modal.scss with order: 2 */
+    /* It will appear in grid-column: 4 automatically */
+}
+
+/* Hide "Load" text on mobile, show icon only */
+@media (max-width: 576.98px) {
+    #load-pgn-btn {
+        font-size: 0; /* Hide text */
+    }
+    
+    #load-pgn-btn i {
+        font-size: 1.2rem; /* Show icon */
+    }
 }

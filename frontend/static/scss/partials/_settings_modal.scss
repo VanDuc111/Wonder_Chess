@@ -42,39 +42,158 @@
     display: none;
 }
 
-/* Laptop/Tablet: Settings icon on right side, aligned with top timer */
-@media (min-width: 577px) {
+/* Desktop/Laptop: Settings button in grid layout */
+@media (min-width: 992px) {
+    .button-group-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--gap-xs);
+    }
+    
+    .button-group-container .btn {
+        max-width: none;
+        width: 100%;
+    }
+    
+    /* Row 1: 4 Navigation buttons */
+    .button-group-container .btn[data-action="first"] {
+        order: 1;
+        grid-column: 1;
+    }
+    
+    .button-group-container .btn[data-action="prev"] {
+        order: 2;
+        grid-column: 2;
+    }
+    
+    .button-group-container .btn[data-action="next"] {
+        order: 3;
+        grid-column: 3;
+    }
+    
+    .button-group-container .btn[data-action="last"] {
+        order: 4;
+        grid-column: 4;
+    }
+    
+    /* Row 2: 4 Action buttons */
+    .button-group-container #load-pgn-btn {
+        order: 5;
+        grid-column: 1;
+    }
+    
+    .button-group-container #edit-board-btn {
+        order: 6;
+        grid-column: 2;
+    }
+    
+    .button-group-container .btn[data-action="clear"] {
+        order: 7;
+        grid-column: 3;
+    }
+    
     .settings-icon-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        right: 10px;
-        top: 5px; /* Align with top timer, not centered */
-        width: 45px;
-        height: 45px;
-        padding: 0;
-        z-index: 100;
-        /* Muted color - less bright */
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: var(--gap-xs) 0 !important;
+        order: 8 !important;
+        grid-column: 4 !important;
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        transition: all 0.3s ease;
+        border-radius: var(--radius-xs) !important;
     }
     
     .settings-icon-btn:hover {
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     
-    .settings-icon-btn i {
-        font-size: 1.2rem;
-        color: rgba(255, 255, 255, 0.9);
-    }
-    
-    /* Hide inline settings panel on laptop/tablet */
+    /* Hide inline settings panel on laptop */
     .analysis-settings-container {
         display: none !important;
+    }
+}
+
+/* Tablet: Settings button in grid layout like mobile */
+@media (min-width: 577px) and (max-width: 991.98px) {
+    .button-group-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--gap-xs);
+    }
+    
+    .button-group-container .btn {
+        max-width: none;
+        width: 100%;
+    }
+    
+    /* Row 1: 4 Navigation buttons */
+    .button-group-container .btn[data-action="first"] {
+        order: 1;
+        grid-column: 1;
+    }
+    
+    .button-group-container .btn[data-action="prev"] {
+        order: 2;
+        grid-column: 2;
+    }
+    
+    .button-group-container .btn[data-action="next"] {
+        order: 3;
+        grid-column: 3;
+    }
+    
+    .button-group-container .btn[data-action="last"] {
+        order: 4;
+        grid-column: 4;
+    }
+    
+    /* Row 2: 4 Action buttons */
+    .button-group-container #load-pgn-btn {
+        order: 5;
+        grid-column: 1;
+    }
+    
+    .button-group-container #edit-board-btn {
+        order: 6;
+        grid-column: 2;
+    }
+    
+    .button-group-container .btn[data-action="clear"] {
+        order: 7;
+        grid-column: 3;
+    }
+    
+    .settings-icon-btn {
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 10px 0 !important;
+        order: 8 !important;
+        grid-column: 4 !important;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
+        border-radius: var(--radius-xs) !important;
+    }
+    
+    .settings-icon-btn:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+    }
+    
+    /* Hide inline settings panel on tablet */
+    .analysis-settings-container {
+        display: none !important;
+    }
+}
+
+/* Hide "Load" text on tablet too */
+@media (min-width: 577px) and (max-width: 991.98px) {
+    #load-pgn-btn {
+        font-size: 0;
+    }
+    
+    #load-pgn-btn i {
+        font-size: 1.2rem;
     }
 }
 
@@ -83,18 +202,18 @@
     /* Reduce spacing between timer and buttons */
     .button-group-container {
         margin-top: 4px !important; /* Reduced from 8px */
-        order: 1; /* Navigation buttons first */
     }
     
     .settings-icon-btn {
         display: block;
         position: relative;
-        width: calc(100% - 2 * var(--btn-group-margin)) !important;
-        margin-top: 8px;
-        margin-left: var(--btn-group-margin) !important;
-        margin-right: var(--btn-group-margin) !important;
-        padding: 10px 0;
-        order: 2;
+        width: 100% !important;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: var(--gap-xs) 0;
+        order: 8;
+        grid-column: 4;
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
     }
     

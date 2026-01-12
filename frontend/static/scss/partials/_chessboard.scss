@@ -36,10 +36,12 @@
   min-height: 0;
 }
 
-/* Reserve space on right for settings panel */
+/* Center board with equal spacing on both sides */
 @media (min-width: 577px) {
   .chess-board-area {
-    padding-right: 100px !important;
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+    max-width: 520px;
   }
 }
 
