@@ -137,7 +137,7 @@ class ChessUI {
                 if (screenWidth >= 992) {
                     capturedRowsOffset = desktopOffset * 2; // top + bottom
                 } else if (screenWidth >= 577) {
-                    capturedRowsOffset = tabletOffsetTop + desktopOffset; // 55 + 45 = 100
+                    capturedRowsOffset = tabletOffsetTop * 2; // Symmetric offsets
                 } else {
                     capturedRowsOffset = mobileOffset * 2; // top + bottom
                 }

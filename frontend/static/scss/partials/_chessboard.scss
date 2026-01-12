@@ -139,11 +139,19 @@
   height: auto; /* Auto height between top and bottom constraints */
 }
 
-/* Tablet specific - even shorter to prevent overflow */
+/* Tablet specific - symmetric offsets to match captured pieces rows */
 @media (min-width: 577px) and (max-width: 991.98px) {
   .score-alignment-wrapper {
     top: var(--eval-offset-tablet);
-    bottom: var(--eval-offset-desktop); /* Keep bottom same */
+    bottom: var(--eval-offset-tablet); 
+  }
+}
+
+/* Mobile specific - even more space needed */
+@media (max-width: 576.98px) {
+  .score-alignment-wrapper {
+    top: var(--eval-offset-mobile);
+    bottom: var(--eval-offset-mobile);
   }
 }
 
