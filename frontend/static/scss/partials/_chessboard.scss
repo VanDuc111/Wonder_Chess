@@ -123,8 +123,8 @@
 .score-alignment-wrapper {
   position: absolute;
   right: 100%; 
-  top: 45px; /* Start below top captured row - shortened */
-  bottom: 45px; /* End above bottom captured row - shortened */
+  top: var(--eval-offset-desktop);
+  bottom: var(--eval-offset-desktop);
   margin-right: 15px; 
   display: flex;
   flex-direction: column;
@@ -140,8 +140,8 @@
 /* Tablet specific - even shorter to prevent overflow */
 @media (min-width: 577px) and (max-width: 991.98px) {
   .score-alignment-wrapper {
-    top: 55px;    /* Increased from 50px - push higher */
-    bottom: 50px;
+    top: var(--eval-offset-tablet);
+    bottom: var(--eval-offset-desktop); /* Keep bottom same */
   }
 }
 

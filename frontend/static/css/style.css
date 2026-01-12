@@ -45,6 +45,8 @@
   --space-sm2: 8px;
   --space-md2: 12px;
   --space-lg2: 16px;
+  --space-xl: 20px;
+  --space-2xl: 30px;
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-default: 8px;
@@ -66,6 +68,7 @@
   --btn-padding-sm: 6px;
   --btn-padding-md: 12px;
   --icon-btn-size: 40px;
+  --icon-btn-size-lg: 45px;
   --scrollbar-thin: 6px;
   --scrollbar-thumb-height: 10px;
   --history-height: 45px;
@@ -76,7 +79,18 @@
   --box-shadow-1: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
   --box-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.3);
   --gap-xs: 4px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
   --padding-xxs: 5px;
+  --padding-xs: 10px;
+  --padding-sm: 15px;
+  --padding-md: 20px;
+  /* Evaluation Bar Offsets */
+  --eval-offset-desktop: 45px;
+  --eval-offset-tablet: 55px;
+  --eval-offset-mobile: 48px;
+  /* Button Group Spacing */
+  --btn-group-margin: 10px;
   /* Transitions */
   --transition-base: all 0.3s ease;
   --transition-fast: all 0.2s ease;
@@ -563,6 +577,78 @@ body.allow-scroll {
   background-size: 100%;
 }
 
+/* Mobile navbar - fullscreen overlay */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 15, 25, 0.98);
+    -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+    z-index: 9999;
+    padding: 80px 20px 40px;
+    overflow-y: auto;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+  }
+  .navbar-collapse.collapsing {
+    -webkit-transition: none;
+    transition: none;
+    display: none;
+  }
+  .navbar-collapse.show {
+    display: -webkit-box !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
+  }
+  .navbar-nav {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .nav-item {
+    margin: 0.5rem 0;
+  }
+  .nav-mode-link {
+    font-size: 1.2rem;
+    padding: 1rem !important;
+    display: block;
+    border-radius: 12px;
+  }
+  #navbar-user-section {
+    width: 100%;
+    max-width: 400px;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    padding: 1rem 0;
+  }
+  #user-display {
+    font-size: 1rem;
+    margin: 0 !important;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.4;
+  }
+}
 /* 5. CHESSBOARD & EVALUATION BAR */
 /* _chessboard.scss */
 #game-view-container {
@@ -717,8 +803,8 @@ body.allow-scroll {
 .score-alignment-wrapper {
   position: absolute;
   right: 100%;
-  top: 45px; /* Start below top captured row - shortened */
-  bottom: 45px; /* End above bottom captured row - shortened */
+  top: var(--eval-offset-desktop);
+  bottom: var(--eval-offset-desktop);
   margin-right: 15px;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -743,8 +829,8 @@ body.allow-scroll {
 /* Tablet specific - even shorter to prevent overflow */
 @media (min-width: 577px) and (max-width: 991.98px) {
   .score-alignment-wrapper {
-    top: 55px; /* Increased from 50px - push higher */
-    bottom: 50px;
+    top: var(--eval-offset-tablet);
+    bottom: var(--eval-offset-desktop); /* Keep bottom same */
   }
 }
 .score-alignment-wrapper.rotated-score {
@@ -2646,13 +2732,14 @@ body.allow-scroll {
   .settings-icon-btn {
     display: block;
     position: relative;
-    width: 100%;
+    width: calc(100% - 2 * var(--btn-group-margin)) !important;
     margin-top: 8px;
-    padding: 10px var(--padding-xxs); /* Match button group padding */
+    margin-left: var(--btn-group-margin) !important;
+    margin-right: var(--btn-group-margin) !important;
+    padding: 10px 0;
     -webkit-box-ordinal-group: 3;
         -ms-flex-order: 2;
-            order: 2; /* Settings button after navigation */
-    /* Muted color on mobile too */
+            order: 2;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
   }
   .settings-icon-btn:hover {

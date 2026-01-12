@@ -126,17 +126,20 @@ class ChessUI {
             if (h > 0) {
                 const screenWidth = window.innerWidth;
                 
+                // Get CSS variable values for offsets
+                const rootStyles = getComputedStyle(document.documentElement);
+                const desktopOffset = parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || 45;
+                const tabletOffsetTop = parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || 55;
+                const mobileOffset = parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || 48;
+                
                 // Calculate height based on CSS offsets (captured pieces rows)
-                // Desktop (≥992px): 45px top + 45px bottom = 90px total offset
-                // Tablet (577-991px): 55px top + 50px bottom = 105px total offset
-                // Mobile (<577px): 48px top + 48px bottom = 96px total offset
                 let capturedRowsOffset;
                 if (screenWidth >= 992) {
-                    capturedRowsOffset = 90; // Desktop
+                    capturedRowsOffset = desktopOffset * 2; // top + bottom
                 } else if (screenWidth >= 577) {
-                    capturedRowsOffset = 105; // Tablet (updated from 100)
+                    capturedRowsOffset = tabletOffsetTop + desktopOffset; // 55 + 45 = 100
                 } else {
-                    capturedRowsOffset = 96; // Mobile
+                    capturedRowsOffset = mobileOffset * 2; // top + bottom
                 }
                 
                 // Set wrapper height to board height minus captured pieces

@@ -50,6 +50,8 @@
     --space-sm2: 8px;
     --space-md2: 12px;
     --space-lg2: 16px;
+    --space-xl: 20px;
+    --space-2xl: 30px;
 
     --radius-xs: 4px;
     --radius-sm: 6px;
@@ -76,6 +78,7 @@
     --btn-padding-sm: 6px;
     --btn-padding-md: 12px;
     --icon-btn-size: 40px;
+    --icon-btn-size-lg: 45px;
 
     --scrollbar-thin: 6px;
     --scrollbar-thumb-height: 10px;
@@ -90,7 +93,21 @@
     --box-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.3);
     
     --gap-xs: 4px;
+    --gap-sm: 8px;
+    --gap-md: 12px;
+    
     --padding-xxs: 5px;
+    --padding-xs: 10px;
+    --padding-sm: 15px;
+    --padding-md: 20px;
+    
+    /* Evaluation Bar Offsets */
+    --eval-offset-desktop: 45px;
+    --eval-offset-tablet: 55px;
+    --eval-offset-mobile: 48px;
+    
+    /* Button Group Spacing */
+    --btn-group-margin: 10px;
 
     /* Transitions */
     --transition-base: all 0.3s ease;
