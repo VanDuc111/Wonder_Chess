@@ -626,10 +626,10 @@ body.allow-scroll {
   min-height: 0;
 }
 
-/* Adjust padding-right only when timers are potentially overlapping */
+/* Reserve space on right for settings panel */
 @media (min-width: 577px) {
   .chess-board-area {
-    padding-right: calc(var(--timer-width) + 25px) !important;
+    padding-right: 100px !important;
   }
 }
 .board-relative-wrapper {
@@ -717,7 +717,8 @@ body.allow-scroll {
 .score-alignment-wrapper {
   position: absolute;
   right: 100%;
-  top: 0;
+  top: 45px; /* Start below top captured row - shortened */
+  bottom: 45px; /* End above bottom captured row - shortened */
   margin-right: 15px;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -736,8 +737,16 @@ body.allow-scroll {
   z-index: 999;
   pointer-events: auto;
   width: 30px;
+  height: auto; /* Auto height between top and bottom constraints */
 }
 
+/* Tablet specific - even shorter to prevent overflow */
+@media (min-width: 577px) and (max-width: 991.98px) {
+  .score-alignment-wrapper {
+    top: 55px; /* Increased from 50px - push higher */
+    bottom: 50px;
+  }
+}
 .score-alignment-wrapper.rotated-score {
   -webkit-transform: rotate(180deg);
           transform: rotate(180deg);
@@ -1057,6 +1066,100 @@ body.allow-scroll {
           flex-direction: column-reverse;
 }
 
+/* 5.6. BOARD CONTROLS LAYOUT */
+/* _board_controls.scss - Vertical settings panel on the right side of board */
+/* Position settings vertically on the right side of the board (desktop only) */
+@media (min-width: 577px) {
+  .analysis-settings-container {
+    position: absolute;
+    right: 5px; /* Inside the board area */
+    top: 0; /* Align with top timer */
+    width: 100px;
+    margin-top: 0 !important;
+    padding: 6px !important;
+    background: rgba(20, 20, 35, 0.9);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: calc(100% - 10px);
+    overflow-y: auto;
+  }
+  .analysis-controls-horizontal {
+    -webkit-box-orient: vertical !important;
+    -webkit-box-direction: normal !important;
+        -ms-flex-direction: column !important;
+            flex-direction: column !important;
+    -webkit-box-align: start !important;
+        -ms-flex-align: start !important;
+            align-items: flex-start !important;
+    gap: 10px;
+  }
+  .analysis-controls-horizontal .form-check {
+    width: 100%;
+    margin: 0;
+  }
+  .analysis-controls-horizontal .form-check-label {
+    font-size: 0.72rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+/* Tablet specific adjustments */
+@media (min-width: 577px) and (max-width: 991.98px) {
+  .analysis-settings-container {
+    width: 95px;
+    padding: 5px !important;
+  }
+  .analysis-controls-horizontal .form-check-label {
+    font-size: 0.68rem;
+  }
+}
+/* Navigation buttons always stay below board (horizontal layout) */
+.button-group-container {
+  position: relative;
+  margin-top: 12px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  gap: var(--gap-xs);
+  padding: 0 var(--padding-xxs);
+  -webkit-box-ordinal-group: 2;
+      -ms-flex-order: 1;
+          order: 1; /* Buttons first on mobile */
+}
+
+/* On mobile, settings also go below the board */
+@media (max-width: 576.98px) {
+  .analysis-settings-container {
+    position: relative;
+    margin-top: 8px !important;
+    -webkit-box-ordinal-group: 3;
+        -ms-flex-order: 2;
+            order: 2; /* Settings after buttons on mobile */
+  }
+  /* Adjust button order for mobile */
+  .chess-board-area {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+  }
+  .board-relative-wrapper {
+    -webkit-box-ordinal-group: 1;
+        -ms-flex-order: 0;
+            order: 0;
+  }
+}
 /* 6. CONTROL BUTTONS */
 /* _buttons.scss */
 .button-group-container {
@@ -2437,6 +2540,143 @@ body.allow-scroll {
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
+/* Settings Modal */
+#settingsModal .modal-content {
+  background: var(--color-element-background);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+#settingsModal .modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem 1.5rem;
+}
+
+#settingsModal .modal-title {
+  color: var(--color-text-light);
+  font-weight: 600;
+}
+
+#settingsModal .modal-body {
+  padding: 1.5rem;
+}
+
+#settingsModal .settings-grid {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  gap: 0.5rem;
+}
+
+#settingsModal .form-check-label {
+  color: var(--color-text-light);
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+#settingsModal .form-check-label i {
+  color: var(--color-primary);
+}
+
+/* Settings Icon Button - Positioned on right side of board */
+.settings-icon-btn {
+  display: none;
+}
+
+/* Laptop/Tablet: Settings icon on right side, aligned with top timer */
+@media (min-width: 577px) {
+  .settings-icon-btn {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    position: absolute;
+    right: 10px;
+    top: 5px; /* Align with top timer, not centered */
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    z-index: 100;
+    /* Muted color - less bright */
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    -webkit-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+  }
+  .settings-icon-btn:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+    -webkit-transform: scale(1.05);
+            transform: scale(1.05);
+    -webkit-box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  .settings-icon-btn i {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  /* Hide inline settings panel on laptop/tablet */
+  .analysis-settings-container {
+    display: none !important;
+  }
+}
+/* Mobile: Settings button below navigation buttons */
+@media (max-width: 576.98px) {
+  /* Reduce spacing between timer and buttons */
+  .button-group-container {
+    margin-top: 4px !important; /* Reduced from 8px */
+    -webkit-box-ordinal-group: 2;
+        -ms-flex-order: 1;
+            order: 1; /* Navigation buttons first */
+  }
+  .settings-icon-btn {
+    display: block;
+    position: relative;
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px var(--padding-xxs); /* Match button group padding */
+    -webkit-box-ordinal-group: 3;
+        -ms-flex-order: 2;
+            order: 2; /* Settings button after navigation */
+    /* Muted color on mobile too */
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
+  }
+  .settings-icon-btn:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+  }
+  .analysis-settings-container {
+    display: none !important;
+  }
+  /* Make chess-board-area flex container for ordering */
+  .chess-board-area {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+  }
+  .board-relative-wrapper {
+    -webkit-box-ordinal-group: 1;
+        -ms-flex-order: 0;
+            order: 0;
+  }
+}
 /* 10. OPENINGS PAGE */
 /* _openings.scss */
 .opening-card {
@@ -3711,15 +3951,17 @@ body.allow-scroll {
     position: absolute;
     left: 5px;
     right: auto;
+    top: 48px !important; /* Below top captured row - shortened */
+    bottom: 48px !important; /* Above bottom captured row - shortened */
     margin-right: 0 !important;
     margin-left: 0 !important;
+    margin-top: 0 !important;
     width: 20px;
     padding-top: 0;
-    height: 80vw !important;
-    max-height: 400px;
+    height: auto !important;
+    max-height: none;
     -ms-flex-item-align: start;
         align-self: flex-start;
-    margin-top: 40px !important;
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;

@@ -18,6 +18,9 @@
 /* 5.5. CAPTURED PIECES DISPLAY */
 @import 'partials/captured_pieces';
 
+/* 5.6. BOARD CONTROLS LAYOUT */
+@import 'partials/board_controls';
+
 /* 6. CONTROL BUTTONS */
 @import 'partials/buttons';
 
@@ -29,6 +32,7 @@
 
 /* 9. MODALS & OVERLAYS */
 @import 'partials/modals';
+@import 'partials/settings_modal';
 
 /* 10. OPENINGS PAGE */
 @import 'partials/openings';

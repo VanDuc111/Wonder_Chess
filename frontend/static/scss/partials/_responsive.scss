@@ -152,14 +152,16 @@
         position: absolute;
         left: 5px;
         right: auto;
+        top: 48px !important; /* Below top captured row - shortened */
+        bottom: 48px !important; /* Above bottom captured row - shortened */
         margin-right: 0 !important;
         margin-left: 0 !important;
+        margin-top: 0 !important;
         width: 20px;
         padding-top: 0;
-        height: 80vw !important; 
-        max-height: 400px; 
+        height: auto !important;
+        max-height: none;
         align-self: flex-start;
-        margin-top: 40px !important; 
         display: flex;
         flex-direction: column;
         z-index: 1000;

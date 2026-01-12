@@ -36,10 +36,10 @@
   min-height: 0;
 }
 
-/* Adjust padding-right only when timers are potentially overlapping */
+/* Reserve space on right for settings panel */
 @media (min-width: 577px) {
   .chess-board-area {
-    padding-right: calc(var(--timer-width) + 25px) !important;
+    padding-right: 100px !important;
   }
 }
 
@@ -123,7 +123,8 @@
 .score-alignment-wrapper {
   position: absolute;
   right: 100%; 
-  top: 0;
+  top: 45px; /* Start below top captured row - shortened */
+  bottom: 45px; /* End above bottom captured row - shortened */
   margin-right: 15px; 
   display: flex;
   flex-direction: column;
@@ -133,6 +134,15 @@
   z-index: 999;
   pointer-events: auto;
   width: 30px;
+  height: auto; /* Auto height between top and bottom constraints */
+}
+
+/* Tablet specific - even shorter to prevent overflow */
+@media (min-width: 577px) and (max-width: 991.98px) {
+  .score-alignment-wrapper {
+    top: 55px;    /* Increased from 50px - push higher */
+    bottom: 50px;
+  }
 }
 
 

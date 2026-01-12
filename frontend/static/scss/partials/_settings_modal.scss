@@ -1,0 +1,117 @@
+/* Settings Modal */
+#settingsModal .modal-content {
+    background: var(--color-element-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+#settingsModal .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+}
+
+#settingsModal .modal-title {
+    color: var(--color-text-light);
+    font-weight: 600;
+}
+
+#settingsModal .modal-body {
+    padding: 1.5rem;
+}
+
+#settingsModal .settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#settingsModal .form-check-label {
+    color: var(--color-text-light);
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+#settingsModal .form-check-label i {
+    color: var(--color-primary);
+}
+
+/* Settings Icon Button - Positioned on right side of board */
+.settings-icon-btn {
+    display: none;
+}
+
+/* Laptop/Tablet: Settings icon on right side, aligned with top timer */
+@media (min-width: 577px) {
+    .settings-icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        right: 10px;
+        top: 5px; /* Align with top timer, not centered */
+        width: 45px;
+        height: 45px;
+        padding: 0;
+        z-index: 100;
+        /* Muted color - less bright */
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .settings-icon-btn:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .settings-icon-btn i {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    /* Hide inline settings panel on laptop/tablet */
+    .analysis-settings-container {
+        display: none !important;
+    }
+}
+
+/* Mobile: Settings button below navigation buttons */
+@media (max-width: 576.98px) {
+    /* Reduce spacing between timer and buttons */
+    .button-group-container {
+        margin-top: 4px !important; /* Reduced from 8px */
+        order: 1; /* Navigation buttons first */
+    }
+    
+    .settings-icon-btn {
+        display: block;
+        position: relative;
+        width: 100%;
+        margin-top: 8px;
+        padding: 10px var(--padding-xxs); /* Match button group padding */
+        order: 2; /* Settings button after navigation */
+        /* Muted color on mobile too */
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
+    }
+    
+    .settings-icon-btn:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+    }
+    
+    .analysis-settings-container {
+        display: none !important;
+    }
+    
+    /* Make chess-board-area flex container for ordering */
+    .chess-board-area {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .board-relative-wrapper {
+        order: 0;
+    }
+}

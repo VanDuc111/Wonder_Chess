@@ -25,8 +25,8 @@
                             0.00
                         </div>
                     </div>
-                    <div class="chess-board-area rounded-3">
-                        <div class="board-relative-wrapper position-relative">
+                    <div class="chess-board-area rounded-3 position-relative">
+                        <div class="board-relative-wrapper">
                             <!-- Black's timer and captured pieces (pieces black captured) -->
                             <div class="captured-timer-row captured-top">
                                 <div id="captured-by-black" class="captured-pieces"></div>
@@ -42,7 +42,37 @@
                                 <div id="captured-by-white" class="captured-pieces"></div>
                             </div>
                         </div>
+                        
+                        <!-- Analysis Settings (vertical on desktop, horizontal on mobile) -->
+                        <div class="analysis-settings-container p-2 rounded-3">
+                            <div class="analysis-controls-horizontal d-flex justify-content-around align-items-center">
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="flip-board-switch">
+                                    <label class="form-check-label" for="flip-board-switch">Đổi hướng (F)</label>
+                                </div>
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="best-move-switch">
+                                    <label class="form-check-label" for="best-move-switch">Gợi ý</label>
+                                </div>
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="move-notate-switch">
+                                    <label class="form-check-label" for="move-notate-switch">Ký hiệu</label>
+                                </div>
+                                <div class="form-check form-switch custom-switch-sm">
+                                    <input class="form-check-input" type="checkbox" id="eval-bar-switch">
+                                    <label class="form-check-label" for="eval-bar-switch">Thanh điểm</label>
+                                </div>
+                            </div>
+                        </div>
 
+                        <!-- Settings Icon Button (visible on laptop/tablet, positioned on right) -->
+                        <button class="btn btn-sm btn-chess-action settings-icon-btn" 
+                                data-bs-toggle="modal" data-bs-target="#settingsModal" 
+                                title="Settings">
+                            <i class="bi bi-gear-fill"></i>
+                        </button>
+                        
+                        <!-- Navigation Buttons (always horizontal below board) -->
                         <div class="button-group-container mt-3">
                             <button class="btn btn-sm btn-chess-nav" data-action="first" title="First Move">
                                 <i class="bi bi-chevron-double-left"></i>
@@ -64,27 +94,6 @@
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
-
-                        <div class="analysis-settings-container mt-2 p-2 rounded-3">
-                            <div class="analysis-controls-horizontal d-flex justify-content-around align-items-center">
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="flip-board-switch">
-                                    <label class="form-check-label" for="flip-board-switch">Đổi hướng (F)</label>
-                                </div>
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="best-move-switch">
-                                    <label class="form-check-label" for="best-move-switch">Gợi ý</label>
-                                </div>
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="move-notate-switch">
-                                    <label class="form-check-label" for="move-notate-switch">Ký hiệu</label>
-                                </div>
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="eval-bar-switch">
-                                    <label class="form-check-label" for="eval-bar-switch">Thanh điểm</label>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -100,7 +109,6 @@
                 <div id="pgn-history-vertical" class="flex-grow-1 overflow-auto">
                     <table class="table table-dark table-borderless history-table mb-0">
                         <tbody id="pgn-history-list-vertical">
-                            <!-- Nước đi sẽ được chèn vào đây bởi JS -->
                         </tbody>
                     </table>
                 </div>
@@ -170,6 +178,7 @@
 {% include 'modals/load_data.html' %}
 {% include 'modals/game_over.html' %}
 {% include 'modals/invalid_fen.html' %}
+{% include 'modals/settings.html' %}
 {% endblock %}
 
 {% block scripts %}
@@ -181,6 +190,7 @@
 <script src="{{ url_for('static', filename='js/chat_manager.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/captured_pieces.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/captured_pieces_integration.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/settings_modal.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/vision_manager.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 {% endblock %}

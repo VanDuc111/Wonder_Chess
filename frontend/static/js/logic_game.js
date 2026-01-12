@@ -118,19 +118,34 @@ class ChessUI {
         const boardArea = document.querySelector('.chess-board-area');
         if (!boardArea || !barCont || !wrapper) return;
 
+        // Don't override CSS - let top/bottom offsets control the height
         wrapper.style.height = 'auto';
         
         setTimeout(() => {
             const h = boardArea.clientHeight;
             if (h > 0) {
-                const isMobile = window.innerWidth < 768;
-                // Thu hẹp extraH để căn giữa đối xứng tốt hơn
-                const extraH = isMobile ? 15 : 0; 
+                const screenWidth = window.innerWidth;
                 
-                wrapper.style.height = `${h + extraH}px`;
+                // Calculate height based on CSS offsets (captured pieces rows)
+                // Desktop (≥992px): 45px top + 45px bottom = 90px total offset
+                // Tablet (577-991px): 55px top + 50px bottom = 105px total offset
+                // Mobile (<577px): 48px top + 48px bottom = 96px total offset
+                let capturedRowsOffset;
+                if (screenWidth >= 992) {
+                    capturedRowsOffset = 90; // Desktop
+                } else if (screenWidth >= 577) {
+                    capturedRowsOffset = 105; // Tablet (updated from 100)
+                } else {
+                    capturedRowsOffset = 96; // Mobile
+                }
+                
+                // Set wrapper height to board height minus captured pieces
+                const wrapperHeight = h - capturedRowsOffset;
+                wrapper.style.height = `${wrapperHeight}px`;
+                
                 const scoreH = scoreEl ? scoreEl.offsetHeight : 0;
-                // Thu hẹp lề dưới của thanh bar để nó không bị "đụng trần đụng sàn" quá sát
-                if (barCont) barCont.style.height = `${h + extraH - scoreH - 15}px`;
+                // Bar container height = wrapper height minus score display
+                if (barCont) barCont.style.height = `${wrapperHeight - scoreH - 10}px`;
             }
         }, 0);
     }
