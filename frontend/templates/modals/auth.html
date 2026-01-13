@@ -1,0 +1,104 @@
+<!-- auth.html -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content auth-modal-content">
+            <div class="modal-body p-0">
+                <button type="button" class="btn-close auth-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                
+                <div class="auth-box">
+                    <div class="auth-header">
+                        <img src="{{ url_for('static', filename='img/brand-logo.svg') }}" alt="WonderChess" class="auth-logo mb-3">
+                        <h4 class="auth-title">Chào mừng bạn!</h4>
+                        <p class="auth-subtitle">Đăng nhập để lưu lịch sử ván đấu của bạn</p>
+                    </div>
+
+                    <!-- Auth Tabs -->
+                    <ul class="nav nav-pills auth-nav-pills mb-4" id="authTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="signin-tab" data-bs-toggle="pill" data-bs-target="#signin" type="button" role="tab">Đăng nhập</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="signup-tab" data-bs-toggle="pill" data-bs-target="#signup" type="button" role="tab">Đăng ký</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="authTabContent">
+                        <!-- Sign In Tab -->
+                        <div class="tab-pane fade show active" id="signin" role="tabpanel">
+                            <form id="signin-form" class="auth-form">
+                                <div class="mb-3 auth-input-group">
+                                    <label class="form-label">Email</label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email" name="email" class="form-control auth-input" placeholder="example@email.com" required>
+                                    </div>
+                                </div>
+                                <div class="mb-4 auth-input-group">
+                                    <label class="form-label d-flex justify-content-between">
+                                        Mật khẩu
+                                        <a href="#" class="forgot-link text-primary">Quên?</a>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-lock"></i>
+                                        <input type="password" name="password" class="form-control auth-input" placeholder="••••••••" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 btn-auth-submit mb-3">
+                                    <span>Đăng nhập</span>
+                                    <div class="spinner-border spinner-border-sm d-none" role="status"></div>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Sign Up Tab -->
+                        <div class="tab-pane fade" id="signup" role="tabpanel">
+                            <form id="signup-form" class="auth-form">
+                                <div class="mb-3 auth-input-group">
+                                    <label class="form-label">Tên hiển thị</label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-user"></i>
+                                        <input type="text" name="username" class="form-control auth-input" placeholder="WonderChess Player" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3 auth-input-group">
+                                    <label class="form-label">Email</label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email" name="email" class="form-control auth-input" placeholder="example@email.com" required>
+                                    </div>
+                                </div>
+                                <div class="mb-4 auth-input-group">
+                                    <label class="form-label">Mật khẩu</label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-lock"></i>
+                                        <input type="password" name="password" class="form-control auth-input" placeholder="Tối thiểu 8 ký tự" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 btn-auth-submit mb-3">
+                                    <span>Tạo tài khoản</span>
+                                    <div class="spinner-border spinner-border-sm d-none" role="status"></div>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="auth-divider mb-4">
+                        <span>Hoặc tiếp tục với</span>
+                    </div>
+
+                    <!-- OAuth Buttons -->
+                    <div class="d-flex gap-3 mb-4">
+                        <a href="{{ url_for('auth.google_login') }}" class="btn btn-outline-light w-100 btn-oauth-google">
+                            <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" style="width: 18px;">
+                            Google
+                        </a>
+                    </div>
+                    
+                    <p class="auth-footer-text">
+                        Bằng việc tiếp tục, bạn đồng ý với <a href="#" class="text-primary">Điều khoản dịch vụ</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

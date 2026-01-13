@@ -161,6 +161,7 @@
 {% include 'modals/game_over.html' %}
 {% include 'modals/invalid_fen.html' %}
 {% include 'modals/settings.html' %}
+{% include 'modals/auth.html' %}
 {% include 'modals/board_editor.html' %}
 
 <!-- Base Switches for Logic (Hidden) -->
@@ -184,5 +185,6 @@
 <script src="{{ url_for('static', filename='js/settings_modal.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/board_editor.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/vision_manager.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/auth_manager.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 {% endblock %}

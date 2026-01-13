@@ -28,7 +28,43 @@
                     </li>
                 </ul>
                 <div class="d-flex align-items-center" id="navbar-user-section">
-                    <span id="user-display" class="me-3 align-self-center text-white-50">Chào, Khách!</span>
+                    {% if current_user.is_authenticated %}
+                        <div class="dropdown">
+                            <a class="user-profile-btn dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="avatar-wrapper">
+                                    <img src="{{ current_user.avatar_url or 'https://ui-avatars.com/api/?name=' + (current_user.display_name or current_user.username) + '&background=2ecc71&color=fff' }}" 
+                                         alt="User Avatar" class="user-avatar-nav">
+                                </div>
+                                <div class="user-info-nav d-none d-md-flex">
+                                    <span class="user-name-nav">{{ current_user.display_name or current_user.username }}</span>
+                                    <span class="user-status-nav">Thành viên</span>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end auth-dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item auth-dropdown-item" href="#">
+                                        <i class="fas fa-user-circle"></i> Hồ sơ
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item auth-dropdown-item" href="#">
+                                        <i class="fas fa-history"></i> Lịch sử ván đấu
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider border-secondary opacity-25"></li>
+                                <li>
+                                    <a class="dropdown-item auth-dropdown-item text-danger" href="{{ url_for('auth.logout') }}" id="btn-logout">
+                                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <button class="btn-login" id="btn-open-login" data-bs-toggle="modal" data-bs-target="#loginModal">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Đăng nhập</span>
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         </div>

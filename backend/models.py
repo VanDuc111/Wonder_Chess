@@ -2,7 +2,9 @@ from datetime import datetime
 from backend import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
-class User(db.Model):
+from flask_login import UserMixin
+
+class User(db.Model, UserMixin):
     """
     Bảng User: Lưu trữ thông tin định danh của người dùng.
     Hỗ trợ cả traditional authentication (username/password) và OAuth (Google).
