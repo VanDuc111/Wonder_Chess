@@ -43,30 +43,9 @@
                             </div>
                         </div>
                         
-                        <!-- Analysis Settings (vertical on desktop, horizontal on mobile) -->
-                        <div class="analysis-settings-container p-2 rounded-3">
-                            <div class="analysis-controls-horizontal d-flex justify-content-around align-items-center">
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="flip-board-switch">
-                                    <label class="form-check-label" for="flip-board-switch">Đổi hướng (F)</label>
-                                </div>
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="best-move-switch">
-                                    <label class="form-check-label" for="best-move-switch">Gợi ý</label>
-                                </div>
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="move-notate-switch">
-                                    <label class="form-check-label" for="move-notate-switch">Ký hiệu</label>
-                                </div>
-                                <div class="form-check form-switch custom-switch-sm">
-                                    <input class="form-check-input" type="checkbox" id="eval-bar-switch">
-                                    <label class="form-check-label" for="eval-bar-switch">Thanh điểm</label>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- Navigation Buttons (always horizontal below board) -->
-                        <div class="button-group-container mt-3">
+                        <div class="button-group-container">
                             <button class="btn btn-sm btn-chess-nav" data-action="first" title="First Move">
                                 <i class="bi bi-chevron-double-left"></i>
                             </button>
@@ -183,6 +162,14 @@
 {% include 'modals/invalid_fen.html' %}
 {% include 'modals/settings.html' %}
 {% include 'modals/board_editor.html' %}
+
+<!-- Base Switches for Logic (Hidden) -->
+<div class="d-none">
+    <input type="checkbox" id="flip-board-switch">
+    <input type="checkbox" id="best-move-switch">
+    <input type="checkbox" id="move-notate-switch">
+    <input type="checkbox" id="eval-bar-switch">
+</div>
 {% endblock %}
 
 {% block scripts %}

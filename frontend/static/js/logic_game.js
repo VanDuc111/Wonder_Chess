@@ -1065,6 +1065,13 @@ window.LOGIC_GAME = {
     showGameOver: (t, m) => core._showGameOver(t, m),
     onDragStart: (s, p, po, o) => core.onDragStart(s, p, po, o),
     onSnapEnd: () => core.onSnapEnd(),
+    flipBoard: () => {
+        if (typeof board !== 'undefined' && board) {
+            board.flip();
+            core._syncOrientationUI();
+            core.updateUI();
+        }
+    },
     // Expose core properties for debugging or main.js compatibility
     getGame: () => core.game,
     getHistory: () => core.history,

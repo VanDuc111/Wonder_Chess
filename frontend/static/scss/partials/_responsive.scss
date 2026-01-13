@@ -58,10 +58,11 @@
     }
 
     .chess-board-area {
-        max-width: 500px !important;
+        max-width: 650px !important; /* Allow slightly larger board on generic tablets */
+        width: 100%;
         margin: 0 auto;
-        padding-right: calc(var(--timer-width) + 25px) !important;
-        padding-left: var(--spacing-sm) !important;
+        padding-right: calc(var(--timer-width) + 10px) !important;
+        padding-left: 10px !important;
     }
 
     #history-col {
@@ -288,38 +289,7 @@
     }
 }
 
-@media (max-width: 576px) {
-    .button-group-container {
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        padding: 0 10px;
-        width: 100%;
-    }
-
-    .button-group-container .btn {
-        flex: none !important;
-        padding: 12px 0;
-        min-width: 0;
-        font-size: 0.8rem;
-    }
-
-    /* 4 nút điều hướng lên hàng 1 */
-    .button-group-container [data-action="first"] { order: 1; }
-    .button-group-container [data-action="prev"]  { order: 2; }
-    .button-group-container [data-action="next"]  { order: 3; }
-    .button-group-container [data-action="last"]  { order: 4; }
-
-    /* 2 nút chức năng xuống hàng 2 */
-    .button-group-container [data-action="load"]  { order: 5; grid-column: span 2; }
-    .button-group-container [data-action="clear"] { order: 6; grid-column: span 2; }
-
-    .button-group-container .btn i {
-        display: inline-block;
-        margin-right: 4px;
-        font-size: 1.1rem;
-    }
-}
+/* End of Responsive Styles */
 
 /* Compact Analysis Settings media query from original */
 @media (max-width: 1200px) {

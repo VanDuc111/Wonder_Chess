@@ -1,56 +1,87 @@
 /**
  * @fileoverview Settings Modal Manager
- * Syncs settings between inline panel (desktop) and modal (tablet/mobile)
+ * Directly triggers logic from Modal UI for immediate feedback
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Mapping between inline switches and modal switches
-    const switchMappings = [
-        { inline: 'flip-board-switch', modal: 'flip-board-switch-modal' },
-        { inline: 'best-move-switch', modal: 'best-move-switch-modal' },
-        { inline: 'move-notate-switch', modal: 'move-notate-switch-modal' },
-        { inline: 'eval-bar-switch', modal: 'eval-bar-switch-modal' }
-    ];
+    const modalSwitches = {
+        flip: document.getElementById('flip-board-switch-modal'),
+        bestMove: document.getElementById('best-move-switch-modal'),
+        notate: document.getElementById('move-notate-switch-modal'),
+        evalBar: document.getElementById('eval-bar-switch-modal')
+    };
 
-    // Sync from inline to modal when modal opens
+    const baseSwitches = {
+        flip: document.getElementById('flip-board-switch'),
+        bestMove: document.getElementById('best-move-switch'),
+        notate: document.getElementById('move-notate-switch'),
+        evalBar: document.getElementById('eval-bar-switch')
+    };
+
+    // Helper to sync modal state to base and trigger logic
+    const updateSetting = (key, value) => {
+        // Always sync the hidden base switch first
+        if (baseSwitches[key]) {
+            baseSwitches[key].checked = value;
+        }
+        
+        // Immediate Logic Trigger via LOGIC_GAME interface
+        if (window.LOGIC_GAME) {
+            switch(key) {
+                case 'flip':
+                    if (typeof window.LOGIC_GAME.flipBoard === 'function') {
+                        window.LOGIC_GAME.flipBoard();
+                    }
+                    break;
+                case 'bestMove':
+                    if (typeof window.LOGIC_GAME.renderBestMoveArrow === 'function') {
+                        const history = window.LOGIC_GAME.getHistory ? window.LOGIC_GAME.getHistory() : [];
+                        const index = window.LOGIC_GAME.getIndex ? window.LOGIC_GAME.getIndex() : 0;
+                        window.LOGIC_GAME.renderBestMoveArrow(value ? (history[index]?.bestMove) : null);
+                    }
+                    break;
+                case 'notate':
+                    if (typeof window.LOGIC_GAME.updatePgnHistory === 'function') {
+                        window.LOGIC_GAME.updatePgnHistory();
+                    }
+                    break;
+                case 'evalBar':
+                    const wrapper = document.querySelector('.score-alignment-wrapper');
+                    if (wrapper) {
+                        wrapper.style.display = value ? 'flex' : 'none';
+                        if (value) {
+                            if (typeof window.LOGIC_GAME.syncBoardAndEvalHeight === 'function') {
+                                setTimeout(() => window.LOGIC_GAME.syncBoardAndEvalHeight(), 50);
+                            }
+                            if (typeof window.LOGIC_GAME.updateUI === 'function') {
+                                window.LOGIC_GAME.updateUI();
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+    };
+
+    // Attach listeners to modal switches
+    Object.keys(modalSwitches).forEach(key => {
+        const sw = modalSwitches[key];
+        if (sw) {
+            sw.addEventListener('change', (e) => {
+                updateSetting(key, e.target.checked);
+            });
+        }
+    });
+
+    // Handle Modal show - sync from base state (in case changed via keybinds)
     const settingsModal = document.getElementById('settingsModal');
     if (settingsModal) {
         settingsModal.addEventListener('show.bs.modal', () => {
-            switchMappings.forEach(mapping => {
-                const inlineSwitch = document.getElementById(mapping.inline);
-                const modalSwitch = document.getElementById(mapping.modal);
-                if (inlineSwitch && modalSwitch) {
-                    modalSwitch.checked = inlineSwitch.checked;
+            Object.keys(baseSwitches).forEach(key => {
+                if (baseSwitches[key] && modalSwitches[key]) {
+                    modalSwitches[key].checked = baseSwitches[key].checked;
                 }
             });
         });
     }
-
-    // Sync from modal to inline when switches change in modal
-    switchMappings.forEach(mapping => {
-        const modalSwitch = document.getElementById(mapping.modal);
-        if (modalSwitch) {
-            modalSwitch.addEventListener('change', (e) => {
-                const inlineSwitch = document.getElementById(mapping.inline);
-                if (inlineSwitch) {
-                    inlineSwitch.checked = e.target.checked;
-                    // Trigger change event on inline switch to activate its functionality
-                    inlineSwitch.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        }
-    });
-
-    // Also sync from inline to modal in real-time (for desktop users who might switch to tablet view)
-    switchMappings.forEach(mapping => {
-        const inlineSwitch = document.getElementById(mapping.inline);
-        if (inlineSwitch) {
-            inlineSwitch.addEventListener('change', (e) => {
-                const modalSwitch = document.getElementById(mapping.modal);
-                if (modalSwitch) {
-                    modalSwitch.checked = e.target.checked;
-                }
-            });
-        }
-    });
 });

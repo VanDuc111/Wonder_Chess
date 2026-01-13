@@ -49,16 +49,26 @@ class BoardEditor {
     }
     
     initializeEditorBoard() {
+        if (this.editorBoard) {
+            this.editorBoard.destroy();
+        }
+
         const config = {
             position: this.currentPosition,
             draggable: false, // We'll handle clicks instead
-            pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
         };
         
         this.editorBoard = Chessboard('editorBoard', config);
         
-        // Add click handler to board squares
-        this.addBoardClickHandler();
+        // Force resize after a short delay to handle modal transition
+        setTimeout(() => {
+            if (this.editorBoard) {
+                this.editorBoard.resize();
+                // Add click handler to board squares AFTER rendering
+                this.addBoardClickHandler();
+            }
+        }, 150);
     }
     
     addBoardClickHandler() {
@@ -211,7 +221,7 @@ class BoardEditor {
         const config = {
             position: this.currentPosition,
             draggable: false,
-            pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
         };
         
         this.editorBoard = Chessboard('editorBoard', config);

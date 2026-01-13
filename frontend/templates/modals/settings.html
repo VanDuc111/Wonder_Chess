@@ -1,41 +1,43 @@
 <!-- Settings Modal -->
 <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content modal-dark">
             <div class="modal-header">
                 <h5 class="modal-title" id="settingsModalLabel">
-                    <i class="bi bi-gear-fill me-2"></i>Cài đặt
+                    <i class="bi bi-gear-fill me-2"></i>Cài đặt hệ thống
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="settings-grid">
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="flip-board-switch-modal">
+                    <div class="form-check form-switch settings-item">
                         <label class="form-check-label" for="flip-board-switch-modal">
                             <i class="bi bi-arrow-repeat me-2"></i>Đổi hướng bàn cờ (F)
                         </label>
+                        <input class="form-check-input" type="checkbox" id="flip-board-switch-modal">
                     </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="best-move-switch-modal">
+                    <div class="form-check form-switch settings-item">
                         <label class="form-check-label" for="best-move-switch-modal">
                             <i class="bi bi-lightbulb-fill me-2"></i>Hiển thị gợi ý nước đi
                         </label>
+                        <input class="form-check-input" type="checkbox" id="best-move-switch-modal">
                     </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="move-notate-switch-modal">
+                    <div class="form-check form-switch settings-item">
                         <label class="form-check-label" for="move-notate-switch-modal">
                             <i class="bi bi-fonts me-2"></i>Hiển thị ký hiệu nước đi
                         </label>
+                        <input class="form-check-input" type="checkbox" id="move-notate-switch-modal">
                     </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="eval-bar-switch-modal">
+                    <div class="form-check form-switch settings-item">
                         <label class="form-check-label" for="eval-bar-switch-modal">
                             <i class="bi bi-bar-chart-fill me-2"></i>Hiển thị thanh đánh giá
                         </label>
+                        <input class="form-check-input" type="checkbox" id="eval-bar-switch-modal">
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+

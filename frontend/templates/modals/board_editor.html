@@ -1,12 +1,12 @@
 <!-- Board Editor Modal -->
 <div class="modal fade" id="boardEditorModal" tabindex="-1" aria-labelledby="boardEditorModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content board-editor-modal">
+        <div class="modal-content modal-dark">
             <div class="modal-header">
                 <h5 class="modal-title" id="boardEditorModalLabel">
                     <i class="bi bi-pencil-square me-2"></i>Chỉnh sửa bàn cờ
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="board-editor-container">
@@ -73,24 +73,24 @@
                 <!-- Control Buttons -->
                 <div class="editor-controls mt-3">
                     <div class="editor-actions">
-                        <button class="btn btn-secondary" id="editor-clear-board">
-                            <i class="bi bi-x-circle"></i> Clear
+                        <button class="btn btn-premium-cancel btn-sm" id="editor-clear-board">
+                            <i class="bi bi-x-circle me-1"></i> Xóa hết
                         </button>
-                        <button class="btn btn-secondary" id="editor-flip-board">
-                            <i class="bi bi-arrow-repeat"></i> Flip
+                        <button class="btn btn-premium-cancel btn-sm" id="editor-flip-board">
+                            <i class="bi bi-arrow-repeat me-1"></i> Quay bàn cờ
                         </button>
-                        <button class="btn btn-secondary" id="editor-start-position">
-                            <i class="bi bi-arrow-counterclockwise"></i> Vị trí ban đầu
+                        <button class="btn btn-premium-cancel btn-sm" id="editor-start-position">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Vị trí chuẩn
                         </button>
                     </div>
                     
                     <!-- FEN Input -->
                     <div class="fen-input-group mt-3">
-                        <label for="editor-fen-input" class="form-label">FEN:</label>
+                        <label for="editor-fen-input" class="form-label">Chuỗi FEN hiện tại:</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="editor-fen-input" placeholder="FEN string">
-                            <button class="btn btn-outline-primary" id="editor-apply-fen">
-                                <i class="bi bi-check-circle"></i> Áp dụng
+                            <input type="text" class="form-control" id="editor-fen-input" placeholder="Dán mã FEN vào đây...">
+                            <button class="btn btn-premium-confirm" id="editor-apply-fen">
+                                <i class="bi bi-check-circle me-1"></i> Áp dụng
                             </button>
                         </div>
                     </div>
@@ -103,13 +103,14 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
-                    <i class="bi bi-x-lg"></i> Hủy
+                <button type="button" class="btn btn-premium-cancel" data-bs-dismiss="modal">
+                    Hủy bỏ
                 </button>
-                <button type="button" class="btn btn-success" id="editor-done-btn">
-                    <i class="bi bi-check-lg"></i> Xong
+                <button type="button" class="btn btn-premium-confirm" id="editor-done-btn">
+                    Xác nhận & Cập nhật
                 </button>
             </div>
         </div>
     </div>
 </div>
+
