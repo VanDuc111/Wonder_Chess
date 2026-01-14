@@ -53,9 +53,13 @@ class BoardEditor {
             this.editorBoard.destroy();
         }
 
+        const isMoveMode = this.selectedTool === 'move';
+
         const config = {
             position: this.currentPosition,
-            draggable: false, // We'll handle clicks instead
+            draggable: isMoveMode, 
+            onDrop: isMoveMode ? this.onPieceMove.bind(this) : undefined,
+            dropOffBoard: isMoveMode ? 'trash' : 'snapback',
             pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
         };
         
@@ -70,60 +74,120 @@ class BoardEditor {
             }
         }, 150);
     }
+
+    onPieceMove(source, target, piece, newPos, oldPos, orientation) {
+        // If piece was dropped off-board (trash mode)
+        if (target === 'offboard') {
+            delete this.currentPosition[source];
+            this.updateFENInput();
+            this.validatePosition();
+            return;
+        }
+
+        if (source === target) return;
+        
+        // Update local position
+        delete this.currentPosition[source];
+        this.currentPosition[target] = piece;
+        
+        // Sync with input
+        this.updateFENInput();
+        this.validatePosition();
+
+        // Ensure internal state consistency
+        setTimeout(() => this.updateBoardUI(), 50);
+    }
     
     addBoardClickHandler() {
-        // Get all squares
-        const squares = document.querySelectorAll('#editorBoard .square-55d63');
+        const boardEl = document.getElementById('editorBoard');
+        if (!boardEl) return;
         
-        squares.forEach(square => {
-            square.addEventListener('click', (e) => {
-                const squareEl = e.currentTarget;
-                const squareId = squareEl.getAttribute('data-square');
-                
-                if (!squareId) return;
-                
-                this.handleSquareClick(squareId);
-            });
+        // Remove existing listener to prevent duplicates
+        if (this._boardClickListener) {
+            boardEl.removeEventListener('click', this._boardClickListener);
+        }
+        
+        this._boardClickListener = (e) => {
+            const squareEl = e.target.closest('.square-55d63');
+            if (!squareEl) return;
+            
+            const squareId = squareEl.getAttribute('data-square');
+            if (!squareId) return;
+            
+            this.handleSquareClick(squareId);
+        };
+        
+        boardEl.addEventListener('click', this._boardClickListener);
+
+        // Setup HTML5 Drag-Drop Listeners for Sidebar Pieces
+        boardEl.addEventListener('dragover', (e) => e.preventDefault());
+        boardEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const piece = e.dataTransfer.getData('piece');
+            const squareEl = e.target.closest('.square-55d63');
+            const squareId = squareEl?.getAttribute('data-square');
+            
+            if (piece && squareId) {
+                this.currentPosition[squareId] = piece;
+                this.updateBoardUI();
+                this.updateFENInput();
+                this.validatePosition();
+            }
         });
     }
     
     handleSquareClick(square) {
         if (this.selectedTool === 'delete') {
-            // Delete piece from square
             delete this.currentPosition[square];
         } else if (this.selectedPiece) {
-            // Place selected piece on square
             this.currentPosition[square] = this.selectedPiece;
+        } else {
+            return; // Nothing to do
         }
         
-        // Recreate board to show changes
-        this.recreateBoard();
-        
-        // Update FEN
+        this.updateBoardUI();
         this.updateFENInput();
-        
-        // Validate position
         this.validatePosition();
+    }
+
+    updateBoardUI() {
+        if (this.editorBoard) {
+            // position() is better than recreateBoard because it doesn't destroy the DOM/listeners
+            this.editorBoard.position(this.currentPosition, false);
+        } else {
+            this.recreateBoard();
+        }
     }
     
     setupPieceSelectors() {
         const pieceButtons = document.querySelectorAll('.btn-piece');
         
         pieceButtons.forEach(btn => {
+            // Handle Click
             btn.addEventListener('click', () => {
-                // Remove active from all
                 pieceButtons.forEach(b => b.classList.remove('active'));
-                
-                // Add active to clicked
                 btn.classList.add('active');
-                
-                // Set selected piece
                 this.selectedPiece = btn.getAttribute('data-piece');
-                
-                // Clear tool selection
                 this.selectedTool = null;
-                document.querySelectorAll('.btn-editor-tool').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.btn-editor-tool').forEach(b => {
+                    b.classList.remove('active', 'active-danger', 'active-success');
+                });
+                // When a piece is selected, ensure board isn't internally draggable
+                this.recreateBoard(); 
             });
+
+            // Handle Drag Start
+            const img = btn.querySelector('img');
+            if (img) {
+                img.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('piece', btn.getAttribute('data-piece'));
+                    // Visual feedback
+                    btn.classList.add('dragging');
+                });
+                img.addEventListener('dragend', () => {
+                    btn.classList.remove('dragging');
+                });
+            }
         });
     }
     
@@ -133,28 +197,35 @@ class BoardEditor {
         
         if (deleteBtn) {
             deleteBtn.addEventListener('click', () => {
-                // Toggle delete tool
-                const isActive = deleteBtn.classList.contains('active');
-                
-                // Clear all selections
-                document.querySelectorAll('.btn-piece, .btn-editor-tool').forEach(b => b.classList.remove('active'));
+                const isActive = deleteBtn.classList.contains('active-danger');
+                document.querySelectorAll('.btn-piece').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.btn-editor-tool').forEach(b => b.classList.remove('active', 'active-danger', 'active-success'));
                 
                 if (!isActive) {
-                    deleteBtn.classList.add('active');
+                    deleteBtn.classList.add('active-danger');
                     this.selectedTool = 'delete';
                     this.selectedPiece = null;
                 } else {
                     this.selectedTool = null;
                 }
+                this.recreateBoard(); // Toggle draggability
             });
         }
         
         if (handBtn) {
             handBtn.addEventListener('click', () => {
-                // Clear all selections
-                document.querySelectorAll('.btn-piece, .btn-editor-tool').forEach(b => b.classList.remove('active'));
-                this.selectedPiece = null;
-                this.selectedTool = null;
+                const isActive = handBtn.classList.contains('active-success');
+                document.querySelectorAll('.btn-piece').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.btn-editor-tool').forEach(b => b.classList.remove('active', 'active-danger', 'active-success'));
+                
+                if (!isActive) {
+                    handBtn.classList.add('active-success');
+                    this.selectedTool = 'move';
+                    this.selectedPiece = null;
+                } else {
+                    this.selectedTool = null;
+                }
+                this.recreateBoard(); // Toggle draggability
             });
         }
     }
@@ -217,10 +288,14 @@ class BoardEditor {
             this.editorBoard.destroy();
         }
         
+        const isMoveMode = this.selectedTool === 'move';
+
         // Create new board
         const config = {
             position: this.currentPosition,
-            draggable: false,
+            draggable: isMoveMode,
+            onDrop: isMoveMode ? this.onPieceMove.bind(this) : undefined,
+            dropOffBoard: isMoveMode ? 'trash' : 'snapback',
             pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
         };
         
@@ -229,6 +304,7 @@ class BoardEditor {
         // Re-add click handlers
         setTimeout(() => {
             this.addBoardClickHandler();
+            if (this.editorBoard) this.editorBoard.resize();
         }, 100);
     }
     

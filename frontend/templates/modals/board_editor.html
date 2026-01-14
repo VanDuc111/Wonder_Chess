@@ -1,5 +1,5 @@
 <!-- Board Editor Modal -->
-<div class="modal fade" id="boardEditorModal" tabindex="-1" aria-labelledby="boardEditorModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="boardEditorModal" tabindex="-1" aria-labelledby="boardEditorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content modal-dark">
             <div class="modal-header">
@@ -12,27 +12,27 @@
                 <div class="board-editor-container">
                     <!-- Left Piece Selector -->
                     <div class="piece-selector piece-selector-left">
-                        <button class="btn btn-editor-tool" id="editor-delete-piece" title="Xóa quân cờ">
+                        <button class="btn btn-editor-tool" id="editor-delete-piece" title="Delete Piece">
                             <i class="bi bi-trash"></i>
                         </button>
                         <div class="piece-buttons white-pieces">
                             <button class="btn btn-piece" data-piece="wK" title="White King">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wK.png') }}" alt="wK">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wK.png') }}" alt="wK" draggable="true" data-piece="wK">
                             </button>
                             <button class="btn btn-piece" data-piece="wQ" title="White Queen">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wQ.png') }}" alt="wQ">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wQ.png') }}" alt="wQ" draggable="true" data-piece="wQ">
                             </button>
                             <button class="btn btn-piece" data-piece="wR" title="White Rook">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wR.png') }}" alt="wR">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wR.png') }}" alt="wR" draggable="true" data-piece="wR">
                             </button>
                             <button class="btn btn-piece" data-piece="wB" title="White Bishop">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wB.png') }}" alt="wB">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wB.png') }}" alt="wB" draggable="true" data-piece="wB">
                             </button>
                             <button class="btn btn-piece" data-piece="wN" title="White Knight">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wN.png') }}" alt="wN">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wN.png') }}" alt="wN" draggable="true" data-piece="wN">
                             </button>
                             <button class="btn btn-piece" data-piece="wP" title="White Pawn">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wP.png') }}" alt="wP">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wP.png') }}" alt="wP" draggable="true" data-piece="wP">
                             </button>
                         </div>
                     </div>
@@ -44,27 +44,27 @@
 
                     <!-- Right Piece Selector -->
                     <div class="piece-selector piece-selector-right">
-                        <button class="btn btn-editor-tool" id="editor-hand-tool" title="Chọn quân">
+                        <button class="btn btn-editor-tool" id="editor-hand-tool" title="Choose Piece">
                             <i class="bi bi-hand-index"></i>
                         </button>
                         <div class="piece-buttons black-pieces">
                             <button class="btn btn-piece" data-piece="bK" title="Black King">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bK.png') }}" alt="bK">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bK.png') }}" alt="bK" draggable="true" data-piece="bK">
                             </button>
                             <button class="btn btn-piece" data-piece="bQ" title="Black Queen">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bQ.png') }}" alt="bQ">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bQ.png') }}" alt="bQ" draggable="true" data-piece="bQ">
                             </button>
                             <button class="btn btn-piece" data-piece="bR" title="Black Rook">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bR.png') }}" alt="bR">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bR.png') }}" alt="bR" draggable="true" data-piece="bR">
                             </button>
                             <button class="btn btn-piece" data-piece="bB" title="Black Bishop">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bB.png') }}" alt="bB">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bB.png') }}" alt="bB" draggable="true" data-piece="bB">
                             </button>
                             <button class="btn btn-piece" data-piece="bN" title="Black Knight">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bN.png') }}" alt="bN">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bN.png') }}" alt="bN" draggable="true" data-piece="bN">
                             </button>
                             <button class="btn btn-piece" data-piece="bP" title="Black Pawn">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bP.png') }}" alt="bP">
+                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bP.png') }}" alt="bP" draggable="true" data-piece="bP">
                             </button>
                         </div>
                     </div>
@@ -77,7 +77,7 @@
                             <i class="bi bi-x-circle me-1"></i> Xóa hết
                         </button>
                         <button class="btn btn-premium-cancel btn-sm" id="editor-flip-board">
-                            <i class="bi bi-arrow-repeat me-1"></i> Quay bàn cờ
+                            <i class="bi bi-arrow-repeat me-1"></i> Xoay bàn cờ
                         </button>
                         <button class="btn btn-premium-cancel btn-sm" id="editor-start-position">
                             <i class="bi bi-arrow-counterclockwise me-1"></i> Vị trí chuẩn

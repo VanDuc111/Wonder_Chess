@@ -2370,12 +2370,20 @@ body.allow-scroll {
   color: var(--color-text-light);
 }
 
-.btn-editor-tool.active {
+.btn-editor-tool.active-danger {
   background: rgba(220, 53, 69, 0.15);
   border-color: var(--color-danger);
   color: var(--color-danger);
   -webkit-box-shadow: 0 0 15px rgba(220, 53, 69, 0.2);
           box-shadow: 0 0 15px rgba(220, 53, 69, 0.2);
+}
+
+.btn-editor-tool.active-success {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  -webkit-box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
+          box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
 }
 
 .editor-board-wrapper {
