@@ -27,5 +27,5 @@ tests/debug_results/*
 *.bin
 backend/engines/stockfish.exe
 
-# Private documentation
-MO_TA_DU_AN.md
+# Agent Skills
+.agent/

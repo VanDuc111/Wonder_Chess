@@ -109,6 +109,12 @@
     /* Button Group Spacing */
     --btn-group-margin: 10px;
 
+    /* Modal Specific Colors */
+    --color-modal-bg-start: rgba(20, 20, 30, 0.95);
+    --color-modal-bg-end: rgba(16, 16, 22, 0.95);
+    --color-modal-bg-dark: #1a1a2e;
+    --color-modal-bg-darker: #2c2c44; 
+    
     /* Transitions */
     --transition-base: all 0.3s ease;
     --transition-fast: all 0.2s ease;

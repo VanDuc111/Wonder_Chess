@@ -1,7 +1,7 @@
 /* _modals.scss */
 
 .modal-content.modal-dark {
-    background: linear-gradient(180deg, rgba(20, 20, 30, 0.95), rgba(16, 16, 22, 0.95));
+    background: linear-gradient(180deg, var(--color-modal-bg-start), var(--color-modal-bg-end));
     color: var(--color-text-light);
     border-radius: var(--radius-xl) !important;
     border: 1px solid var(--color-border-subtle);
@@ -193,13 +193,13 @@
     border-radius: var(--radius-default);
     overflow: hidden;
     box-shadow: var(--shadow-deep);
-    background: #1a1a2e;
+    background: var(--color-modal-bg-dark);
 }
 
 #editorBoard {
     width: 100%;
     aspect-ratio: 1 / 1;
-    background-color: #2c2c44; /* Dark board base */
+    background-color: var(--color-modal-bg-darker); /* Dark board base */
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -387,7 +387,7 @@
 }
 
 .form-select-custom option {
-    background-color: #1a1a2e;
+    background-color: var(--color-modal-bg-dark);
     color: white;
     padding: 10px;
 }
@@ -412,7 +412,7 @@
     cursor: pointer;
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 3px solid #1a1a2e;
+    border: 3px solid var(--color-modal-bg-dark);
 }
 
 .form-range-custom::-webkit-slider-thumb:hover {
