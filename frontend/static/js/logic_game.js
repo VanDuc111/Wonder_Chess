@@ -374,14 +374,10 @@ class ChessEngine {
      * @async
      */
     async getBestMove(fen, level, time) {
-        const type = typeof selectedBotEngine !== 'undefined' ? selectedBotEngine : 'stockfish';
-        if (type === 'stockfish' && window.SF_MANAGER) return await window.SF_MANAGER.getBestMove(fen, level, 500);
-        const resp = await fetch(window.APP_CONST?.API?.BOT_MOVE || '/api/game/bot_move', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ fen, engine: type, skill_level: level, time_limit: time })
-        });
-        const d = await resp.json();
-        return d.success ? { move: d.move_uci, score: d.evaluation, fen: d.fen } : null;
+        if (window.BOT_MANAGER && typeof window.BOT_MANAGER.getBestMove === 'function') {
+            return await window.BOT_MANAGER.getBestMove(fen, level, time);
+        }
+        return null;
     }
 
     /**

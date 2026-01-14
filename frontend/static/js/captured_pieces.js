@@ -5,12 +5,12 @@
 
 class CapturedPiecesManager {
     constructor() {
-        this.pieceValues = {
+        this.pieceValues = window.APP_CONST?.PIECE_VALUES || {
             'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9,
             'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9
         };
         
-        this.pieceImages = {
+        this.pieceImages = window.APP_CONST?.PATHS?.PIECE_IMAGES || {
             'p': 'img/chesspieces/wikipedia/bP.png',
             'n': 'img/chesspieces/wikipedia/bN.png',
             'b': 'img/chesspieces/wikipedia/bB.png',
@@ -33,6 +33,11 @@ class CapturedPiecesManager {
      * Initialize DOM references
      */
     init() {
+        const ids = window.APP_CONST?.IDS;
+        this.dom.capturedByWhite = document.getElementById(ids?.TIMER_WHITE ? 'captured-by-white' : 'captured-by-white'); // Fix if ID differs
+        this.dom.capturedByBlack = document.getElementById('captured-by-black');
+        
+        // Use generic Ids if available in constants later
         this.dom.capturedByWhite = document.getElementById('captured-by-white');
         this.dom.capturedByBlack = document.getElementById('captured-by-black');
     }
@@ -45,7 +50,7 @@ class CapturedPiecesManager {
     calculateCaptured(game) {
         if (!game) return { white: [], black: [], advantage: 0 };
         
-        const startingPieces = {
+        const startingPieces = window.APP_CONST?.CHESS_RULES?.STARTING_PIECES || {
             'p': 8, 'n': 2, 'b': 2, 'r': 2, 'q': 1, 'k': 1,
             'P': 8, 'N': 2, 'B': 2, 'R': 2, 'Q': 1, 'K': 1
         };
@@ -152,6 +157,9 @@ class CapturedPiecesManager {
      * @returns {string} Piece name
      */
     getPieceName(piece) {
+        if (window.APP_CONST?.PIECE_NAMES_VN) {
+            return window.APP_CONST.PIECE_NAMES_VN[piece] || '';
+        }
         const names = {
             'p': 'Tốt đen', 'n': 'Mã đen', 'b': 'Tượng đen', 
             'r': 'Xe đen', 'q': 'Hậu đen',

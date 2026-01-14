@@ -14,7 +14,9 @@ class BoardEditor {
     }
     
     init() {
-        this.modal = document.getElementById('boardEditorModal');
+        const ids = window.APP_CONST?.IDS;
+        this.modal = document.getElementById(ids?.BOT_SETTINGS_MODAL ? 'boardEditorModal' : 'boardEditorModal'); // Use actual ID from constants if mapped
+        this.modal = document.getElementById('boardEditorModal'); // Keep specific if not in constants
         if (!this.modal) return;
         
         // Initialize when modal is shown
@@ -60,7 +62,7 @@ class BoardEditor {
             draggable: isMoveMode, 
             onDrop: isMoveMode ? this.onPieceMove.bind(this) : undefined,
             dropOffBoard: isMoveMode ? 'trash' : 'snapback',
-            pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
         };
         
         this.editorBoard = Chessboard('editorBoard', config);
@@ -252,11 +254,11 @@ class BoardEditor {
             });
         }
         
-        // Start position
         const startBtn = document.getElementById('editor-start-position');
         if (startBtn) {
             startBtn.addEventListener('click', () => {
-                this.currentPosition = this.fenToPosition('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+                const startFen = window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+                this.currentPosition = this.fenToPosition(startFen);
                 this.recreateBoard();
                 this.updateFENInput();
                 this.validatePosition();
@@ -296,7 +298,7 @@ class BoardEditor {
             draggable: isMoveMode,
             onDrop: isMoveMode ? this.onPieceMove.bind(this) : undefined,
             dropOffBoard: isMoveMode ? 'trash' : 'snapback',
-            pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
         };
         
         this.editorBoard = Chessboard('editorBoard', config);
@@ -428,7 +430,10 @@ class BoardEditor {
             rows.push(row);
         }
         
-        return rows.join('/') + ' w KQkq - 0 1';
+        const startFen = window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        const suffix = startFen.split(' ').slice(1).join(' ');
+        
+        return rows.join('/') + ' ' + suffix;
     }
     
     applyPositionToMainBoard() {

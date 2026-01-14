@@ -43,8 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Chatbot welcome message (only on page with chatbot)
         const chatbotMessages = document.getElementById('chatbot-messages');
         if (chatbotMessages && !sessionStorage.getItem('alice_welcomed')) {
-            const welcomeMessage = `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
-            // Check if displayChatbotMessage is defined (usually in chat_manager.js)
+            const welcomeMessage = window.APP_CONST?.MESSAGES?.WELCOME ? 
+                window.APP_CONST.MESSAGES.WELCOME(nickname) : 
+                `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
+            
             if (typeof displayChatbotMessage === 'function') {
                 displayChatbotMessage(welcomeMessage);
                 sessionStorage.setItem('alice_welcomed', 'true');

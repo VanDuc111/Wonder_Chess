@@ -93,7 +93,9 @@ class AliceChat {
 
         // Hiển thị lời chào mặc định sau khi xóa sạch
         setTimeout(() => {
-            const welcomeMsg = `Chào bạn${nickname !== 'bạn' ? ', ' + nickname : ''}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
+            const welcomeMsg = window.APP_CONST?.MESSAGES?.WELCOME ? 
+                window.APP_CONST.MESSAGES.WELCOME(nickname) : 
+                `Chào bạn${nickname !== 'bạn' ? ', ' + nickname : ''}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
             this.displayMessage(welcomeMsg, true, true);
         }, 300);
     }
@@ -199,7 +201,7 @@ class AliceChat {
         if (sender === 'Alice') {
             msgEl.innerHTML = `
                 <div class="typing-indicator">
-                    <img src="static/img/alice-loading.svg" alt="Alice is thinking..." class="alice-loading-svg">
+                    <img src="${window.APP_CONST?.ASSETS?.ALICE_LOADING_SVG || 'static/img/alice-loading.svg'}" alt="Alice is thinking..." class="alice-loading-svg">
                 </div>
             `;
         } else {
@@ -333,8 +335,9 @@ class AliceChat {
         
         // 1. Trigger: Khai cuộc ở nước thứ 5 (Full move 5 = half-move 10)
         const openingName = this.dom.openingName?.textContent || "N/A";
-        if (curIdx === 10 && openingName !== "N/A" && openingName !== "Khởi đầu") {
-            this._handleCoachComment("phân tích khai cuộc này một cách chuyên sâu");
+        const defaultOpening = window.APP_CONST?.STRINGS?.OPENING_DEFAULT || "Khởi đầu";
+        if (curIdx === 10 && openingName !== "N/A" && openingName !== defaultOpening) {
+            this._handleCoachComment(window.APP_CONST?.MESSAGES?.COACH_COMMENT_OPENING || "phân tích khai cuộc này một cách chuyên sâu");
             return;
         }
 
@@ -345,10 +348,11 @@ class AliceChat {
             const diff = (curIdx % 2 !== 0) ? (curVal - prevVal) : (prevVal - curVal);
 
             let triggerReason = "";
-            if (diff > 1.5) triggerReason = "khen ngợi nước đi thiên tài này";
-            else if (diff > 0.8) triggerReason = "nhận xét đây là một nước đi rất tốt";
-            else if (diff < -1.5) triggerReason = "phê bình sai lầm nghiêm trọng này";
-            else if (diff < -0.7) triggerReason = "chỉ ra đây là một sai lầm và tại sao";
+            const msg = window.APP_CONST?.MESSAGES;
+            if (diff > 1.5) triggerReason = msg?.COACH_COMMENT_BRILLIANT || "khen ngợi nước đi thiên tài này";
+            else if (diff > 0.8) triggerReason = msg?.COACH_COMMENT_GOOD || "nhận xét đây là một nước đi rất tốt";
+            else if (diff < -1.5) triggerReason = msg?.COACH_COMMENT_BLUNDER || "phê bình sai lầm nghiêm trọng này";
+            else if (diff < -0.7) triggerReason = msg?.COACH_COMMENT_MISTAKE || "chỉ ra đây là một sai lầm và tại sao";
 
             if (triggerReason) {
                 this._handleCoachComment(triggerReason);

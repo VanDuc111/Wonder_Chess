@@ -121,7 +121,7 @@ class VisionManager {
         this.dom.filePreview?.classList.add('d-none');
         this.dom.dropZone?.classList.remove('has-file');
         if (this.dom.imageStatus) {
-            this.dom.imageStatus.textContent = "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
+            this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SUPPORTED_FORMATS || "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
         }
     }
 
@@ -255,7 +255,7 @@ class VisionManager {
      */
     _handleImageFiles(file) {
         if (!file.type.startsWith('image/')) {
-            alert("Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
+            alert(window.APP_CONST?.MESSAGES?.INVALID_IMAGE || "Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
             return;
         }
 
@@ -267,7 +267,7 @@ class VisionManager {
             
             this.dom.filePreview?.classList.remove('d-none');
             this.dom.dropZone?.classList.add('has-file');
-            if (this.dom.imageStatus) this.dom.imageStatus.textContent = "Sẵn sàng để phân tích!";
+            if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_READY_SCAN || "Sẵn sàng để phân tích!";
         };
         reader.readAsDataURL(file);
     }
@@ -421,17 +421,18 @@ class VisionManager {
      */
     showFriendlyError(statusEl, rawError) {
         if (!statusEl) return;
-        let title = "Ôi không! Alice bị lạc rồi...";
-        let message = "Kết nối tới máy chủ AI gặp chút trục trặc. Bạn hãy thử lại sau giây lát nhé.";
+        const msg = window.APP_CONST?.MESSAGES;
+        let title = msg?.VISION_ERROR_LOST || "Ôi không! Alice bị lạc rồi...";
+        let message = msg?.VISION_ERROR_LOST_DESC || "Kết nối tới máy chủ AI gặp chút trục trặc. Bạn hãy thử lại sau giây lát nhé.";
         
         if (rawError?.includes('timeout') || rawError?.includes(' Read timed out')) {
-            title = "Kết nối quá hạn (Timeout)";
-            message = "Alice đã cố gắng hết sức nhưng máy chủ phản hồi quá chậm.";
+            title = msg?.VISION_ERROR_TIMEOUT || "Kết nối quá hạn (Timeout)";
+            message = msg?.VISION_ERROR_TIMEOUT_DESC || "Alice đã cố gắng hết sức nhưng máy chủ phản hồi quá chậm.";
         }
 
         statusEl.innerHTML = `
             <div class=\"error-rabbit-container\">
-                <img src=\"static/img/alice-error.webp\" class=\"error-rabbit-img\" alt=\"Sad Alice\">
+                <img src=\"${window.APP_CONST?.ASSETS?.ALICE_ERROR_IMG || 'static/img/alice-error.webp'}\" class=\"error-rabbit-img\" alt=\"Sad Alice\">
                 <div class=\"friendly-error-msg\">
                     <strong>${title}</strong><br>${message}
                 </div>

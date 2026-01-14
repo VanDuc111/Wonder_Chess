@@ -167,11 +167,20 @@ class ChessTimer {
         this.stop();
         this._ensureDom();
         this.isTimedGame = false;
-        const winner = (color === 'w') ? 'Đen' : 'Trắng';
+        
+        const whiteVN = window.APP_CONST?.STRINGS?.COLOR_WHITE_VN || 'Trắng';
+        const blackVN = window.APP_CONST?.STRINGS?.COLOR_BLACK_VN || 'Đen';
+        const winner = (color === 'w') ? blackVN : whiteVN;
+        
+        const title = window.APP_CONST?.MESSAGES?.GAME_OVER_TIME_TITLE || "Hết giờ";
+        const body = window.APP_CONST?.MESSAGES?.GAME_OVER_TIME_DESC ? 
+            window.APP_CONST.MESSAGES.GAME_OVER_TIME_DESC(winner) : 
+            `Hết giờ! ${winner} thắng cuộc.`;
+
         if (window.LOGIC_GAME && window.LOGIC_GAME.showGameOver) {
-            window.LOGIC_GAME.showGameOver("Hết giờ", `Hết giờ! ${winner} thắng cuộc.`);
+            window.LOGIC_GAME.showGameOver(title, body);
         } else if (window.showGameOverModal) {
-            window.showGameOverModal("Hết giờ", `Hết giờ! ${winner} thắng cuộc.`);
+            window.showGameOverModal(title, body);
         }
     }
 }
