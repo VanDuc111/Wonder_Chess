@@ -1,12 +1,13 @@
 let board = null;
 const STARTING_FEN = (window.APP_CONST && window.APP_CONST.STARTING_FEN) ? window.APP_CONST.STARTING_FEN : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-let playerColor = null;
-let isPlayerTurn = true;
-let selectedBotColor = 'r';
-let selectedBotEngine = 'stockfish';
-let selectedBotLevel = 10;
-let selectedBotTime = '0';
-let selectedBotIncrement = 0;
+// Bot configuration (synced with BOT_MANAGER)
+window.selectedBotColor = 'r';
+window.selectedBotEngine = 'stockfish';
+window.selectedBotLevel = 10;
+window.selectedBotTime = '0';
+window.selectedBotIncrement = 0;
+window.playerColor = null;
+window.isPlayerTurn = true;
 
 const JS_MATE_SCORE_BASE = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_SCORE_BASE) ? window.APP_CONST.ENGINE.MATE_SCORE_BASE : 1000000;
 const JS_MATE_DEPTH_ADJUSTMENT = (window.APP_CONST && window.APP_CONST.ENGINE && window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT) ? window.APP_CONST.ENGINE.MATE_DEPTH_ADJUSTMENT : 500;
@@ -111,8 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
         resetTimers();
 
         // 2. Reset biến trạng thái Bot
-        playerColor = null;
-        isPlayerTurn = true;
+        window.playerColor = null;
+        window.isPlayerTurn = true;
 
         // 3. Khởi tạo lại bàn cờ về hướng 'white'
         initChessboard('white');
@@ -155,91 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupModalBehavior('bot-settings-modal', '#nav-play-bot');
 
 
-    // === BOT SETTINGS UI LOGIC ===
-    const botEngineSelect = document.getElementById('bot-engine-select');
-    const botLevelSlider = document.getElementById('bot-level-slider');
-    const botLevelSelect = document.getElementById('bot-level-select');
-    const botSideSelect = document.getElementById('bot-side-select');
-    const botTimeSelect = document.getElementById('bot-time-select');
-    const botIncrementSelect = document.getElementById('bot-increment-select');
-    const levelDisplay = document.getElementById('level-value-display');
-
-    // Sync Slider and Level Display/Select
-    if (botLevelSlider) {
-        botLevelSlider.addEventListener('input', function() {
-            const val = parseInt(this.value);
-            selectedBotLevel = val;
-            
-            // Map 0-20 to ELO-like display (850 + Level * 50)
-            const elo = 850 + (val * 50); 
-            if (levelDisplay) levelDisplay.textContent = elo;
-
-            // Update Select
-            if (val <= 4) botLevelSelect.value = "0";
-            else if (val <= 8) botLevelSelect.value = "5";
-            else if (val <= 12) botLevelSelect.value = "10";
-            else if (val <= 16) botLevelSelect.value = "15";
-            else botLevelSelect.value = "20";
-        });
-    }
-
-    if (botLevelSelect) {
-        botLevelSelect.addEventListener('change', function() {
-            const val = parseInt(this.value);
-            botLevelSlider.value = val;
-            selectedBotLevel = val;
-            const elo = 850 + (val * 50);
-            if (levelDisplay) levelDisplay.textContent = elo;
-        });
-    }
-
-    // Initialize Level Display
-    if (botLevelSlider && levelDisplay) {
-        levelDisplay.textContent = 850 + (parseInt(botLevelSlider.value) * 50);
-    }
-    // 3. LOGIC BẮT ĐẦU GAME BOT
-    const startBotGameBtn = document.getElementById('start-bot-game-btn');
-    if (startBotGameBtn) {
-        startBotGameBtn.addEventListener('click', () => {
-            // Read all settings
-            selectedBotEngine = botEngineSelect.value;
-            selectedBotLevel = parseInt(botLevelSlider.value);
-            selectedBotColor = botSideSelect.value;
-            selectedBotTime = botTimeSelect.value;
-            selectedBotIncrement = parseInt(botIncrementSelect.value);
-
-            // Ẩn Modal
-            document.getElementById('bot-settings-modal').style.display = 'none';
-            // Xử lý lựa chọn màu
-            let finalPlayerColor = selectedBotColor;
-            let boardOrientation;
-
-            if (selectedBotColor === 'r') {
-                finalPlayerColor = (Math.random() < 0.5) ? 'w' : 'b';
-            }
-
-            playerColor = finalPlayerColor;
-            boardOrientation = (finalPlayerColor === 'b') ? 'black' : 'white';
-
-            // Cập nhật công tắc xoay bàn cờ trên UI
-            const flipSwitch = document.getElementById('flip-board-switch');
-            if (flipSwitch) flipSwitch.checked = (boardOrientation === 'black');
-
-            // 1. Khởi tạo đồng hồ TRƯỚC khi tạo bàn cờ để onTurnEnd nhận diện được biến isTimedGame
-            const timeLimitMinutes = parseInt(selectedBotTime);
-            if (timeLimitMinutes > 0) {
-                if (window.initTimers) window.initTimers(timeLimitMinutes);
-            } else {
-                if (window.resetTimers) window.resetTimers();
-            }
-
-            // 2. Clear cache
-            fetch((window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache', {method: 'POST'});
-
-            // 3. Khởi tạo bàn cờ
-            initChessboard(boardOrientation);
-        });
-    }
+    // Bot Settings Modal behavior is initialized here, 
+    // while the internal logic (sliders, start button) is handled by BotManager.js
+    setupModalBehavior('bot-settings-modal', '#nav-play-bot');
 
 
     // ===== THANH ĐIỂM =====
@@ -540,37 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Hàm chung để xử lý việc chọn nút trong Modal
-    function setupModalButtonSelection(selector) {
-        document.querySelectorAll(selector).forEach(button => {
-            button.addEventListener('click', function () {
-                const group = this.parentElement.querySelectorAll('button');
-
-                group.forEach(btn => btn.classList.remove('selected'));
-
-                this.classList.add('selected');
-
-                // Màu quân và thời gian
-                const color = this.getAttribute('data-color');
-                const time = this.getAttribute('data-time');
-
-                if (color) {
-                    selectedBotColor = color;
-                    console.log("Đã chọn màu:", selectedBotColor);
-                }
-                if (time) {
-                    selectedBotTime = time;
-                    console.log("Đã chọn thời gian:", selectedBotTime);
-                }
-            });
-        });
-    }
-
-    // Áp dụng cho lựa chọn màu
-    setupModalButtonSelection('.setting-group button[data-color]');
-
-    // Áp dụng cho lựa chọn thời gian
-    setupModalButtonSelection('.setting-group button[data-time]');
+    // Modal logic is now partially managed by BotManager.js
 
     const gameOverModalEl = document.getElementById('gameOverModal');
     if (gameOverModalEl) {
@@ -617,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resetTimers();
             }
 
-            if (playerColor === 'b') {
+            if (window.playerColor === 'b') {
                 handleBotTurn();
             }
         });

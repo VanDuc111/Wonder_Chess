@@ -172,3 +172,28 @@ class CapturedPiecesManager {
 
 // Initialize global instance
 window.CAPTURED_PIECES = new CapturedPiecesManager();
+
+/**
+ * Integration helpers (Moved from captured_pieces_integration.js)
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.CAPTURED_PIECES) {
+        window.CAPTURED_PIECES.init();
+    }
+});
+
+window.updateCapturedPieces = function(game) {
+    if (window.CAPTURED_PIECES && game) {
+        try {
+            window.CAPTURED_PIECES.update(game);
+        } catch (error) {
+            console.error('Error updating captured pieces:', error);
+        }
+    }
+};
+
+window.clearCapturedPieces = function() {
+    if (window.CAPTURED_PIECES) {
+        window.CAPTURED_PIECES.clear();
+    }
+};
