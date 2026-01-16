@@ -4,13 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const gridEl = document.getElementById('opening-grid');
     const searchInput = document.getElementById('opening-search');
     const filterBtns = document.querySelectorAll('.category-btn');
-    const userDisplay = document.getElementById('user-display');
-    
-    // Hiển thị nickname từ localStorage
-    const storedNickname = localStorage.getItem('userNickname');
-    if (storedNickname && userDisplay) {
-        userDisplay.textContent = `Chào, ${storedNickname}!`;
-    }
 
     let currentFilter = 'all';
     let searchQuery = '';

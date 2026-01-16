@@ -34,13 +34,29 @@
     
     {% block extra_css %}{% endblock %}
 
+    <!-- Server-side data provider for JS -->
+    <div id="user-info-provider" class="d-none" 
+         data-is-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}"
+         data-display-name="{{ current_user.display_name or current_user.username or '' }}">
+    </div>
+
     <script>
         (function() {
-            const nickname = localStorage.getItem('userNickname');
+            const provider = document.getElementById('user-info-provider');
+            window.USER_DATA = {
+                isAuthenticated: provider.dataset.isAuthenticated === 'true',
+                displayName: provider.dataset.displayName
+            };
+        })();
+    </script>
+
+    <script>
+        (function() {
+            const welcomeShown = localStorage.getItem('welcomeShown');
             const isWelcomePage = window.location.pathname === '/welcome';
-            if (!nickname && !isWelcomePage) {
+            if (!welcomeShown && !isWelcomePage) {
                 window.location.href = '/welcome';
-            } else if (nickname && isWelcomePage) {
+            } else if (welcomeShown && isWelcomePage) {
                 window.location.href = '/';
             }
         })();

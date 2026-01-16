@@ -25,27 +25,23 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = `https://chessboardjs.com/img/chesspieces/${pieceTheme}/${p}.png`;
     });
 
-    const userDisplaySpan = document.getElementById('user-display');
     if (window.ALICE_CHAT) window.ALICE_CHAT.init();
+    
     const loadDataModalEl = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.LOAD_DATA_MODAL) ? window.APP_CONST.IDS.LOAD_DATA_MODAL : 'loadDataModal');
-    const videoElement = document.getElementById((window.APP_CONST && window.APP_CONST.IDS && window.APP_CONST.IDS.WEBCAM_VIDEO) ? window.APP_CONST.IDS.WEBCAM_VIDEO : 'webcam-feed');
     if (loadDataModalEl) {
         loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
     }
 
     // Initialize application state
-    function initApp(nickname) {
-        if (userDisplaySpan) {
-            userDisplaySpan.textContent = `Chào, ${nickname}!`;
-            userDisplaySpan.classList.remove('d-none');
-        }
+    function initApp() {
+        const displayName = (window.USER_DATA && window.USER_DATA.isAuthenticated) ? window.USER_DATA.displayName : "bạn";
 
         // Chatbot welcome message (only on page with chatbot)
         const chatbotMessages = document.getElementById('chatbot-messages');
         if (chatbotMessages && !sessionStorage.getItem('alice_welcomed')) {
             const welcomeMessage = window.APP_CONST?.MESSAGES?.WELCOME ? 
-                window.APP_CONST.MESSAGES.WELCOME(nickname) : 
-                `Chào bạn, ${nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
+                window.APP_CONST.MESSAGES.WELCOME(displayName) : 
+                `Chào ${displayName}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
             
             if (typeof displayChatbotMessage === 'function') {
                 displayChatbotMessage(welcomeMessage);
@@ -65,10 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const storedNickname = localStorage.getItem('userNickname');
-    if (storedNickname) {
-        initApp(storedNickname);
-    }
+    // Initialize the app immediately
+    initApp();
 
     // ===== QUẢN LÝ CÁC CHẾ ĐỘ TRÊN NAVBAR =====
 

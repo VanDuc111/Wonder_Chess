@@ -7,11 +7,12 @@
 {% block body_content %}
 <div id="welcome-screen" class="d-flex justify-content-center align-items-center vh-100">
     <div class="welcome-container text-center">
-        <h1 class="welcome-title mb-4">Chào Mừng Đến Với WonderChess</h1>
-        <p class="welcome-question mb-4">Tôi có thể gọi bạn là gì?</p>
-        <form id="nickname-form" class="mx-auto" style="max-width: 400px;">
-            <input type="text" id="nickname-input" class="form-control mb-3" placeholder="Nhập nickname của bạn..." required>
-            <button type="submit" class="start-button w-100">Bắt Đầu!</button>
+        <h1 class="welcome-title mb-5">Chào Mừng Đến Với WonderChess</h1>
+        <form id="welcome-form" class="mx-auto" style="max-width: 300px;">
+            <button type="submit" class="start-button d-flex align-items-center justify-content-center gap-2">
+                BẮT ĐẦU!
+                <i class="bi bi-arrow-right-circle-fill fs-4"></i>
+            </button>
         </form>
     </div>
 </div>
@@ -20,21 +21,19 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const nicknameForm = document.getElementById('nickname-form');
-        const nicknameInput = document.getElementById('nickname-input');
+        const welcomeForm = document.getElementById('welcome-form');
 
-        if (nicknameForm) {
-            nicknameForm.addEventListener('submit', (e) => {
+        if (welcomeForm) {
+            welcomeForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const nickname = nicknameInput.value.trim();
-                if (nickname) {
-                    localStorage.setItem('userNickname', nickname);
-                    window.location.href = '/';
-                }
+                // Đánh dấu là đã xem trang chào mừng
+                localStorage.setItem('welcomeShown', 'true');
+                window.location.href = '/';
             });
         }
 
-        if (localStorage.getItem('userNickname')) {
+        // Nếu đã xem rồi thì redirect thẳng vào trang chủ
+        if (localStorage.getItem('welcomeShown')) {
             window.location.href = '/';
         }
     });
