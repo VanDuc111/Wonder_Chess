@@ -23,9 +23,9 @@
                     <li class="nav-item">
                         <a id="nav-opening" class="nav-link nav-mode-link {{ 'active' if active_page == 'openings' }}" href="{{ url_for('main.openings_page') }}">Khai cuộc</a>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a id="nav-learn" class="nav-link nav-mode-link {{ 'active' if active_page == 'learn' }}" href="{{ url_for('main.learn_page') }}">Học tập</a>
-                    </li>
+                    </li> -->
                 </ul>
                 <div class="d-flex align-items-center" id="navbar-user-section">
                     {% if current_user.is_authenticated %}
