@@ -3,7 +3,10 @@ Module chuyển ảnh bàn cờ 3D thành chuỗi FEN sử dụng Roboflow và O
 """
 import cv2
 import numpy as np
-from ultralytics import YOLO
+try:
+    from backend.services.onnx_inference import YOLOv8ONNX
+except ImportError:
+    from onnx_inference import YOLOv8ONNX
 import os
 from dotenv import load_dotenv
 import base64
@@ -17,12 +20,14 @@ except ImportError:
 
 # --- CẤU HÌNH ---
 # Tự động load model một lần duy nhất
+PIECE_NAMES = {0: 'BB', 1: 'BK', 2: 'BKN', 3: 'BP', 4: 'BQ', 5: 'BR', 6: 'WB', 7: 'WK', 8: 'WKN', 9: 'WP', 10: 'WQ', 11: 'WR'}
+
 try:
-    BOARD_MODEL = YOLO('backend/models/chessboard_detector_best.pt')
-    PIECE_MODEL = YOLO('backend/models/chess_pieces_detector_best.pt')
-    print("✅ Đã load thành công 2 model YOLO (Board & Pieces).")
+    BOARD_MODEL = YOLOv8ONNX('backend/models/chessboard_detector_best.onnx', imgsz=640)
+    PIECE_MODEL = YOLOv8ONNX('backend/models/chess_pieces_detector_best.onnx', imgsz=640)
+    print("✅ Đã load thành công 2 model ONNX (Board & Pieces) - RAM optimized.")
 except Exception as e:
-    print(f"❌ Lỗi khi load model YOLO: {e}")
+    print(f"❌ Lỗi khi load model ONNX: {e}")
     BOARD_MODEL = None
     PIECE_MODEL = None
 
@@ -74,20 +79,20 @@ def analyze_image_to_fen(image_path):
             return None, None, "Dịch vụ AI chưa được khởi tạo thành công."
 
         print("- Bước 1: Đang tìm bàn cờ...")
-        board_results = BOARD_MODEL.predict(image_path, conf=0.40, verbose=False)
+        board_results = BOARD_MODEL.predict(img, conf=0.40)
         
-        if len(board_results[0].boxes) > 0:
+        if len(board_results) > 0:
             # Lấy box có confidence cao nhất
-            top_box = sorted(board_results[0].boxes, key=lambda x: x.conf[0], reverse=True)[0]
+            top_res = sorted(board_results, key=lambda x: x['conf'], reverse=True)[0]
+            x1, y1, x2, y2 = top_res['box']
             
             # Chuyển đổi format sang dict cũ để giữ nguyên logic xử lý phía dưới
-            x, y, w_box, h_box = top_box.xywh[0].tolist()
             board_box = {
-                'x': x,
-                'y': y,
-                'width': w_box,
-                'height': h_box,
-                'confidence': float(top_box.conf[0])
+                'x': (x1 + x2) / 2,
+                'y': (y1 + y2) / 2,
+                'width': x2 - x1,
+                'height': y2 - y1,
+                'confidence': float(top_res['conf'])
             }
             print(f"✅ Đã tìm thấy bàn cờ (Conf: {board_box['confidence']:.2f})")
 
@@ -147,6 +152,7 @@ def analyze_image_to_fen(image_path):
                 nx2 = min(w, x2 + pad_w)
                 ny2 = min(h, y2 + pad_h)
 
+                # Cắt ảnh
                 img_crop = img[ny1:ny2, nx1:nx2]
                 if img_crop.size > 0:
                     img = img_crop
@@ -188,21 +194,21 @@ def analyze_image_to_fen(image_path):
     piece_preds = []
     try:
         print("- Bước 2: Đang nhận diện quân cờ...")
-        # Chạy dự đoán trực tiếp trên mảng numpy 'img'
-        piece_results = PIECE_MODEL.predict(img, conf=0.40, verbose=False)
+        # Chạy dự đoán trực tiếp trên mảng numpy 'img' (đã có thể bị crop)
+        piece_results = PIECE_MODEL.predict(img, conf=0.40)
         
-        for box in piece_results[0].boxes:
-            bx, by, bw, bh = box.xywh[0].tolist()
-            cls_id = int(box.cls[0])
-            cls_name = PIECE_MODEL.names[cls_id]
+        for res in piece_results:
+            x1, y1, x2, y2 = res['box']
+            cls_id = int(res['class'])
+            cls_name = PIECE_NAMES.get(cls_id, "unknown")
             
             piece_preds.append({
-                'x': bx,
-                'y': by,
-                'width': bw,
-                'height': bh,
+                'x': (x1 + x2) / 2,
+                'y': (y1 + y2) / 2,
+                'width': x2 - x1,
+                'height': y2 - y1,
                 'class': cls_name,
-                'confidence': float(box.conf[0])
+                'confidence': float(res['conf'])
             })
         print(f"✅ Tìm thấy {len(piece_preds)} quân cờ.")
     except Exception as e:
@@ -390,23 +396,38 @@ def analyze_image_to_fen(image_path):
         if not os.path.exists(debug_dir):
             os.makedirs(debug_dir)
         
-        # 1. Lưu ảnh hiện tại
+        # 1. Lưu ảnh gốc + debug (vẽ grid lên ảnh gốc)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         debug_filename = f"debug_{timestamp}.jpg"
         debug_path = os.path.join(debug_dir, debug_filename)
         cv2.imwrite(debug_path, debug_img)
-        print(f" Đã lưu ảnh debug: {debug_path}")
+        print(f" ✅ Đã lưu ảnh debug: {debug_path}")
 
-        # 2. Dọn dẹp ảnh cũ (> 24h), giữ lại .gitkeep
+        # 2. Xử lý & Lưu ảnh đã uốn (Warped Board) - Để kiểm tra ma trận M
+        if use_perspective and M is not None and side_len > 0:
+            warped_img = cv2.warpPerspective(img, M, (int(side_len), int(side_len)))
+            
+            # Vẽ lưới grid 8x8 lên ảnh đã uốn để kiểm tra độ khớp
+            sq_size = side_len / 8
+            for i in range(1, 8):
+                # Đường ngang
+                cv2.line(warped_img, (0, int(i * sq_size)), (int(side_len), int(i * sq_size)), (0, 255, 0), 1)
+                # Đường dọc
+                cv2.line(warped_img, (int(i * sq_size), 0), (int(i * sq_size), int(side_len)), (0, 255, 0), 1)
+            
+            warped_filename = f"warped_{timestamp}.jpg"
+            warped_path = os.path.join(debug_dir, warped_filename)
+            cv2.imwrite(warped_path, warped_img)
+            print(f" ✅ Đã lưu ảnh uốn phẳng (Warped): {warped_path}")
+
+        # 3. Dọn dẹp ảnh cũ (> 24h), giữ lại .gitkeep
         now = time.time()
         for f in os.listdir(debug_dir):
-            # Skip .gitkeep files
-            if f == '.gitkeep':
-                continue
+            if f == '.gitkeep': continue
             f_path = os.path.join(debug_dir, f)
             if os.path.isfile(f_path) and now - os.path.getmtime(f_path) > 86400: # 24h
                 os.remove(f_path)
-                print(f" Đã xóa ảnh debug cũ: {f}")
+                print(f" 🗑️ Đã xóa ảnh debug cũ: {f}")
     except Exception as e:
         print(f"⚠️ Lỗi khi lưu/dọn dẹp ảnh debug: {e}")
 

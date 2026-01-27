@@ -25,36 +25,49 @@ def order_points(pts):
 
 def find_board_corners(image):
     """
-    Bước 1: Tìm 4 góc của bàn cờ sử dụng Canny Edge & Contours
+    Bước 1: Tìm 4 góc của bàn cờ sử dụng Adaptive Threshold & Contour Approximation.
+    Tối ưu cho việc tìm hình tứ giác (hình thang) của bàn cờ trong ảnh 3D.
     """
-    # 1. Tiền xử lý (Xám -> Mờ -> Cạnh)
+    # 1. Tiền xử lý (Xám -> Mờ -> Nhị phân hóa thích nghi)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(blur, 50, 150)
+    
+    # Làm mượt ảnh để giảm nhiễu từ các ô cờ và quân cờ
+    blur = cv2.GaussianBlur(gray, (7, 7), 0)
+    
+    # Adaptive Threshold giúp tách biệt bàn cờ khỏi nền ngay cả khi ánh sáng không đều
+    # Ta sử dụng kích thước block lớn (11-21) để bắt được các cạnh lớn của bàn cờ
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                   cv2.THRESH_BINARY_INV, 21, 5)
+
+    # Dilation giúp nối liền các đoạn cạnh bị đứt quãng do quân cờ che khuất
+    kernel = np.ones((3,3), np.uint8)
+    thresh = cv2.dilate(thresh, kernel, iterations=1)
 
     # 2. Tìm đường bao (Contours)
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Sắp xếp lấy contour lớn nhất (Giả định bàn cờ là vật thể to nhất)
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
+    # Sắp xếp lấy các contour lớn nhất
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:10]
 
-    screen_cnt = None
+    img_area = image.shape[0] * image.shape[1]
+    
     for c in contours:
-        # Làm mượt đường bao
+        # Tính chu vi và làm mượt đường bao
         peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+        
+        # Thử nghiệm với các giá trị epsilon khác nhau để tìm ra 4 góc
+        for eps_factor in [0.02, 0.05, 0.1]:
+            approx = cv2.approxPolyDP(c, eps_factor * peri, True)
 
-        # Nếu đường bao có 4 điểm -> Khả năng cao là bàn cờ (hình chữ nhật)
-        if len(approx) == 4:
-            screen_cnt = approx
-            break
+            # Nếu đường bao có 4 điểm và diện tích chiếm ít nhất 20% vùng ảnh
+            if len(approx) == 4:
+                area = cv2.contourArea(approx)
+                if area > img_area * 0.2:
+                    print(f"✅ OpenCV tìm thấy hình tứ giác (Area: {area/img_area:.2f})")
+                    return approx.reshape(4, 2)
 
-    if screen_cnt is None:
-        print("Không tìm thấy bàn cờ (Contours 4 cạnh)")
-        return None
-
-    # Trả về 4 điểm góc
-    return screen_cnt.reshape(4, 2)
+    print("⚠️ Không tìm thấy bàn cờ bằng thuật toán Contour.")
+    return None
 
 
 def get_board_mapping_matrix(corners, img_w, img_h):
