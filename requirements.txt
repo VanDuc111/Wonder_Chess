@@ -10,7 +10,7 @@ python-chess==1.999
 # --- Computer Vision & Image Processing ---
 numpy==2.2.6
 opencv-python-headless==4.10.0.84
-roboflow==1.2.11
+ultralytics==8.4.7
 Pillow==11.3.0
 
 # --- AI & LLM ---

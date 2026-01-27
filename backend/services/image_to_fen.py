@@ -3,7 +3,7 @@ Module chuyển ảnh bàn cờ 3D thành chuỗi FEN sử dụng Roboflow và O
 """
 import cv2
 import numpy as np
-from roboflow import Roboflow
+from ultralytics import YOLO
 import os
 from dotenv import load_dotenv
 import base64
@@ -15,22 +15,16 @@ try:
 except ImportError:
     from vision_core import find_board_corners, get_board_mapping_matrix, map_point_to_grid
 
-load_dotenv()
-
 # --- CẤU HÌNH ---
-API_KEY = os.getenv("ROBOFLOW_API_KEY")
-ROBOFLOW_CHESS_PIECES_MODEL_ID = os.getenv("ROBOFLOW_CHESS_PIECES_MODEL_ID")
-ROBOFLOW_BOARD_MODEL_ID = os.getenv("ROBOFLOW_BOARD_MODEL_ID")
-
+# Tự động load model một lần duy nhất
 try:
-    ROBOFLOW_CHESS_PIECES_VERSION = int(os.getenv("ROBOFLOW_CHESS_PIECES_VERSION", 1))
-except:
-    ROBOFLOW_CHESS_PIECES_VERSION = 1
-
-try:
-    ROBOFLOW_BOARD_VERSION = int(os.getenv("ROBOFLOW_BOARD_VERSION", 1))
-except:
-    ROBOFLOW_BOARD_VERSION = 1
+    BOARD_MODEL = YOLO('backend/models/chessboard_detector_best.pt')
+    PIECE_MODEL = YOLO('backend/models/chess_pieces_detector_best.pt')
+    print("✅ Đã load thành công 2 model YOLO (Board & Pieces).")
+except Exception as e:
+    print(f"❌ Lỗi khi load model YOLO: {e}")
+    BOARD_MODEL = None
+    PIECE_MODEL = None
 
 CLASS_TO_FEN = {
     # Quân Đen
@@ -73,38 +67,33 @@ def analyze_image_to_fen(image_path):
         cv2.imwrite(image_path, img)
         h, w = new_h, new_w
 
-    # 2. Gọi Roboflow (Quy trình 2 Model)
+    # 2. XỬ LÝ AI - BƯỚC 1: TÌM BÀN CỜ
+    board_box = None
     try:
-        if not API_KEY or not ROBOFLOW_CHESS_PIECES_MODEL_ID or not ROBOFLOW_BOARD_MODEL_ID:
-            return None, None, "Thiếu cấu hình Roboflow API Key hoặc Model IDs."
+        if BOARD_MODEL is None or PIECE_MODEL is None:
+            return None, None, "Dịch vụ AI chưa được khởi tạo thành công."
 
-        rf = Roboflow(api_key=API_KEY)
-
-        # --- BƯỚC A: TÌM BÀN CỜ (Model chessboard) ---
-        print(f"- Bước 1: Đang tìm bàn cờ (Model: {ROBOFLOW_BOARD_MODEL_ID[:5]}... v{ROBOFLOW_BOARD_VERSION})...")
-        board_project = rf.workspace().project(ROBOFLOW_BOARD_MODEL_ID)
-        board_model = board_project.version(ROBOFLOW_BOARD_VERSION).model
-        board_prediction = board_model.predict(image_path, confidence=40).json()
-        board_results = board_prediction.get("predictions", [])
+        print("- Bước 1: Đang tìm bàn cờ...")
+        board_results = BOARD_MODEL.predict(image_path, conf=0.40, verbose=False)
         
-        board_box = None
-        if board_results:
-            # Lấy kết quả có độ tin cậy cao nhất
-            board_box = sorted(board_results, key=lambda x: x['confidence'], reverse=True)[0]
+        if len(board_results[0].boxes) > 0:
+            # Lấy box có confidence cao nhất
+            top_box = sorted(board_results[0].boxes, key=lambda x: x.conf[0], reverse=True)[0]
+            
+            # Chuyển đổi format sang dict cũ để giữ nguyên logic xử lý phía dưới
+            x, y, w_box, h_box = top_box.xywh[0].tolist()
+            board_box = {
+                'x': x,
+                'y': y,
+                'width': w_box,
+                'height': h_box,
+                'confidence': float(top_box.conf[0])
+            }
             print(f"✅ Đã tìm thấy bàn cờ (Conf: {board_box['confidence']:.2f})")
 
-        # --- BƯỚC B: TÌM QUÂN CỜ (Model chess-pieces) ---
-        print(f"- Bước 2: Đang nhận diện quân cờ (Model: {ROBOFLOW_CHESS_PIECES_MODEL_ID[:5]}... v{ROBOFLOW_CHESS_PIECES_VERSION})...")
-        piece_project = rf.workspace().project(ROBOFLOW_CHESS_PIECES_MODEL_ID)
-        piece_model = piece_project.version(ROBOFLOW_CHESS_PIECES_VERSION).model
-        piece_prediction = piece_model.predict(image_path, confidence=30, overlap=30).json()
-        piece_preds = piece_prediction.get("predictions", [])
-        
-        print(f"✅ Tìm thấy {len(piece_preds)} quân cờ.")
-
     except Exception as e:
-        print(f"❌ Lỗi Roboflow: {str(e)}")
-        return None, None, f"Lỗi Roboflow: {str(e)}"
+        print(f"❌ Lỗi YOLO Board Inference: {str(e)}")
+        return None, None, f"Lỗi xử lý AI (Board): {str(e)}"
 
     # Biến lưu tọa độ cắt (Offset)
     offset_x = 0
@@ -187,11 +176,6 @@ def analyze_image_to_fen(image_path):
                         print(f"Chế độ: Bàn cờ 3D/Ảnh thực tế (Aspect: {initial_aspect:.2f}).")
                         is_2d_mode = False
 
-                    # Dịch chuyển tọa độ quân cờ về hệ tọa độ ảnh cắt
-                    for p in piece_preds:
-                        p['x'] -= offset_x
-                        p['y'] -= offset_y
-
             except Exception as e:
                 print(f"⚠️ Lỗi khi cắt ảnh (OpenCV): {e}. Dùng ảnh gốc.")
         else:
@@ -200,7 +184,32 @@ def analyze_image_to_fen(image_path):
     else:
         print("⚠️ Không tìm thấy class 'chessboard'. Dùng toàn bộ ảnh.")
 
-    # 3. Xử lý hình học
+    # 4. XỬ LÝ AI - BƯỚC 2: TÌM QUÂN CỜ (Trên ảnh đã cắt hoặc ảnh gốc)
+    piece_preds = []
+    try:
+        print("- Bước 2: Đang nhận diện quân cờ...")
+        # Chạy dự đoán trực tiếp trên mảng numpy 'img'
+        piece_results = PIECE_MODEL.predict(img, conf=0.40, verbose=False)
+        
+        for box in piece_results[0].boxes:
+            bx, by, bw, bh = box.xywh[0].tolist()
+            cls_id = int(box.cls[0])
+            cls_name = PIECE_MODEL.names[cls_id]
+            
+            piece_preds.append({
+                'x': bx,
+                'y': by,
+                'width': bw,
+                'height': bh,
+                'class': cls_name,
+                'confidence': float(box.conf[0])
+            })
+        print(f"✅ Tìm thấy {len(piece_preds)} quân cờ.")
+    except Exception as e:
+        print(f"❌ Lỗi YOLO Piece Inference: {str(e)}")
+        return None, None, f"Lỗi xử lý AI (Pieces): {str(e)}"
+
+    # 5. Xử lý hình học
 
     # --- XỬ LÝ HÌNH HỌC (Tinh chỉnh góc bằng OpenCV) ---
     if not is_2d_mode:
