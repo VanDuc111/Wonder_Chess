@@ -248,17 +248,20 @@ class VisionManager {
         }
     }
 
+
+
     /**
-     * Processes selected image for preview.
+     * Handles image file selection and API upload
      * @param {File} file 
      * @private
      */
-    _handleImageFiles(file) {
+    async _handleImageFiles(file) {
         if (!file.type.startsWith('image/')) {
             alert(window.APP_CONST?.MESSAGES?.INVALID_IMAGE || "Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
             return;
         }
 
+        // Show preview
         const reader = new FileReader();
         reader.onload = (e) => {
             if (this.dom.previewImg) this.dom.previewImg.src = e.target.result;
@@ -267,9 +270,37 @@ class VisionManager {
             
             this.dom.filePreview?.classList.remove('d-none');
             this.dom.dropZone?.classList.add('has-file');
-            if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_READY_SCAN || "Sẵn sàng để phân tích!";
+            if (this.dom.imageStatus) this.dom.imageStatus.textContent = "Đang tải lên và phân tích...";
         };
         reader.readAsDataURL(file);
+
+        // Upload and Analyze
+        try {
+            const data = await this.analyzeUpload(file);
+            
+            if (data.success) {
+                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = "✅ Phân tích thành công!";
+                 
+                 // Close Modal & Open Editor
+                const loadDataModalEl = document.getElementById('loadDataModal');
+                const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
+                if (loadDataModal) {
+                    loadDataModal.hide();
+                }
+                
+                setTimeout(() => {
+                    if (window.BOARD_EDITOR) {
+                         window.BOARD_EDITOR.openWithFen(data.fen, data.debug_image);
+                    }
+                }, 300);
+
+            } else {
+                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = "❌ Lỗi: " + data.error;
+            }
+        } catch (e) {
+            console.error(e);
+            if (this.dom.imageStatus) this.dom.imageStatus.textContent = "❌ Lỗi kết nối server.";
+        }
     }
 
     /**
@@ -360,12 +391,26 @@ class VisionManager {
                     setTimeout(() => { if (this.dom.debugOverlay) this.dom.debugOverlay.style.display = 'none'; }, 1500);
                 }
 
+                // --- NEW FLOW: Open Editor instead of direct apply ---
                 const newFen = data.fen;
-                const gameInst = window.LOGIC_GAME?.getGame();
-                if (gameInst && gameInst.fen().split(' ')[0] !== newFen.split(' ')[0]) {
-                    if (window.initChessboard) window.initChessboard(window.board?.orientation() || 'white', newFen);
-                    if (window.updateUI) window.updateUI();
+                
+                // Close the Load Data Modal first to avoid stacking modals
+                const loadDataModalEl = document.getElementById('loadDataModal');
+                const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
+                if (loadDataModal) {
+                    loadDataModal.hide();
                 }
+
+                // Wait a bit for modal to close, then open Editor
+                setTimeout(() => {
+                    if (window.BOARD_EDITOR) {
+                        window.BOARD_EDITOR.openWithFen(newFen, data.debug_image);
+                    } else {
+                        console.error('Board Editor not initialized!');
+                        // Fallback
+                        if (window.initChessboard) window.initChessboard('white', newFen);
+                    }
+                }, 300);
             } else {
                 this.showFriendlyError(this.dom.scanStatus, data.error);
             }

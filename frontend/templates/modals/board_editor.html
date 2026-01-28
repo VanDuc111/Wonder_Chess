@@ -9,98 +9,125 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="board-editor-container">
-                    <!-- Left Piece Selector -->
-                    <div class="piece-selector piece-selector-left">
-                        <button class="btn btn-editor-tool" id="editor-delete-piece" title="Delete Piece">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                        <div class="piece-buttons white-pieces">
-                            <button class="btn btn-piece" data-piece="wK" title="White King">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wK.png') }}" alt="wK" draggable="true" data-piece="wK">
-                            </button>
-                            <button class="btn btn-piece" data-piece="wQ" title="White Queen">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wQ.png') }}" alt="wQ" draggable="true" data-piece="wQ">
-                            </button>
-                            <button class="btn btn-piece" data-piece="wR" title="White Rook">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wR.png') }}" alt="wR" draggable="true" data-piece="wR">
-                            </button>
-                            <button class="btn btn-piece" data-piece="wB" title="White Bishop">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wB.png') }}" alt="wB" draggable="true" data-piece="wB">
-                            </button>
-                            <button class="btn btn-piece" data-piece="wN" title="White Knight">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wN.png') }}" alt="wN" draggable="true" data-piece="wN">
-                            </button>
-                            <button class="btn btn-piece" data-piece="wP" title="White Pawn">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wP.png') }}" alt="wP" draggable="true" data-piece="wP">
-                            </button>
+                <div class="board-editor-split">
+                    <!-- LEFT PANE: EDITOR TOOL -->
+                    <div class="editor-left-pane">
+                        <div class="board-editor-container">
+                            <!-- Left Piece Selector -->
+                            <div class="piece-selector piece-selector-left">
+                                <button class="btn btn-editor-tool" id="editor-delete-piece" title="Delete Piece">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <div class="piece-buttons white-pieces">
+                                    <button class="btn btn-piece" data-piece="wK" title="White King">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wK.png') }}" alt="wK" draggable="true" data-piece="wK">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="wQ" title="White Queen">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wQ.png') }}" alt="wQ" draggable="true" data-piece="wQ">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="wR" title="White Rook">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wR.png') }}" alt="wR" draggable="true" data-piece="wR">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="wB" title="White Bishop">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wB.png') }}" alt="wB" draggable="true" data-piece="wB">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="wN" title="White Knight">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wN.png') }}" alt="wN" draggable="true" data-piece="wN">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="wP" title="White Pawn">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/wP.png') }}" alt="wP" draggable="true" data-piece="wP">
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Chessboard (will be rendered by chessboard.js) -->
+                            <div class="editor-board-wrapper">
+                                <div id="editorBoard"></div>
+                            </div>
+
+                            <!-- Right Piece Selector -->
+                            <div class="piece-selector piece-selector-right">
+                                <button class="btn btn-editor-tool" id="editor-hand-tool" title="Choose Piece">
+                                    <i class="bi bi-hand-index"></i>
+                                </button>
+                                <div class="piece-buttons black-pieces">
+                                    <button class="btn btn-piece" data-piece="bK" title="Black King">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bK.png') }}" alt="bK" draggable="true" data-piece="bK">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="bQ" title="Black Queen">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bQ.png') }}" alt="bQ" draggable="true" data-piece="bQ">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="bR" title="Black Rook">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bR.png') }}" alt="bR" draggable="true" data-piece="bR">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="bB" title="Black Bishop">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bB.png') }}" alt="bB" draggable="true" data-piece="bB">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="bN" title="Black Knight">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bN.png') }}" alt="bN" draggable="true" data-piece="bN">
+                                    </button>
+                                    <button class="btn btn-piece" data-piece="bP" title="Black Pawn">
+                                        <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bP.png') }}" alt="bP" draggable="true" data-piece="bP">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Control Buttons -->
+                        <div class="editor-controls mt-2">
+                            <div class="editor-actions">
+                                <button class="btn btn-premium-cancel btn-sm" id="editor-clear-board">
+                                    <i class="bi bi-x-circle me-1"></i> Xóa hết
+                                </button>
+                                <button class="btn btn-premium-cancel btn-sm" id="editor-flip-board">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Xoay bàn cờ
+                                </button>
+                                <button class="btn btn-premium-cancel btn-sm" id="editor-start-position">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Vị trí chuẩn
+                                </button>
+                            </div>
+                            
+                            <!-- FEN Input -->
+                            <div class="fen-input-group mt-2">
+                                <label for="editor-fen-input" class="form-label">Chuỗi FEN hiện tại:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="editor-fen-input" placeholder="Dán mã FEN vào đây...">
+                                    <button class="btn btn-premium-confirm" id="editor-apply-fen">
+                                        <i class="bi bi-check-circle me-1"></i> Áp dụng
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Validation Message -->
+                            <div class="alert alert-danger mt-2 d-none" id="editor-validation-error" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <span id="editor-error-message"></span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Chessboard (will be rendered by chessboard.js) -->
-                    <div class="editor-board-wrapper">
-                        <div id="editorBoard"></div>
-                    </div>
-
-                    <!-- Right Piece Selector -->
-                    <div class="piece-selector piece-selector-right">
-                        <button class="btn btn-editor-tool" id="editor-hand-tool" title="Choose Piece">
-                            <i class="bi bi-hand-index"></i>
-                        </button>
-                        <div class="piece-buttons black-pieces">
-                            <button class="btn btn-piece" data-piece="bK" title="Black King">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bK.png') }}" alt="bK" draggable="true" data-piece="bK">
-                            </button>
-                            <button class="btn btn-piece" data-piece="bQ" title="Black Queen">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bQ.png') }}" alt="bQ" draggable="true" data-piece="bQ">
-                            </button>
-                            <button class="btn btn-piece" data-piece="bR" title="Black Rook">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bR.png') }}" alt="bR" draggable="true" data-piece="bR">
-                            </button>
-                            <button class="btn btn-piece" data-piece="bB" title="Black Bishop">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bB.png') }}" alt="bB" draggable="true" data-piece="bB">
-                            </button>
-                            <button class="btn btn-piece" data-piece="bN" title="Black Knight">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bN.png') }}" alt="bN" draggable="true" data-piece="bN">
-                            </button>
-                            <button class="btn btn-piece" data-piece="bP" title="Black Pawn">
-                                <img src="{{ url_for('static', filename='img/chesspieces/wikipedia/bP.png') }}" alt="bP" draggable="true" data-piece="bP">
-                            </button>
+                    <!-- RIGHT PANE: REFERENCE IMAGE (AI DEBUG) -->
+                    <div class="editor-right-pane">
+                        <div class="reference-image-container">
+                            <span class="reference-label"><i class="bi bi-robot me-1"></i>Alice's Analysis</span>
+                            <img id="editor-reference-image" src="" alt="AI Analysis Result">
+                            <div id="editor-no-image-placeholder" class="text-secondary text-center p-3">
+                                <i class="bi bi-image display-1 mb-3 d-block opacity-25"></i>
+                                <p class="small">Chưa có ảnh phân tích</p>
+                            </div>
+                        </div>
+                        <div class="alert alert-info bg-opacity-10 border-0 text-white small">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Mẹo:</strong> Đối chiếu vị trí các quân cờ trên ảnh bên trái với bàn cờ để sửa lại các lỗi nhận diện nếu có.
                         </div>
                     </div>
                 </div>
-
-                <!-- Control Buttons -->
-                <div class="editor-controls mt-3">
-                    <div class="editor-actions">
-                        <button class="btn btn-premium-cancel btn-sm" id="editor-clear-board">
-                            <i class="bi bi-x-circle me-1"></i> Xóa hết
-                        </button>
-                        <button class="btn btn-premium-cancel btn-sm" id="editor-flip-board">
-                            <i class="bi bi-arrow-repeat me-1"></i> Xoay bàn cờ
-                        </button>
-                        <button class="btn btn-premium-cancel btn-sm" id="editor-start-position">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i> Vị trí chuẩn
-                        </button>
-                    </div>
-                    
-                    <!-- FEN Input -->
-                    <div class="fen-input-group mt-3">
-                        <label for="editor-fen-input" class="form-label">Chuỗi FEN hiện tại:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="editor-fen-input" placeholder="Dán mã FEN vào đây...">
-                            <button class="btn btn-premium-confirm" id="editor-apply-fen">
-                                <i class="bi bi-check-circle me-1"></i> Áp dụng
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Validation Message -->
-                    <div class="alert alert-danger mt-3 d-none" id="editor-validation-error" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <span id="editor-error-message"></span>
-                    </div>
-                </div>
+            </div>
+            
+            <!-- Image Lightbox -->
+            <div id="editor-image-lightbox" class="lightbox-overlay d-none">
+                <button class="lightbox-close-btn"><i class="bi bi-x-lg"></i></button>
+                <img id="lightbox-img" src="" alt="Full Reference">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-premium-cancel" data-bs-dismiss="modal">

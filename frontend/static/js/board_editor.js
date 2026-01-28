@@ -9,6 +9,7 @@ class BoardEditor {
         this.selectedTool = null;
         this.currentPosition = {};
         this.modal = null;
+        this.hasDebugImage = false; // Flag to track if opened with image
         
         this.init();
     }
@@ -27,20 +28,92 @@ class BoardEditor {
         this.setupToolButtons();
         this.setupControlButtons();
         this.setupDoneButton();
+        this.setupLightbox();
+    }
+    
+    /**
+     * Open editor with specific FEN and optional Debug Image
+     * @param {string} fen - FEN string to load
+     * @param {string} debugImage - Base64 string of debug image (optional)
+     */
+    openWithFen(fen, debugImage = null) {
+        if (!this.modal) {
+            // Re-init if modal wasn't found initially
+            this.init(); 
+            if (!this.modal) return;
+        }
+
+        // Set internal state
+        try {
+            this.currentPosition = this.fenToPosition(fen);
+        } catch (e) {
+            console.error("Invalid FEN provided to editor:", e);
+            this.currentPosition = this.fenToPosition(window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+        }
+
+        // Open Modal
+        const bsModal = new bootstrap.Modal(this.modal);
+        bsModal.show();
+
+        const splitContainer = this.modal.querySelector('.board-editor-split');
+        const rightPane = this.modal.querySelector('.editor-right-pane');
+        const imgEl = document.getElementById('editor-reference-image');
+        const placeholderEl = document.getElementById('editor-no-image-placeholder');
+        
+        if (rightPane && imgEl && splitContainer) {
+            if (debugImage) {
+                // HAS IMAGE: Show right pane, set image
+                splitContainer.classList.add('has-image');
+                rightPane.style.display = 'flex';
+                imgEl.src = 'data:image/jpeg;base64,' + debugImage;
+                imgEl.style.display = 'block';
+                if (placeholderEl) placeholderEl.style.display = 'none';
+                
+                // Set Modal size larger for split view
+                this.modal.querySelector('.modal-dialog').classList.remove('modal-lg');
+                this.modal.querySelector('.modal-dialog').classList.add('modal-xl');
+                this.hasDebugImage = true;
+            } else {
+                // NO IMAGE: Hide right pane completely
+                splitContainer.classList.remove('has-image');
+                rightPane.style.display = 'none';
+                
+                // Use large modal for single-column editor
+                this.modal.querySelector('.modal-dialog').classList.remove('modal-xl');
+                this.modal.querySelector('.modal-dialog').classList.add('modal-lg');
+                this.hasDebugImage = false;
+            }
+        }
+        
+        // Wait for modal transition then render board
+        setTimeout(() => {
+            this.initializeEditorBoard();
+            this.updateFENInput();
+        }, 200);
     }
     
     onModalShown() {
-        // Get current position from main board via LOGIC_GAME
-        if (window.LOGIC_GAME && typeof window.LOGIC_GAME.getGame === 'function') {
-            const chess = window.LOGIC_GAME.getGame();
-            if (chess) {
-                this.currentPosition = this.fenToPosition(chess.fen());
+        // If currentPosition is empty (user opened manually), load from main game
+        if (Object.keys(this.currentPosition).length === 0) {
+             if (window.LOGIC_GAME && typeof window.LOGIC_GAME.getGame === 'function') {
+                const chess = window.LOGIC_GAME.getGame();
+                if (chess) {
+                    this.currentPosition = this.fenToPosition(chess.fen());
+                }
             } else {
+                 // Start with empty board if manual open and no game state
                 this.currentPosition = {};
             }
-        } else {
-            // Start with empty board
-            this.currentPosition = {};
+        }
+
+        // Check if we need to hide the right pane (Manual Open case)
+        if (!this.hasDebugImage) {
+            const splitContainer = this.modal.querySelector('.board-editor-split');
+            const rightPane = this.modal.querySelector('.editor-right-pane');
+            if (splitContainer) splitContainer.classList.remove('has-image');
+            if (rightPane) rightPane.style.display = 'none';
+            this.modal.querySelector('.modal-dialog').classList.remove('modal-xl');
+            this.modal.querySelector('.modal-dialog').classList.add('modal-lg');
         }
         
         // Initialize editor board
@@ -478,9 +551,48 @@ class BoardEditor {
             alert('Lỗi khi áp dụng vị trí: ' + e.message);
         }
     }
+
+    setupLightbox() {
+        const thumbImg = document.getElementById('editor-reference-image');
+        const lightbox = document.getElementById('editor-image-lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const closeBtn = document.querySelector('.lightbox-close-btn');
+
+        if (!thumbImg || !lightbox || !lightboxImg) return;
+
+        // Open Lightbox
+        thumbImg.addEventListener('click', () => {
+            if (thumbImg.src && thumbImg.src !== window.location.href) {
+                lightboxImg.src = thumbImg.src;
+                lightbox.classList.remove('d-none');
+            }
+        });
+
+        // Close functions
+        const closeLightbox = () => {
+            lightbox.classList.add('d-none');
+            lightboxImg.src = '';
+        };
+
+        if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
+        
+        // Close on background click
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !lightbox.classList.contains('d-none')) {
+                closeLightbox();
+            }
+        });
+    }
 }
+
+
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.boardEditor = new BoardEditor();
+    window.BOARD_EDITOR = new BoardEditor();
 });
