@@ -91,6 +91,11 @@
   --eval-offset-mobile: 55px;
   /* Button Group Spacing */
   --btn-group-margin: 10px;
+  /* Modal Specific Colors */
+  --color-modal-bg-start: rgba(20, 20, 30, 0.95);
+  --color-modal-bg-end: rgba(16, 16, 22, 0.95);
+  --color-modal-bg-dark: #1a1a2e;
+  --color-modal-bg-darker: #2c2c44;
   /* Transitions */
   --transition-base: all 0.3s ease;
   --transition-fast: all 0.2s ease;
@@ -2157,8 +2162,8 @@ body.allow-scroll {
 /* 9. MODALS & OVERLAYS */
 /* _modals.scss */
 .modal-content.modal-dark {
-  background: -webkit-gradient(linear, left top, left bottom, from(rgba(20, 20, 30, 0.95)), to(rgba(16, 16, 22, 0.95)));
-  background: linear-gradient(180deg, rgba(20, 20, 30, 0.95), rgba(16, 16, 22, 0.95));
+  background: -webkit-gradient(linear, left top, left bottom, from(var(--color-modal-bg-start)), to(var(--color-modal-bg-end)));
+  background: linear-gradient(180deg, var(--color-modal-bg-start), var(--color-modal-bg-end));
   color: var(--color-text-light);
   border-radius: var(--radius-xl) !important;
   border: 1px solid var(--color-border-subtle);
@@ -2396,13 +2401,13 @@ body.allow-scroll {
   overflow: hidden;
   -webkit-box-shadow: var(--shadow-deep);
           box-shadow: var(--shadow-deep);
-  background: #1a1a2e;
+  background: var(--color-modal-bg-dark);
 }
 
 #editorBoard {
   width: 100%;
   aspect-ratio: 1/1;
-  background-color: #2c2c44; /* Dark board base */
+  background-color: var(--color-modal-bg-darker); /* Dark board base */
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -2618,7 +2623,7 @@ body.allow-scroll {
 }
 
 .form-select-custom option {
-  background-color: #1a1a2e;
+  background-color: var(--color-modal-bg-dark);
   color: white;
   padding: 10px;
 }
@@ -2649,7 +2654,7 @@ body.allow-scroll {
           box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
   -webkit-transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 3px solid #1a1a2e;
+  border: 3px solid var(--color-modal-bg-dark);
 }
 
 .form-range-custom::-webkit-slider-thumb:hover {

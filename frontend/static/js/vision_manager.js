@@ -349,6 +349,11 @@ class VisionManager {
                     this.dom.scanStatus.style.color = 'green';
                 }
                 
+                // Show warped board confirmation if available
+                if (data.warped_image) {
+                     this._showWarpedConfirmation(data.warped_image);
+                }
+
                 if (data.debug_image && this.dom.debugOverlay) {
                     this.dom.debugOverlay.src = 'data:image/jpeg;base64,' + data.debug_image;
                     this.dom.debugOverlay.style.display = 'block';
@@ -438,6 +443,42 @@ class VisionManager {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Shows a warped board preview for user confirmation.
+     * @param {string} base64 
+     * @private
+     */
+    _showWarpedConfirmation(base64) {
+        // Create or get confirmation element
+        let confirmEl = document.getElementById('warped-confirm-container');
+        if (!confirmEl) {
+            confirmEl = document.createElement('div');
+            confirmEl.id = 'warped-confirm-container';
+            confirmEl.className = 'warped-confirm-overlay';
+            confirmEl.innerHTML = `
+                <div class="warped-preview-card">
+                    <p class="small text-white mb-2">Alice nhìn thế này đúng chưa?</p>
+                    <img src="" id="warped-preview-img" class="img-fluid rounded border border-success">
+                </div>
+            `;
+            // Append to the modal body or near the scan status
+            const scannerPane = document.getElementById('live-scan-pane');
+            if (scannerPane) scannerPane.appendChild(confirmEl);
+        }
+
+        const img = confirmEl.querySelector('#warped-preview-img');
+        if (img) {
+            img.src = 'data:image/jpeg;base64,' + base64;
+            confirmEl.style.display = 'block';
+            
+            // Auto-hide after 3 seconds or on next scan
+            if (this._warpedTimeout) clearTimeout(this._warpedTimeout);
+            this._warpedTimeout = setTimeout(() => {
+                confirmEl.style.display = 'none';
+            }, 3000);
+        }
     }
 
     /**

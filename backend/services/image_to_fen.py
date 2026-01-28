@@ -22,14 +22,22 @@ except ImportError:
 # Tự động load model một lần duy nhất
 PIECE_NAMES = {0: 'BB', 1: 'BK', 2: 'BKN', 3: 'BP', 4: 'BQ', 5: 'BR', 6: 'WB', 7: 'WK', 8: 'WKN', 9: 'WP', 10: 'WQ', 11: 'WR'}
 
-try:
-    BOARD_MODEL = YOLOv8ONNX('backend/models/chessboard_detector_best.onnx', imgsz=640)
-    PIECE_MODEL = YOLOv8ONNX('backend/models/chess_pieces_detector_best.onnx', imgsz=640)
-    print("✅ Đã load thành công 2 model ONNX (Board & Pieces) - RAM optimized.")
-except Exception as e:
-    print(f"❌ Lỗi khi load model ONNX: {e}")
-    BOARD_MODEL = None
-    PIECE_MODEL = None
+# Global models
+BOARD_MODEL = None
+PIECE_MODEL = None
+
+def get_board_model():
+    global BOARD_MODEL
+    if BOARD_MODEL is None:
+        # Revert to 640 because ONNX model has fixed input shape
+        BOARD_MODEL = YOLOv8ONNX('backend/models/chessboard_detector_best.onnx', imgsz=640)
+    return BOARD_MODEL
+
+def get_piece_model():
+    global PIECE_MODEL
+    if PIECE_MODEL is None:
+        PIECE_MODEL = YOLOv8ONNX('backend/models/chess_pieces_detector_best.onnx', imgsz=640)
+    return PIECE_MODEL
 
 CLASS_TO_FEN = {
     # Quân Đen
@@ -61,7 +69,7 @@ def analyze_image_to_fen(image_path):
     # 1. Đọc ảnh và Resize nếu quá lớn (Tránh lỗi 413)
     img = cv2.imread(image_path)
     if img is None:
-        return None, None, "Lỗi đọc ảnh."
+        return None, None, None, "Lỗi đọc ảnh."
 
     h, w = img.shape[:2] # Chiều cao, chiều rộng 
     max_dim = 1024 
@@ -74,15 +82,22 @@ def analyze_image_to_fen(image_path):
 
     # 2. XỬ LÝ AI - BƯỚC 1: TÌM BÀN CỜ
     board_box = None
+    board_polygon = None
     try:
         if BOARD_MODEL is None or PIECE_MODEL is None:
-            return None, None, "Dịch vụ AI chưa được khởi tạo thành công."
+            # Note: Now models are lazy-loaded via getter, so this might not hit unless something is broken
+            pass
 
         print("- Bước 1: Đang tìm bàn cờ...")
-        board_results = BOARD_MODEL.predict(img, conf=0.40)
+        model = get_board_model()
+        board_results = model.predict(img, conf=0.15)
+        
+        # Nếu đang chạy trên Render (RAM thấp), có thể cân nhắc xóa luôn sau khi dùng
+        # model.clear() 
+        # BOARD_MODEL = None
         
         if len(board_results) > 0:
-            # Lấy box có confidence cao nhất
+            # Lấy kết quả có confidence cao nhất
             top_res = sorted(board_results, key=lambda x: x['conf'], reverse=True)[0]
             x1, y1, x2, y2 = top_res['box']
             
@@ -94,11 +109,17 @@ def analyze_image_to_fen(image_path):
                 'height': y2 - y1,
                 'confidence': float(top_res['conf'])
             }
-            print(f"✅ Đã tìm thấy bàn cờ (Conf: {board_box['confidence']:.2f})")
+            
+            # ƯU TIÊN: Lấy Polygon từ Segmentation (nếu có)
+            if 'polygon' in top_res and top_res['polygon'] is not None:
+                board_polygon = top_res['polygon']
+                print(f"✅ Đã tìm thấy bàn cờ dạng SEGMENTATION (Polygon {len(board_polygon)} điểm)")
+            else:
+                print(f"✅ Đã tìm thấy bàn cờ dạng BOX (Conf: {board_box['confidence']:.2f})")
 
     except Exception as e:
         print(f"❌ Lỗi YOLO Board Inference: {str(e)}")
-        return None, None, f"Lỗi xử lý AI (Board): {str(e)}"
+        return None, None, None, f"Lỗi xử lý AI (Board): {str(e)}"
 
     # Biến lưu tọa độ cắt (Offset)
     offset_x = 0
@@ -160,17 +181,25 @@ def analyze_image_to_fen(image_path):
                     offset_y = ny1
                     h, w = img.shape[:2]
 
-                    # --- KHỞI TẠO GÓC TỪ ROBOLOW (AI) ---
-                    # Tính toán tọa độ 4 góc của bàn cờ so với ảnh đã bị cắt (có padding)
-                    # Điều này giúp ta luôn có "khung xương" bàn cờ kể cả khi OpenCV thất bại
-                    ai_x1 = pad_w
-                    ai_y1 = pad_h
-                    ai_x2 = w - pad_w
-                    ai_y2 = h - pad_h
-                    corners = np.array([
-                        [ai_x1, ai_y1], [ai_x2, ai_y1], 
-                        [ai_x2, ai_y2], [ai_x1, ai_y2]
-                    ], dtype="float32")
+                    # --- KHỞI TẠO GÓC TỪ AI ---
+                    if board_polygon is not None and len(board_polygon) == 4:
+                        # Dùng Polygon trực tiếp (Trừ đi offset do crop)
+                        corners = board_polygon.astype("float32")
+                        corners[:, 0] -= offset_x
+                        corners[:, 1] -= offset_y
+                        print("🎯 Sử dụng 4 góc từ AI Segmentation.")
+                    else:
+                        # FALLBACK: Dùng khung Box (Trừ lề padding)
+                        ai_x1 = pad_w
+                        ai_y1 = pad_h
+                        ai_x2 = w - pad_w
+                        ai_y2 = h - pad_h
+                        corners = np.array([
+                            [ai_x1, ai_y1], [ai_x2, ai_y1], 
+                            [ai_x2, ai_y2], [ai_x1, ai_y2]
+                        ], dtype="float32")
+                        print("💡 Fallback dùng Bounding Box (AI).")
+                    
                     use_perspective = True
                     M, side_len = get_board_mapping_matrix(corners, w, h)
 
@@ -183,7 +212,7 @@ def analyze_image_to_fen(image_path):
                         is_2d_mode = False
 
             except Exception as e:
-                print(f"⚠️ Lỗi khi cắt ảnh (OpenCV): {e}. Dùng ảnh gốc.")
+                print(f"⚠️ Lỗi khi cắt ảnh: {e}. Dùng ảnh gốc.")
         else:
             print(f"⚠️ Vùng bàn cờ quá nhỏ ({crop_w}x{crop_h}). Dùng ảnh gốc.")
 
@@ -194,13 +223,17 @@ def analyze_image_to_fen(image_path):
     piece_preds = []
     try:
         print("- Bước 2: Đang nhận diện quân cờ...")
-        # Chạy dự đoán trực tiếp trên mảng numpy 'img' (đã có thể bị crop)
-        piece_results = PIECE_MODEL.predict(img, conf=0.40)
+        model = get_piece_model()
+        piece_results = model.predict(img, conf=0.15)
+        
+        # Proactive memory clearing
+        import gc
+        gc.collect()
         
         for res in piece_results:
             x1, y1, x2, y2 = res['box']
             cls_id = int(res['class'])
-            cls_name = PIECE_NAMES.get(cls_id, "unknown")
+            cls_name = PIECE_NAMES.get(cls_id, f"unknown_{cls_id}")
             
             piece_preds.append({
                 'x': (x1 + x2) / 2,
@@ -210,10 +243,14 @@ def analyze_image_to_fen(image_path):
                 'class': cls_name,
                 'confidence': float(res['conf'])
             })
-        print(f"✅ Tìm thấy {len(piece_preds)} quân cờ.")
+        print(f"✅ Tìm thấy {len(piece_preds)} quân cờ (ngưỡng 0.15).")
+        # Log chi tiết các quân cờ để debug
+        if len(piece_preds) > 0:
+            names_found = [p['class'] for p in piece_preds[:5]]
+            print(f"   Detections (top 5): {', '.join(names_found)}...")
     except Exception as e:
         print(f"❌ Lỗi YOLO Piece Inference: {str(e)}")
-        return None, None, f"Lỗi xử lý AI (Pieces): {str(e)}"
+        return None, None, None, f"Lỗi xử lý AI (Pieces): {str(e)}"
 
     # 5. Xử lý hình học
 
@@ -308,11 +345,13 @@ def analyze_image_to_fen(image_path):
         conf = p.get("confidence", 0)
 
         # Lấy điểm quy chiếu (Bottom point cho 3D, Center cho 2D)
+        # Lấy điểm quy chiếu (Gốc quân cờ cho 3D, Tâm cho 2D)
         if is_2d_mode:
             ref_x, ref_y = p["x"], p["y"]
         else:
             ref_x = p["x"]
-            ref_y = p["y"] + (p["height"] / 2) * 1.05 
+            # Đối với 3D, chân quân cờ quan trọng hơn tâm
+            ref_y = p["y"] + (p["height"] / 2) * 0.95 # Giảm xuống 0.95 để an toàn hơn 1.05
         
         row, col = -1, -1
         if use_perspective:
@@ -431,9 +470,27 @@ def analyze_image_to_fen(image_path):
     except Exception as e:
         print(f"⚠️ Lỗi khi lưu/dọn dẹp ảnh debug: {e}")
 
-        # 4. Mã hóa ảnh thành Base64 để gửi qua JSON
+    # --- MÃ HÓA ẢNH THÀNH BASE64 ---
     _, buffer = cv2.imencode('.jpg', debug_img)
     debug_base64 = base64.b64encode(buffer).decode('utf-8')
+
+    warped_base64 = None
+    if use_perspective and M is not None and side_len > 0:
+        try:
+            warped_img = cv2.warpPerspective(img, M, (int(side_len), int(side_len)))
+            
+            # Vẽ lưới grid 8x8 lên ảnh đã uốn để kiểm tra độ khớp
+            sq_size = side_len / 8
+            for i in range(1, 8):
+                # Đường ngang
+                cv2.line(warped_img, (0, int(i * sq_size)), (int(side_len), int(i * sq_size)), (0, 255, 0), 1)
+                # Đường dọc
+                cv2.line(warped_img, (int(i * sq_size), 0), (int(i * sq_size), int(side_len)), (0, 255, 0), 1)
+            
+            _, w_buffer = cv2.imencode('.jpg', warped_img)
+            warped_base64 = base64.b64encode(w_buffer).decode('utf-8')
+        except Exception as e:
+            print(f"⚠️ Lỗi khi mã hóa ảnh warped: {e}")
 
     # 5. Tạo chuỗi FEN cuối cùng
     fen_rows = []
@@ -452,4 +509,4 @@ def analyze_image_to_fen(image_path):
     final_fen = "/".join(fen_rows) + " w KQkq - 0 1"
     print(f" Final FEN: {final_fen}")
 
-    return final_fen, debug_base64, None
+    return final_fen, debug_base64, warped_base64, None

@@ -9,13 +9,15 @@ def test_inference():
         return
         
     print(f"Testing ONNX inference with {test_img}...")
-    fen, debug, error = analyze_image_to_fen(test_img)
+    fen, debug, warped, error = analyze_image_to_fen(test_img)
     
     if error:
         print(f"❌ Test Failed: {error}")
     else:
         print(f"✅ Test Success!")
         print(f"FEN: {fen}")
+        if warped:
+            print("Warped image generated successfully.")
 
 if __name__ == "__main__":
     test_inference()

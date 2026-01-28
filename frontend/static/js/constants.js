@@ -16,8 +16,8 @@
             'P': 'img/chesspieces/wikipedia/wP.png',
             'N': 'img/chesspieces/wikipedia/wN.png',
             'B': 'img/chesspieces/wikipedia/wB.png',
-            'r': 'img/chesspieces/wikipedia/wR.png',
-            'Q': 'img/chesspieces/wikipedia/wQ.png'
+            'R': 'img/chesspieces/wikipedia/wR.png',
+            'Q': 'img/chesspieces/wikipedia/wQ.png',
         }
     };
 

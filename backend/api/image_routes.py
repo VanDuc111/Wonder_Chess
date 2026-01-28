@@ -35,20 +35,25 @@ def analyze_image() -> jsonify:
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
-        detected_fen, debug_image_b64, error = analyze_image_to_fen(filepath)
-
         try:
-            if os.path.exists(filepath):
-                os.remove(filepath)
-        except:
-            pass
+            detected_fen, debug_image_b64, warped_image_b64, error = analyze_image_to_fen(filepath)
 
-        if detected_fen:
-            return jsonify({
-                'success': True,
-                'fen': detected_fen,
-                'debug_image': debug_image_b64,
-                'message': 'Thành công!'
-            })
-        else:
-            return jsonify({'success': False, 'error': error})
+            if detected_fen:
+                return jsonify({
+                    'success': True,
+                    'fen': detected_fen,
+                    'debug_image': debug_image_b64,
+                    'warped_image': warped_image_b64,
+                    'message': 'Thành công!'
+                })
+            else:
+                return jsonify({'success': False, 'error': error})
+        except Exception as e:
+            return jsonify({'success': False, 'error': f"Lỗi server: {str(e)}"})
+        finally:
+            # Luôn luôn xóa file tạm dù thành công hay lỗi
+            try:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+            except:
+                pass
