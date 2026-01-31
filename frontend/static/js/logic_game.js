@@ -832,14 +832,32 @@ class ChessCore {
     _setupResize() {
         if (!window._boardResizeHandler) {
             window._boardResizeHandler = () => {
-                // Thêm một khoảng trễ nhỏ để đảm bảo Layout đã ổn định
-                setTimeout(() => {
-                    board?.resize();
-                    this.ui.syncBoardAndEvalHeight();
-                    this.updateUI();
-                }, 100);
+                // Trigger resize multiple times to ensure we catch the final stable layout
+                [50, 200, 500].forEach(delay => {
+                    setTimeout(() => {
+                        if (typeof board !== 'undefined' && board) {
+                             board.resize();
+                             if (this.ui) {
+                                 this.ui.syncBoardAndEvalHeight();
+                                 this.updateUI();
+                             }
+                        }
+                    }, delay);
+                });
             };
             window.addEventListener('resize', window._boardResizeHandler);
+            
+            // Add ResizeObserver for the main container to handle internal layout shifts
+            const container = document.getElementById('chessboard-main-container');
+            if (container && window.ResizeObserver) {
+                const ro = new ResizeObserver(() => {
+                    if (typeof board !== 'undefined' && board) {
+                        board.resize();
+                        if (this.ui) this.ui.syncBoardAndEvalHeight();
+                    }
+                });
+                ro.observe(container);
+            }
         }
     }
 

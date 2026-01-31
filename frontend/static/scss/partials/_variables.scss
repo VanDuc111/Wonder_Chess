@@ -101,10 +101,20 @@
     --padding-sm: 15px;
     --padding-md: 20px;
     
-    /* Evaluation Bar Offsets */
+    /* Evaluation Bar Tokens */
+    --eval-bar-width: 18px;
+    --eval-wrapper-width-desktop: 30px;
+    --eval-wrapper-width-mobile: 35px;
+    --eval-margin-desktop: 8px;
     --eval-offset-desktop: 38px; 
     --eval-offset-tablet: 55px;
     --eval-offset-mobile: 55px;
+    
+    /* Board Layout Tokens */
+    --board-col-desktop-width: 45%; /* Slightly reduced to give room to middle col */
+    --board-col-desktop-min-width: 550px;
+    --chat-col-desktop-width: 30%; /* Balanced width */
+    --mobile-board-padding-left: 48px;
     
     /* Button Group Spacing */
     --btn-group-margin: 10px;

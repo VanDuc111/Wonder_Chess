@@ -14,6 +14,9 @@
 #boardEditorModal {
     .modal-body {
         padding: 1rem 1.25rem; 
+        @media (max-width: 576.98px) {
+            padding: 0.75rem 0.5rem;
+        }
     }
     .modal-footer {
         padding: 0.75rem 1.25rem; 
@@ -295,8 +298,12 @@
     
     .editor-board-wrapper {
         width: 100%;
-        max-width: 400px;
-        margin: 15px 0;
+        max-width: 480px;
+        margin: 10px 0;
+    }
+    
+    #editorBoard {
+        width: 100% !important;
     }
 
     .board-editor-split {
@@ -332,8 +339,10 @@
 
     .editor-board-wrapper {
         order: -1;
-        width: 100%;
-        max-width: 400px;
+        width: 98% !important; /* Take almost full width on small screens */
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
     }
 }
 

@@ -12,8 +12,9 @@
     /* Game Column (Left) */
     .main-content-row > div:first-child {
         flex: 0 0 auto;
-        width: 45%;
-        align-self: flex-start; /* Align to top */
+        width: var(--board-col-desktop-width);
+        min-width: var(--board-col-desktop-min-width);
+        align-self: flex-start;
     }
     
     /* Force board container to align top */
@@ -26,14 +27,14 @@
     #history-col {
         flex: 1 1 auto;
         min-width: 200px;
-        padding-left: 15px;
-        padding-right: 15px;
+        padding-left: var(--padding-sm);
+        padding-right: var(--padding-sm);
     }
 
     /* Chat Column (Right) */
     #chat-col {
         flex: 0 0 auto;
-        width: 33.333333%; 
+        width: var(--chat-col-desktop-width); 
         padding-right: var(--spacing-sm) !important;
     }
 
@@ -61,8 +62,8 @@
         max-width: 650px !important; /* Allow slightly larger board on generic tablets */
         width: 100%;
         margin: 0 auto;
-        padding-right: calc(var(--timer-width) + 10px) !important;
-        padding-left: 10px !important;
+        padding-right: calc(var(--timer-width) + var(--padding-xs)) !important;
+        padding-left: var(--padding-xs) !important;
     }
 
     #history-col {
@@ -78,7 +79,7 @@
     .history-container {
         height: 350px !important; /* Fixed height for mobile/tablet */
         max-height: 40vh !important; /* Or max 40% of screen height */
-        margin-bottom: 15px;
+        margin-bottom: var(--padding-sm);
         display: flex;
         flex-direction: column;
     }
@@ -116,8 +117,8 @@
 
     .nav-mode-link {
         padding: 14px 20px !important;
-        margin-bottom: 6px;
-        border-radius: 12px;
+        margin-bottom: var(--radius-sm);
+        border-radius: var(--radius-lg);
         border-bottom: none !important;
         transition: all 0.2s ease;
         text-align: left;
@@ -136,8 +137,8 @@
 
     #navbar-user-section {
         justify-content: center !important;
-        margin-top: 1.5rem;
-        padding-top: 1.2rem;
+        margin-top: var(--space-xl);
+        padding-top: var(--padding-sm);
         border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
@@ -158,7 +159,7 @@
     }
 
     #chatbot-form {
-        margin: 10px 10px 0 10px;
+        margin: var(--padding-xs) var(--padding-xs) 0 var(--padding-xs);
     }
 }
 
@@ -169,14 +170,14 @@
 
     .score-alignment-wrapper {
         position: absolute;
-        left: 5px;
+        left: 0; /* Moves it further away from the board due to container padding */
         right: auto;
-        top: 48px !important; /* Below top captured row - shortened */
-        bottom: 48px !important; /* Above bottom captured row - shortened */
+        top: 48px !important; 
+        bottom: 48px !important; 
         margin-right: 0 !important;
         margin-left: 0 !important;
         margin-top: 0 !important;
-        width: 20px;
+        width: var(--eval-wrapper-width-mobile);
         padding-top: 0;
         height: auto !important;
         max-height: none;
@@ -187,28 +188,32 @@
     }
 
     #evaluation-bar {
-        width: 10px;
+        width: var(--eval-bar-width);
         margin-top: 0 !important; 
         flex-grow: 1;
+        border-radius: 10px; 
     }
 
     #evaluation-score {
-        width: 100%;
+        width: auto;
+        min-width: 50px;
         font-size: 0.7rem;
-        margin-top: 4px !important;
-        min-height: 15px;
+        margin-top: 8px !important;
+        min-height: 20px;
+        white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     }
 
     #chessboard-main-container {
         min-width: 0;
         max-width: 100%;
-        padding-left: 35px !important;
+        padding-left: var(--mobile-board-padding-left) !important;
         position: relative;
     }
 
     .chess-board-area {
-        padding: 5px !important;
-        padding-right: 5px !important;
+        padding: var(--padding-xxs) !important;
+        padding-right: var(--padding-xxs) !important;
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box;
@@ -234,7 +239,7 @@
         background: rgba(15, 15, 26, 0.9) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         z-index: 105 !important;
-        border-radius: 6px !important;
+        border-radius: var(--radius-sm) !important;
         text-align: center !important;
         transition: all 0.3s ease;
 
@@ -271,8 +276,8 @@
     .analysis-controls-horizontal {
         display: grid !important;
         grid-template-columns: 1fr 1fr;
-        gap: 12px 20px;
-        padding: 5px 10px !important;
+        gap: var(--space-md2) var(--space-xl);
+        padding: var(--padding-xxs) var(--padding-xs) !important;
     }
 
     .custom-switch-sm {

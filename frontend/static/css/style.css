@@ -85,10 +85,19 @@
   --padding-xs: 10px;
   --padding-sm: 15px;
   --padding-md: 20px;
-  /* Evaluation Bar Offsets */
+  /* Evaluation Bar Tokens */
+  --eval-bar-width: 18px;
+  --eval-wrapper-width-desktop: 30px;
+  --eval-wrapper-width-mobile: 35px;
+  --eval-margin-desktop: 8px;
   --eval-offset-desktop: 38px;
   --eval-offset-tablet: 55px;
   --eval-offset-mobile: 55px;
+  /* Board Layout Tokens */
+  --board-col-desktop-width: 45%; /* Slightly reduced to give room to middle col */
+  --board-col-desktop-min-width: 550px;
+  --chat-col-desktop-width: 30%; /* Balanced width */
+  --mobile-board-padding-left: 48px;
   /* Button Group Spacing */
   --btn-group-margin: 10px;
   /* Modal Specific Colors */
@@ -961,7 +970,7 @@ body.allow-scroll {
   right: 100%;
   top: var(--eval-offset-desktop);
   bottom: var(--eval-offset-desktop);
-  margin-right: 15px;
+  margin-right: var(--eval-margin-desktop);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -978,8 +987,8 @@ body.allow-scroll {
   transition: opacity 0.3s ease;
   z-index: 999;
   pointer-events: auto;
-  width: 30px;
-  height: auto; /* Auto height between top and bottom constraints */
+  width: var(--eval-wrapper-width-desktop);
+  height: auto;
 }
 
 /* Tablet specific - symmetric offsets to match captured pieces rows */
@@ -1024,7 +1033,7 @@ body.allow-scroll {
 }
 
 #evaluation-bar {
-  width: 20px;
+  width: var(--eval-bar-width);
   background: -webkit-gradient(linear, left bottom, left top, from(var(--color-eval-gradient-start)), to(var(--color-eval-gradient-end)));
   background: linear-gradient(to top, var(--color-eval-gradient-start) 0%, var(--color-eval-gradient-end) 100%);
   border-radius: 10px;
@@ -1046,9 +1055,9 @@ body.allow-scroll {
 
 #evaluation-score {
   color: var(--color-text-light);
-  font-size: 0.7rem;
+  font-size: 0.75rem; /* Balanced size */
   font-weight: bold;
-  margin-top: 8px;
+  margin-top: 6px;
   min-height: 20px;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -1571,6 +1580,7 @@ body.allow-scroll {
   -webkit-transition: var(--transition-fast);
   transition: var(--transition-fast);
   background: transparent;
+  white-space: nowrap;
 }
 
 .history-table .move-cell:hover {
@@ -2882,6 +2892,11 @@ body.allow-scroll {
 #boardEditorModal .modal-body {
   padding: 1rem 1.25rem;
 }
+@media (max-width: 576.98px) {
+  #boardEditorModal .modal-body {
+    padding: 0.75rem 0.5rem;
+  }
+}
 #boardEditorModal .modal-footer {
   padding: 0.75rem 1.25rem;
   margin-top: -5px;
@@ -3244,8 +3259,11 @@ body.allow-scroll {
   }
   .editor-board-wrapper {
     width: 100%;
-    max-width: 400px;
-    margin: 15px 0;
+    max-width: 480px;
+    margin: 10px 0;
+  }
+  #editorBoard {
+    width: 100% !important;
   }
   .board-editor-split {
     -webkit-box-orient: vertical;
@@ -3284,8 +3302,10 @@ body.allow-scroll {
     -webkit-box-ordinal-group: 0;
         -ms-flex-order: -1;
             order: -1;
-    width: 100%;
-    max-width: 400px;
+    width: 98% !important; /* Take almost full width on small screens */
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 @media (max-width: 576.98px) {
@@ -4684,9 +4704,10 @@ body.allow-scroll {
     -webkit-box-flex: 0;
         -ms-flex: 0 0 auto;
             flex: 0 0 auto;
-    width: 45%;
+    width: var(--board-col-desktop-width);
+    min-width: var(--board-col-desktop-min-width);
     -ms-flex-item-align: start;
-        align-self: flex-start; /* Align to top */
+        align-self: flex-start;
   }
   /* Force board container to align top */
   #game-view-container {
@@ -4699,15 +4720,15 @@ body.allow-scroll {
         -ms-flex: 1 1 auto;
             flex: 1 1 auto;
     min-width: 200px;
-    padding-left: 15px;
-    padding-right: 15px;
+    padding-left: var(--padding-sm);
+    padding-right: var(--padding-sm);
   }
   /* Chat Column (Right) */
   #chat-col {
     -webkit-box-flex: 0;
         -ms-flex: 0 0 auto;
             flex: 0 0 auto;
-    width: 33.333333%;
+    width: var(--chat-col-desktop-width);
     padding-right: var(--spacing-sm) !important;
   }
   #chat-col.shrunk {
@@ -4737,8 +4758,8 @@ body.allow-scroll {
     max-width: 650px !important; /* Allow slightly larger board on generic tablets */
     width: 100%;
     margin: 0 auto;
-    padding-right: calc(var(--timer-width) + 10px) !important;
-    padding-left: 10px !important;
+    padding-right: calc(var(--timer-width) + var(--padding-xs)) !important;
+    padding-left: var(--padding-xs) !important;
   }
   #history-col {
     margin-top: var(--spacing-sm) !important;
@@ -4751,7 +4772,7 @@ body.allow-scroll {
   .history-container {
     height: 350px !important; /* Fixed height for mobile/tablet */
     max-height: 40vh !important; /* Or max 40% of screen height */
-    margin-bottom: 15px;
+    margin-bottom: var(--padding-sm);
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -4790,8 +4811,8 @@ body.allow-scroll {
   }
   .nav-mode-link {
     padding: 14px 20px !important;
-    margin-bottom: 6px;
-    border-radius: 12px;
+    margin-bottom: var(--radius-sm);
+    border-radius: var(--radius-lg);
     border-bottom: none !important;
     -webkit-transition: all 0.2s ease;
     transition: all 0.2s ease;
@@ -4812,8 +4833,8 @@ body.allow-scroll {
     -webkit-box-pack: center !important;
         -ms-flex-pack: center !important;
             justify-content: center !important;
-    margin-top: 1.5rem;
-    padding-top: 1.2rem;
+    margin-top: var(--space-xl);
+    padding-top: var(--padding-sm);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
   #chat-col {
@@ -4832,7 +4853,7 @@ body.allow-scroll {
     max-width: 95%;
   }
   #chatbot-form {
-    margin: 10px 10px 0 10px;
+    margin: var(--padding-xs) var(--padding-xs) 0 var(--padding-xs);
   }
 }
 @media (max-width: 767.98px) {
@@ -4841,14 +4862,14 @@ body.allow-scroll {
   }
   .score-alignment-wrapper {
     position: absolute;
-    left: 5px;
+    left: 0; /* Moves it further away from the board due to container padding */
     right: auto;
-    top: 48px !important; /* Below top captured row - shortened */
-    bottom: 48px !important; /* Above bottom captured row - shortened */
+    top: 48px !important;
+    bottom: 48px !important;
     margin-right: 0 !important;
     margin-left: 0 !important;
     margin-top: 0 !important;
-    width: 20px;
+    width: var(--eval-wrapper-width-mobile);
     padding-top: 0;
     height: auto !important;
     max-height: none;
@@ -4864,27 +4885,31 @@ body.allow-scroll {
     z-index: 1000;
   }
   #evaluation-bar {
-    width: 10px;
+    width: var(--eval-bar-width);
     margin-top: 0 !important;
     -webkit-box-flex: 1;
         -ms-flex-positive: 1;
             flex-grow: 1;
+    border-radius: 10px;
   }
   #evaluation-score {
-    width: 100%;
+    width: auto;
+    min-width: 50px;
     font-size: 0.7rem;
-    margin-top: 4px !important;
-    min-height: 15px;
+    margin-top: 8px !important;
+    min-height: 20px;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
   #chessboard-main-container {
     min-width: 0;
     max-width: 100%;
-    padding-left: 35px !important;
+    padding-left: var(--mobile-board-padding-left) !important;
     position: relative;
   }
   .chess-board-area {
-    padding: 5px !important;
-    padding-right: 5px !important;
+    padding: var(--padding-xxs) !important;
+    padding-right: var(--padding-xxs) !important;
     width: 100% !important;
     max-width: 100% !important;
     -webkit-box-sizing: border-box;
@@ -4908,7 +4933,7 @@ body.allow-scroll {
     background: rgba(15, 15, 26, 0.9) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     z-index: 105 !important;
-    border-radius: 6px !important;
+    border-radius: var(--radius-sm) !important;
     text-align: center !important;
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
@@ -4942,8 +4967,8 @@ body.allow-scroll {
   .analysis-controls-horizontal {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
-    gap: 12px 20px;
-    padding: 5px 10px !important;
+    gap: var(--space-md2) var(--space-xl);
+    padding: var(--padding-xxs) var(--padding-xs) !important;
   }
   .custom-switch-sm {
     margin-right: 0 !important;

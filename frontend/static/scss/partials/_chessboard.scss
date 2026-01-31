@@ -127,7 +127,7 @@
   right: 100%; 
   top: var(--eval-offset-desktop);
   bottom: var(--eval-offset-desktop);
-  margin-right: 15px; 
+  margin-right: var(--eval-margin-desktop);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -135,8 +135,8 @@
   transition: opacity 0.3s ease;
   z-index: 999;
   pointer-events: auto;
-  width: 30px;
-  height: auto; /* Auto height between top and bottom constraints */
+  width: var(--eval-wrapper-width-desktop);
+  height: auto;
 }
 
 /* Tablet specific - symmetric offsets to match captured pieces rows */
@@ -173,7 +173,7 @@
 }
 
 #evaluation-bar {
-  width: 20px;
+  width: var(--eval-bar-width);
   background: linear-gradient(
     to top,
     var(--color-eval-gradient-start) 0%,
@@ -197,9 +197,9 @@
 
 #evaluation-score {
   color: var(--color-text-light);
-  font-size: 0.7rem;
+  font-size: 0.75rem; /* Balanced size */
   font-weight: bold;
-  margin-top: 8px;
+  margin-top: 6px;
   min-height: 20px;
   display: flex;
   align-items: center;
