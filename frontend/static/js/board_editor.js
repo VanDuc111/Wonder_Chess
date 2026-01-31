@@ -13,6 +13,10 @@ class BoardEditor {
         this.selectedTool = null;
         /** @type {Object} Current position mapping (square -> pieceCode) */
         this.currentPosition = {};
+        /** @type {string} Current turn ('w' or 'b') */
+        this.currentTurn = 'w';
+        /** @type {string} Current castling rights (e.g., 'KQkq') */
+        this.currentCastling = 'KQkq';
         /** @type {HTMLElement|null} The modal element */
         this.modal = null;
         /** @type {boolean} Whether the editor was opened with a reference debug image */
@@ -36,6 +40,7 @@ class BoardEditor {
         this.setupPieceSelectors();
         this.setupToolButtons();
         this.setupControlButtons();
+        this.setupSettingsListeners(); // NEW: Turn & Castling UI
         this.setupDoneButton();
         this.setupLightbox();
         this._setupResize();
@@ -53,12 +58,16 @@ class BoardEditor {
             if (!this.modal) return;
         }
 
+        // Set flag to signal we are opening from AI analysis
+        this._isOpeningWithAI = true;
+
         // Set internal state from FEN
         try {
-            this.currentPosition = this.fenToPosition(fen);
+            this._loadFenToState(fen);
         } catch (e) {
             console.error("Invalid FEN provided to editor:", e);
-            this.currentPosition = this.fenToPosition(window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            const startFen = window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            this._loadFenToState(startFen);
         }
 
         // Show Modal using Bootstrap API
@@ -95,6 +104,7 @@ class BoardEditor {
         // Delay ensures container has correct dimensions before rendering
         setTimeout(() => {
             this.initializeEditorBoard();
+            this.updateSettingsUI();
             this.updateFENInput();
         }, 200);
     }
@@ -103,16 +113,19 @@ class BoardEditor {
      * Handler for when the modal is fully visible. Loads current game state if empty.
      */
     onModalShown() {
-        if (Object.keys(this.currentPosition).length === 0) {
+        // If NOT opened with AI, always sync with the current position of the main game
+        if (!this._isOpeningWithAI) {
              if (window.LOGIC_GAME && typeof window.LOGIC_GAME.getGame === 'function') {
                 const chess = window.LOGIC_GAME.getGame();
                 if (chess) {
-                    this.currentPosition = this.fenToPosition(chess.fen());
+                    console.log("🔄 Syncing editor with main board position.");
+                    this._loadFenToState(chess.fen());
                 }
-            } else {
-                this.currentPosition = {};
             }
         }
+        
+        // Reset the AI flag for next time
+        this._isOpeningWithAI = false;
 
         if (!this.hasDebugImage) {
             const splitContainer = this.modal.querySelector('.board-editor-split');
@@ -124,9 +137,83 @@ class BoardEditor {
         }
         
         this.initializeEditorBoard();
+        this.updateSettingsUI();
         this.updateFENInput();
     }
     
+    /**
+     * Parse FEN and store components in internal state.
+     * @private
+     */
+    _loadFenToState(fen) {
+        const parts = fen.split(' ');
+        this.currentPosition = this.fenToPosition(parts[0]);
+        this.currentTurn = parts[1] || 'w';
+        this.currentCastling = parts[2] || '-';
+    }
+
+    /**
+     * Setup listeners for turn and castling UI elements.
+     */
+    setupSettingsListeners() {
+        // Turn Radio Buttons
+        const turnRadios = document.querySelectorAll('input[name="editor-turn"]');
+        turnRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.checked) {
+                    this.currentTurn = radio.value;
+                    this.updateFENInput();
+                }
+            });
+        });
+
+        // Castling Checkboxes
+        const castlingChecks = [
+            { id: 'castling-wk', val: 'K' },
+            { id: 'castling-wq', val: 'Q' },
+            { id: 'castling-bk', val: 'k' },
+            { id: 'castling-bq', val: 'q' }
+        ];
+
+        castlingChecks.forEach(checkItem => {
+            const el = document.getElementById(checkItem.id);
+            if (el) {
+                el.addEventListener('change', () => {
+                    this._updateCastlingStateFromUI();
+                    this.updateFENInput();
+                });
+            }
+        });
+    }
+
+    /**
+     * Update currentCastling state string based on checkbox states.
+     * @private
+     */
+    _updateCastlingStateFromUI() {
+        let castling = '';
+        if (document.getElementById('castling-wk')?.checked) castling += 'K';
+        if (document.getElementById('castling-wq')?.checked) castling += 'Q';
+        if (document.getElementById('castling-bk')?.checked) castling += 'k';
+        if (document.getElementById('castling-bq')?.checked) castling += 'q';
+        this.currentCastling = castling || '-';
+    }
+
+    /**
+     * Update UI elements (Radios/Checkboxes) to match current state.
+     */
+    updateSettingsUI() {
+        // Set Turn
+        const turnRadio = document.querySelector(`input[name="editor-turn"][value="${this.currentTurn}"]`);
+        if (turnRadio) turnRadio.checked = true;
+
+        // Set Castling
+        document.getElementById('castling-wk').checked = this.currentCastling.includes('K');
+        document.getElementById('castling-wq').checked = this.currentCastling.includes('Q');
+        document.getElementById('castling-bk').checked = this.currentCastling.includes('k');
+        document.getElementById('castling-bq').checked = this.currentCastling.includes('q');
+    }
+
     /**
      * Create or re-create the Chessboard.js instance in the editor.
      */
@@ -430,7 +517,10 @@ class BoardEditor {
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
                 this.currentPosition = {};
+                this.currentTurn = 'w';
+                this.currentCastling = '-';
                 this.recreateBoard();
+                this.updateSettingsUI();
                 this.updateFENInput();
                 this.hideValidationError();
             });
@@ -449,8 +539,9 @@ class BoardEditor {
         if (startBtn) {
             startBtn.addEventListener('click', () => {
                 const startFen = window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-                this.currentPosition = this.fenToPosition(startFen);
+                this._loadFenToState(startFen);
                 this.recreateBoard();
+                this.updateSettingsUI();
                 this.updateFENInput();
                 this.validatePosition();
             });
@@ -464,8 +555,9 @@ class BoardEditor {
                 if (fenInput) {
                     try {
                         const fen = fenInput.value.trim();
-                        this.currentPosition = this.fenToPosition(fen);
+                        this._loadFenToState(fen);
                         this.recreateBoard();
+                        this.updateSettingsUI();
                         this.validatePosition();
                     } catch (e) {
                         this.showValidationError('FEN không hợp lệ');
@@ -636,9 +728,10 @@ class BoardEditor {
         }
         
         const startFen = window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-        const suffix = startFen.split(' ').slice(1).join(' ');
+        const defaultSuffix = startFen.split(' ').slice(3).join(' ');
         
-        return rows.join('/') + ' ' + suffix;
+        // Assemble FULL FEN: [Pos] [Turn] [Castling] [EnPassant] [Half] [Full]
+        return `${rows.join('/')} ${this.currentTurn} ${this.currentCastling} ${defaultSuffix}`;
     }
     
     /**

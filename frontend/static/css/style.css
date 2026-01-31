@@ -3232,6 +3232,11 @@ body.allow-scroll {
   font-family: "Courier New", monospace;
   font-size: 0.9rem;
   letter-spacing: 0.5px;
+  border-radius: var(--radius-lg) !important; /* Force rounded on all sides */
+}
+
+.fen-input-group .btn-premium-confirm {
+  border-radius: var(--radius-lg) !important;
 }
 
 /* Validation Error in editor */
@@ -3241,6 +3246,47 @@ body.allow-scroll {
   color: #ff6b6b;
   border-radius: var(--radius-lg);
   font-weight: 500;
+}
+
+.editor-settings {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 15px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.custom-check .form-check-input {
+  background-color: var(--color-glass-strong);
+  border-color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+.custom-check .form-check-input:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  -webkit-box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+          box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+}
+.custom-check .form-check-label {
+  color: var(--color-text-light);
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-check:checked + .btn-outline-light {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: white !important;
+  -webkit-box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+          box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
 }
 
 /* Editor Specific Alert Fixes */

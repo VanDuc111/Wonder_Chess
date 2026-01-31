@@ -19,10 +19,20 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     debug_mode = os.environ.get("FLASK_DEBUG", "True").lower() == "true"
     
-    # Only open browser if running locally on port 5000 and not in a production environment
+    # URL for local access
+    local_url = f"http://127.0.0.1:{port}"
+    
+    # Print welcome message
+    print("\n" + "="*50)
+    print(f"🚀 WONDER CHESS SERVER IS STARTING...")
+    print(f"🌍 Local URL: {local_url}")
+    print("="*50 + "\n")
+    
+    # Only open browser if running locally and not in a production environment
     is_render = os.environ.get("RENDER") is not None
-    if not is_render and (os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not debug_mode):
-        Timer(1.5, open_browser).start()
+    if not is_render and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        # Launch browser in a separate thread to not block the server start
+        Timer(2.0, open_browser).start()
     
     # Start the Flask server
     app.run(host="0.0.0.0", port=port, debug=debug_mode)

@@ -115,6 +115,11 @@ class CapturedPiecesManager {
         
         const captured = this.calculateCaptured(game);
         
+        // Cache state to avoid redundant renders and image re-requests
+        const stateKey = JSON.stringify(captured);
+        if (this._lastStateKey === stateKey) return;
+        this._lastStateKey = stateKey;
+        
         // Update white's captures (black pieces)
         this.renderCaptured(this.dom.capturedByWhite, captured.white, captured.advantage > 0 ? captured.advantage : 0);
         

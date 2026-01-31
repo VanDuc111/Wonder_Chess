@@ -30,17 +30,15 @@ class ChessUI {
      * @private
      */
     _ensureDom() {
-        // Kiểm tra tính hợp lệ của Cache (tránh trỏ vào các Element đã bị xóa khỏi DOM)
-        for (let key in this.dom) {
-            if (this.dom[key] && !document.contains(this.dom[key])) {
-                this.dom[key] = null;
-            }
-        }
+        // Only re-cache if essential elements are missing
+        if (this.dom.evalBar && document.contains(this.dom.evalBar)) return;
 
-        if (!this.dom.evalBar) this.dom.evalBar = document.getElementById(window.APP_CONST?.IDS?.EVAL_BAR || 'eval-white-advantage');
-        if (!this.dom.evalScore) this.dom.evalScore = document.getElementById(window.APP_CONST?.IDS?.EVAL_SCORE || 'evaluation-score');
-        if (!this.dom.boardCont) this.dom.boardCont = document.getElementById('myBoard');
-        if (!this.dom.openingName) this.dom.openingName = document.getElementById('opening-name');
+        const ids = window.APP_CONST?.IDS || {};
+        this.dom.evalBar = document.getElementById(ids.EVAL_BAR || 'eval-white-advantage');
+        this.dom.evalScore = document.getElementById(ids.EVAL_SCORE || 'evaluation-score');
+        this.dom.boardCont = document.getElementById('myBoard');
+        this.dom.openingName = document.getElementById('opening-name');
+        this.dom.arrowCont = document.getElementById('arrow-container');
     }
 
     /**
@@ -109,48 +107,36 @@ class ChessUI {
 
     /**
      * Synchronizes the evaluation bar height with the chessboard's dynamic height.
+     * Debounced to prevent layout thrashing.
      */
     syncBoardAndEvalHeight() {
-        this._ensureDom();
-        const barCont = document.querySelector('.score-bar-container');
-        const wrapper = document.querySelector('.score-alignment-wrapper');
-        const scoreEl = this.dom.evalScore;
-        const boardArea = document.querySelector('.chess-board-area');
-        if (!boardArea || !barCont || !wrapper) return;
-
-        // Don't override CSS - let top/bottom offsets control the height
-        wrapper.style.height = 'auto';
+        if (this._syncTimeout) clearTimeout(this._syncTimeout);
         
-        setTimeout(() => {
+        this._syncTimeout = setTimeout(() => {
+            this._ensureDom();
+            const boardArea = document.querySelector('.chess-board-area');
+            const barCont = document.querySelector('.score-bar-container');
+            const wrapper = document.querySelector('.score-alignment-wrapper');
+            
+            if (!boardArea || !barCont || !wrapper) return;
+
             const h = boardArea.clientHeight;
-            if (h > 0) {
-                const screenWidth = window.innerWidth;
-                
-                // Get CSS variable values for offsets
-                const rootStyles = getComputedStyle(document.documentElement);
-                const desktopOffset = parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || 45;
-                const tabletOffsetTop = parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || 55;
-                const mobileOffset = parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || 48;
-                
-                // Calculate height based on CSS offsets (captured pieces rows)
-                let capturedRowsOffset;
-                if (screenWidth >= 992) {
-                    capturedRowsOffset = desktopOffset * 2; // top + bottom
-                } else if (screenWidth >= 577) {
-                    capturedRowsOffset = tabletOffsetTop * 2; // Symmetric offsets
-                } else {
-                    capturedRowsOffset = mobileOffset * 2; // top + bottom
-                }
-                
-                // Set wrapper height to board height minus captured pieces
-                const wrapperHeight = h - capturedRowsOffset;
-                wrapper.style.height = `${wrapperHeight}px`;
-                
-                const scoreH = scoreEl ? scoreEl.offsetHeight : 0;
-                // Bar container height = wrapper height minus score display
-                if (barCont) barCont.style.height = `${wrapperHeight - scoreH - 10}px`;
-            }
-        }, 0);
+            if (h <= 0) return;
+
+            const screenWidth = window.innerWidth;
+            const rootStyles = getComputedStyle(document.documentElement);
+            
+            let offset;
+            if (screenWidth >= 992) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || 45;
+            else if (screenWidth >= 577) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || 55;
+            else offset = parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || 48;
+            
+            const wrapperHeight = h - (offset * 2);
+            wrapper.style.height = `${wrapperHeight}px`;
+            
+            const scoreH = this.dom.evalScore ? this.dom.evalScore.offsetHeight : 0;
+            barCont.style.height = `${wrapperHeight - scoreH - 10}px`;
+        }, 50);
     }
 
     /**
@@ -161,28 +147,29 @@ class ChessUI {
         this._ensureDom();
         if (!this.dom.boardCont) return;
         
-        // Kiểm tra xem mũi tên cũ có còn trong DOM không (tránh trường hợp bị Chessboard() xóa mất)
-        if (this.dom.arrowCont && !document.contains(this.dom.arrowCont)) {
-            this.dom.arrowCont = null;
+        const enabled = document.getElementById('best-move-switch')?.checked;
+        
+        // If disabled or no move, just clear and exit
+        if (!enabled || !moveUci || moveUci.length < 4) {
+            if (this.dom.arrowCont) this.dom.arrowCont.innerHTML = '';
+            return;
         }
 
-        if (!this.dom.arrowCont) this.dom.arrowCont = document.getElementById('arrow-container');
-        
         if (!this.dom.arrowCont) {
             this.dom.arrowCont = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             this.dom.arrowCont.id = "arrow-container";
-            
             Object.assign(this.dom.arrowCont.style, {
                 position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
                 pointerEvents: 'none', zIndex: '100'
             });
             this.dom.boardCont.appendChild(this.dom.arrowCont);
         } else {
+            // Optimization: If the same move arrow is already there, don't redraw
+            if (this.dom.arrowCont.getAttribute('data-current-move') === moveUci) return;
             this.dom.arrowCont.innerHTML = '';
         }
-
-        const enabled = document.getElementById('best-move-switch')?.checked;
-        if (!enabled || !moveUci || moveUci.length < 4) return;
+        
+        this.dom.arrowCont.setAttribute('data-current-move', moveUci);
 
         const boardRect = this.dom.boardCont.getBoundingClientRect();
         this.dom.arrowCont.setAttribute("viewBox", `0 0 ${boardRect.width} ${boardRect.height}`);
@@ -434,6 +421,11 @@ class ChessCore {
         /** @type {number} Current pointer in the history array */
         this.index = 0;
 
+        /** @type {AbortController|null} Controller for cancelling stale API evaluations */
+        this.evalAbortController = null;
+        /** @type {number} Monotonic counter to track board 'version' for async safety */
+        this.boardVersion = 0;
+
         this._initGlobalListeners();
         this._setupResize();
         this.dom = {
@@ -639,28 +631,46 @@ class ChessCore {
         
         if (this.game.game_over()) {
             this._showGameOver();
-            isPlayerTurn = true; return;
+            isPlayerTurn = true; 
+            return;
         }
 
+        // --- EXPERT: Cancel previous stale evaluations ---
+        if (this.evalAbortController) this.evalAbortController.abort();
+        this.evalAbortController = new AbortController();
+        const { signal } = this.evalAbortController;
+
         const savedIdx = this.index;
-        this.engine.getDeepEval(this.game.fen()).then(d => {
+        const currentFen = this.game.fen();
+
+        // Perform evaluation with cancellation support
+        fetch(window.APP_CONST?.API?.EVALUATE || '/api/game/evaluate', {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ fen: currentFen }),
+            signal // Link to abort controller
+        })
+        .then(res => res.json())
+        .then(d => {
             if (d.success && d.engine_results && this.history[savedIdx]) {
                 const sc = d.engine_results.search_score;
-                this.ui.updateEvaluationBar(sc, this.game.fen(), this.game);
+                this.ui.updateEvaluationBar(sc, currentFen, this.game);
                 this.history[savedIdx].score = sc;
                 this.history[savedIdx].bestMove = d.engine_results.best_move;
+                
                 if (savedIdx === this.index) {
                     this.ui.renderBestMoveArrow(d.engine_results.best_move);
                     this._renderPGN();
-                    
-                    // Trigger Alice Coach Mode nếu đang bật
-                    if (window.ALICE_CHAT) {
-                        window.ALICE_CHAT.checkCoachComment();
-                    }
+                    if (window.ALICE_CHAT) window.ALICE_CHAT.checkCoachComment();
                 }
             }
+        })
+        .catch(err => {
+            if (err.name === 'AbortError') return; // Expected cancellation
+            console.warn('Evaluation failed:', err);
         });
 
+        // Handle Bot or Human turn
         if (playerColor !== null && this.game.turn() !== playerColor) {
             if (isTimed) TIMER_MANAGER.start(this.game.turn(), selectedBotIncrement);
             await this.botGo();
@@ -678,42 +688,43 @@ class ChessCore {
         isPlayerTurn = false;
         this.ui.renderBestMoveArrow(null);
         
+        const currentVersion = ++this.boardVersion; // Increment version per bot session
         const startTime = Date.now();
-        const MIN_THINKING_TIME = 1200; // Minimum 800ms for bot to "think"
+        const MIN_THINKING_TIME = 1200;
         
         try {
             const r = await this.engine.getBestMove(this.game.fen(), selectedBotLevel || 10, selectedBotTime);
+            
+            // --- EXPERT: Validate that game state has not changed (Undo/Restart) while thinking ---
+            if (currentVersion !== this.boardVersion) {
+                console.log("⚠️ Ignoring Bot move: board state changed during calculation.");
+                return;
+            }
+
             if (r) {
-                // Calculate remaining time to wait
                 const elapsed = Date.now() - startTime;
                 const remainingWait = Math.max(0, MIN_THINKING_TIME - elapsed);
+                if (remainingWait > 0) await new Promise(res => setTimeout(res, remainingWait));
                 
-                // Wait minimum time so timer can run
-                if (remainingWait > 0) {
-                    await new Promise(resolve => setTimeout(resolve, remainingWait));
-                }
-                
+                // Final sanity check before applying
+                if (currentVersion !== this.boardVersion) return;
+
                 this.game.move(r.move, { sloppy: true });
                 const history = this.game.history();
                 const san = history[history.length - 1];
+                
                 this.history.push({ fen: this.game.fen(), score: r.score, san, uci: r.move });
                 this.index = this.history.length - 1;
                 
-                // Cập nhật khai cuộc cho nước đi của Bot
                 this.opening.detectAndUpdate(this.history, this.index);
-                
-                // Update UI and captured pieces
                 this.updateUI();
-                if (window.updateCapturedPieces) {
-                    window.updateCapturedPieces(this.game);
-                }
+                if (window.updateCapturedPieces) window.updateCapturedPieces(this.game);
                 
-                // Gọi onTurnEnd để xử lý kết thúc lượt (bao gồm việc trigger gợi ý cho Player)
                 await this.onTurnEnd();
             }
         } catch (e) {
             console.error("Engine failure:", e);
-            isPlayerTurn = true;
+            if (currentVersion === this.boardVersion) isPlayerTurn = true;
         }
     }
 
@@ -746,6 +757,12 @@ class ChessCore {
     _renderPGN() {
         this._ensureDom();
         if (!this.dom.pgnList) return;
+        
+        // Cache check to avoid redundant innerHTML sets. Include score to update icons when engine results arrive.
+        const currentScore = this.history[this.index]?.score || '';
+        const stateKey = `len:${this.history.length}-idx:${this.index}-sc:${currentScore}`;
+        if (this._lastPgnStateKey === stateKey) return;
+        this._lastPgnStateKey = stateKey;
         
         const htmlParts = [];
         for (let i = 1; i < this.history.length; i += 2) {
@@ -830,35 +847,29 @@ class ChessCore {
      * @private
      */
     _setupResize() {
-        if (!window._boardResizeHandler) {
-            window._boardResizeHandler = () => {
-                // Trigger resize multiple times to ensure we catch the final stable layout
-                [50, 200, 500].forEach(delay => {
-                    setTimeout(() => {
-                        if (typeof board !== 'undefined' && board) {
-                             board.resize();
-                             if (this.ui) {
-                                 this.ui.syncBoardAndEvalHeight();
-                                 this.updateUI();
-                             }
-                        }
-                    }, delay);
-                });
-            };
-            window.addEventListener('resize', window._boardResizeHandler);
-            
-            // Add ResizeObserver for the main container to handle internal layout shifts
-            const container = document.getElementById('chessboard-main-container');
-            if (container && window.ResizeObserver) {
-                const ro = new ResizeObserver(() => {
-                    if (typeof board !== 'undefined' && board) {
-                        board.resize();
-                        if (this.ui) this.ui.syncBoardAndEvalHeight();
-                    }
-                });
-                ro.observe(container);
+        if (window._boardResizeInitialized) return;
+
+        const handleResize = () => {
+            if (typeof board !== 'undefined' && board) {
+                board.resize();
+                if (this.ui) this.ui.syncBoardAndEvalHeight();
             }
+        };
+
+        window.addEventListener('resize', () => {
+            if (this._resizeTimer) clearTimeout(this._resizeTimer);
+            this._resizeTimer = setTimeout(handleResize, 150);
+        });
+
+        const container = document.getElementById('chessboard-main-container');
+        if (container && window.ResizeObserver) {
+            const ro = new ResizeObserver((entries) => {
+                // Use requestAnimationFrame to sync with browser paint
+                window.requestAnimationFrame(() => handleResize());
+            });
+            ro.observe(container);
         }
+        window._boardResizeInitialized = true;
     }
 
     /**
