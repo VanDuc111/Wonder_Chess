@@ -14,13 +14,15 @@
 #boardEditorModal {
     .modal-body {
         padding: 1rem 1.25rem; 
-        @media (max-width: 576.98px) {
-            padding: 0.75rem 0.5rem;
+        @media (max-width: 767.98px) {
+            padding: 0.5rem 0.25rem; /* Even tighter padding */
         }
     }
     .modal-footer {
         padding: 0.75rem 1.25rem; 
-        margin-top: -5px; 
+        @media (max-width: 767.98px) {
+            padding: 0.5rem;
+        }
     }
 }
 
@@ -176,9 +178,10 @@
 }
 
 .btn-piece img {
-    width: 100%;
-    height: 100%;
+    width: 110%; /* Make pieces slightly larger than padding for better visibility */
+    height: 110%;
     object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
 .btn-piece:hover {
@@ -238,6 +241,7 @@
     aspect-ratio: 1 / 1;
     background-color: var(--color-modal-bg-darker);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    touch-action: none; /* Critical for mobile drag and drop */
 }
 
 .editor-controls {
@@ -292,18 +296,50 @@
 
 @media (max-width: 991.98px) {
     .board-editor-container {
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
+        justify-content: center;
+        gap: 5px;
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 0;
     }
     
     .editor-board-wrapper {
-        width: 100%;
-        max-width: 480px;
-        margin: 10px 0;
+        flex: 1;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        border: none;
+        box-shadow: none;
+        order: unset;
     }
     
     #editorBoard {
         width: 100% !important;
+    }
+
+    .piece-selector {
+        flex-direction: column;
+        width: auto;
+        padding: 2px;
+        gap: 4px;
+        background: none;
+        border: none;
+        justify-content: center;
+    }
+    
+    .piece-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        grid-template-columns: none;
+    }
+    
+    .btn-piece, .btn-editor-tool {
+        width: 40px; /* Base mobile size */
+        height: 40px;
+        padding: 2px;
     }
 
     .board-editor-split {
@@ -311,51 +347,29 @@
     }
 
     .reference-image-container {
-        height: 300px;
-        margin-bottom: 20px;
-    }
-
-    .piece-selector {
-        flex-direction: row;
-        width: 100%;
-        justify-content: center;
-        padding: 10px;
-    }
-    
-    .piece-buttons {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 8px;
-    }
-    
-    .btn-piece {
-        width: 50px;
-        height: 50px;
-    }
-
-    .btn-editor-tool {
-        width: 50px;
-        height: 50px;
-    }
-
-    .editor-board-wrapper {
-        order: -1;
-        width: 98% !important; /* Take almost full width on small screens */
-        max-width: 480px;
-        margin-left: auto;
-        margin-right: auto;
+        height: 200px; /* Shorter image for mobile to focus on board */
+        margin-top: 10px;
     }
 }
 
 @media (max-width: 576.98px) {
-    .piece-buttons {
-        grid-template-columns: repeat(3, 1fr);
+    .btn-piece, .btn-editor-tool {
+        width: 36px; /* Even smaller for narrow phones */
+        height: 36px;
     }
     
+    .board-editor-container {
+        gap: 2px;
+    }
+
     .editor-actions {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* Three icons in a row for mobile */
+        gap: 6px;
     }
     
     .editor-actions .btn {
-        width: 100%;
+        font-size: 0.75rem;
+        padding: 8px 4px;
     }
 }

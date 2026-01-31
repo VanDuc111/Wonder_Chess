@@ -1,49 +1,59 @@
 /**
  * Board Editor - Allow users to edit chess positions
+ * Manages the UI, board logic, and drag-and-drop operations for editing FEN strings.
  */
 
 class BoardEditor {
     constructor() {
+        /** @type {Object|null} Chessboard.js instance */
         this.editorBoard = null;
+        /** @type {string|null} Current piece selected for placement (e.g., 'wK', 'bP') */
         this.selectedPiece = null;
+        /** @type {string|null} Current active tool ('move', 'delete') */
         this.selectedTool = null;
+        /** @type {Object} Current position mapping (square -> pieceCode) */
         this.currentPosition = {};
+        /** @type {HTMLElement|null} The modal element */
         this.modal = null;
-        this.hasDebugImage = false; // Flag to track if opened with image
+        /** @type {boolean} Whether the editor was opened with a reference debug image */
+        this.hasDebugImage = false; 
         
         this.init();
     }
     
+    /**
+     * Initialize modal listeners and UI event handlers.
+     */
     init() {
         const ids = window.APP_CONST?.IDS;
-        this.modal = document.getElementById(ids?.BOT_SETTINGS_MODAL ? 'boardEditorModal' : 'boardEditorModal'); // Use actual ID from constants if mapped
-        this.modal = document.getElementById('boardEditorModal'); // Keep specific if not in constants
+        this.modal = document.getElementById('boardEditorModal');
         if (!this.modal) return;
         
-        // Initialize when modal is shown
+        // Initialize when modal is fully shown
         this.modal.addEventListener('shown.bs.modal', () => this.onModalShown());
         
-        // Setup event listeners
+        // Setup all functional modules
         this.setupPieceSelectors();
         this.setupToolButtons();
         this.setupControlButtons();
         this.setupDoneButton();
         this.setupLightbox();
+        this._setupResize();
+        this.addBoardClickHandler(); // Initialize board listeners ONCE on the container
     }
     
     /**
-     * Open editor with specific FEN and optional Debug Image
-     * @param {string} fen - FEN string to load
-     * @param {string} debugImage - Base64 string of debug image (optional)
+     * Open editor with specific FEN and optional Debug Image from AI analysis.
+     * @param {string} fen - FEN string to load into the board.
+     * @param {string} debugImage - Base64 encoded string of the reference image.
      */
     openWithFen(fen, debugImage = null) {
         if (!this.modal) {
-            // Re-init if modal wasn't found initially
             this.init(); 
             if (!this.modal) return;
         }
 
-        // Set internal state
+        // Set internal state from FEN
         try {
             this.currentPosition = this.fenToPosition(fen);
         } catch (e) {
@@ -51,10 +61,11 @@ class BoardEditor {
             this.currentPosition = this.fenToPosition(window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
         }
 
-        // Open Modal
+        // Show Modal using Bootstrap API
         const bsModal = new bootstrap.Modal(this.modal);
         bsModal.show();
 
+        // Responsive adjustment for AI reference image view
         const splitContainer = this.modal.querySelector('.board-editor-split');
         const rightPane = this.modal.querySelector('.editor-right-pane');
         const imgEl = document.getElementById('editor-reference-image');
@@ -62,38 +73,36 @@ class BoardEditor {
         
         if (rightPane && imgEl && splitContainer) {
             if (debugImage) {
-                // HAS IMAGE: Show right pane, set image
                 splitContainer.classList.add('has-image');
                 rightPane.style.display = 'flex';
                 imgEl.src = 'data:image/jpeg;base64,' + debugImage;
                 imgEl.style.display = 'block';
                 if (placeholderEl) placeholderEl.style.display = 'none';
                 
-                // Set Modal size larger for split view
                 this.modal.querySelector('.modal-dialog').classList.remove('modal-lg');
                 this.modal.querySelector('.modal-dialog').classList.add('modal-xl');
                 this.hasDebugImage = true;
             } else {
-                // NO IMAGE: Hide right pane completely
                 splitContainer.classList.remove('has-image');
                 rightPane.style.display = 'none';
                 
-                // Use large modal for single-column editor
                 this.modal.querySelector('.modal-dialog').classList.remove('modal-xl');
                 this.modal.querySelector('.modal-dialog').classList.add('modal-lg');
                 this.hasDebugImage = false;
             }
         }
         
-        // Wait for modal transition then render board
+        // Delay ensures container has correct dimensions before rendering
         setTimeout(() => {
             this.initializeEditorBoard();
             this.updateFENInput();
         }, 200);
     }
     
+    /**
+     * Handler for when the modal is fully visible. Loads current game state if empty.
+     */
     onModalShown() {
-        // If currentPosition is empty (user opened manually), load from main game
         if (Object.keys(this.currentPosition).length === 0) {
              if (window.LOGIC_GAME && typeof window.LOGIC_GAME.getGame === 'function') {
                 const chess = window.LOGIC_GAME.getGame();
@@ -101,12 +110,10 @@ class BoardEditor {
                     this.currentPosition = this.fenToPosition(chess.fen());
                 }
             } else {
-                 // Start with empty board if manual open and no game state
                 this.currentPosition = {};
             }
         }
 
-        // Check if we need to hide the right pane (Manual Open case)
         if (!this.hasDebugImage) {
             const splitContainer = this.modal.querySelector('.board-editor-split');
             const rightPane = this.modal.querySelector('.editor-right-pane');
@@ -116,13 +123,13 @@ class BoardEditor {
             this.modal.querySelector('.modal-dialog').classList.add('modal-lg');
         }
         
-        // Initialize editor board
         this.initializeEditorBoard();
-        
-        // Update FEN input
         this.updateFENInput();
     }
     
+    /**
+     * Create or re-create the Chessboard.js instance in the editor.
+     */
     initializeEditorBoard() {
         if (this.editorBoard) {
             this.editorBoard.destroy();
@@ -133,6 +140,9 @@ class BoardEditor {
         const config = {
             position: this.currentPosition,
             draggable: isMoveMode, 
+            onDragStart: (source, piece) => {
+                return isMoveMode; // Dragging only enabled in hand-tool mode
+            },
             onDrop: isMoveMode ? this.onPieceMove.bind(this) : undefined,
             dropOffBoard: isMoveMode ? 'trash' : 'snapback',
             pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
@@ -140,18 +150,52 @@ class BoardEditor {
         
         this.editorBoard = Chessboard('editorBoard', config);
         
-        // Force resize after a short delay to handle modal transition
-        setTimeout(() => {
-            if (this.editorBoard) {
-                this.editorBoard.resize();
-                // Add click handler to board squares AFTER rendering
-                this.addBoardClickHandler();
-            }
-        }, 150);
+        // Ensure board fills container after transitions
+        [150, 400, 800].forEach(delay => {
+            setTimeout(() => {
+                if (this.editorBoard && typeof this.editorBoard.resize === 'function') {
+                    this.editorBoard.resize();
+                }
+            }, delay);
+        });
     }
 
+    /**
+     * Setup robust resizing logic using ResizeObserver and window listeners.
+     */
+    _setupResize() {
+        if (this._resizeInitialized) return;
+
+        // Trigger resize on window size changes
+        window.addEventListener('resize', () => {
+            [50, 250, 600].forEach(delay => {
+                setTimeout(() => {
+                    if (this.editorBoard && typeof this.editorBoard.resize === 'function') {
+                        this.editorBoard.resize();
+                    }
+                }, delay);
+            });
+        });
+
+        // Trigger resize when internal container shifts (e.g. Inspect Tool toggle)
+        const observer = new ResizeObserver(() => {
+            if (this.editorBoard && typeof this.editorBoard.resize === 'function') {
+                this.editorBoard.resize();
+            }
+        });
+
+        const wrapper = document.querySelector('.editor-board-wrapper');
+        if (wrapper) {
+            observer.observe(wrapper);
+        }
+
+        this._resizeInitialized = true;
+    }
+
+    /**
+     * Callback when a piece is dragged and dropped within the board.
+     */
     onPieceMove(source, target, piece, newPos, oldPos, orientation) {
-        // If piece was dropped off-board (trash mode)
         if (target === 'offboard') {
             delete this.currentPosition[source];
             this.updateFENInput();
@@ -161,40 +205,42 @@ class BoardEditor {
 
         if (source === target) return;
         
-        // Update local position
         delete this.currentPosition[source];
         this.currentPosition[target] = piece;
         
-        // Sync with input
         this.updateFENInput();
         this.validatePosition();
 
-        // Ensure internal state consistency
         setTimeout(() => this.updateBoardUI(), 50);
     }
     
+    /**
+     * Add click and touch listeners to the board container.
+     */
     addBoardClickHandler() {
         const boardEl = document.getElementById('editorBoard');
-        if (!boardEl) return;
+        if (!boardEl || this._boardInteractionsInitialized) return;
         
-        // Remove existing listener to prevent duplicates
-        if (this._boardClickListener) {
-            boardEl.removeEventListener('click', this._boardClickListener);
-        }
-        
-        this._boardClickListener = (e) => {
+        const handleInteraction = (e) => {
             const squareEl = e.target.closest('.square-55d63');
-            if (!squareEl) return;
-            
-            const squareId = squareEl.getAttribute('data-square');
-            if (!squareId) return;
-            
-            this.handleSquareClick(squareId);
+            if (squareEl) {
+                const squareId = squareEl.getAttribute('data-square');
+                if (squareId) this.handleSquareClick(squareId);
+            }
         };
         
-        boardEl.addEventListener('click', this._boardClickListener);
+        boardEl.addEventListener('click', handleInteraction);
+        
+        // Critical for touch devices: explicitly disable passive behavior to allow preventDefault
+        boardEl.addEventListener('touchstart', (e) => {
+            if (this.selectedTool || this.selectedPiece) {
+                if (e.target.closest('img') && e.cancelable) {
+                    e.preventDefault(); // Stop scrolling while dragging
+                }
+            }
+        }, { passive: false });
 
-        // Setup HTML5 Drag-Drop Listeners for Sidebar Pieces
+        // HTML5 Drag-Drop for Sidebar Pieces
         boardEl.addEventListener('dragover', (e) => e.preventDefault());
         boardEl.addEventListener('drop', (e) => {
             e.preventDefault();
@@ -209,15 +255,21 @@ class BoardEditor {
                 this.validatePosition();
             }
         });
+
+        this._boardInteractionsInitialized = true;
     }
     
+    /**
+     * Logic for clicking a square on the board (Add/Delete piece).
+     * @param {string} square - Square ID (e.g. 'e4').
+     */
     handleSquareClick(square) {
         if (this.selectedTool === 'delete') {
             delete this.currentPosition[square];
         } else if (this.selectedPiece) {
             this.currentPosition[square] = this.selectedPiece;
         } else {
-            return; // Nothing to do
+            return; 
         }
         
         this.updateBoardUI();
@@ -225,47 +277,112 @@ class BoardEditor {
         this.validatePosition();
     }
 
+    /**
+     * Synchronize the visual state of the board with internal position object.
+     */
     updateBoardUI() {
         if (this.editorBoard) {
-            // position() is better than recreateBoard because it doesn't destroy the DOM/listeners
             this.editorBoard.position(this.currentPosition, false);
         } else {
             this.recreateBoard();
         }
     }
     
+    /**
+     * Setup listeners for the piece selection sidebar (Laptop & Tablet).
+     */
     setupPieceSelectors() {
         const pieceButtons = document.querySelectorAll('.btn-piece');
         
         pieceButtons.forEach(btn => {
-            // Handle Click
+            const pieceCode = btn.getAttribute('data-piece');
+            
             btn.addEventListener('click', () => {
                 pieceButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                this.selectedPiece = btn.getAttribute('data-piece');
+                this.selectedPiece = pieceCode;
                 this.selectedTool = null;
                 document.querySelectorAll('.btn-editor-tool').forEach(b => {
                     b.classList.remove('active', 'active-danger', 'active-success');
                 });
-                // When a piece is selected, ensure board isn't internally draggable
                 this.recreateBoard(); 
             });
 
-            // Handle Drag Start
             const img = btn.querySelector('img');
             if (img) {
+                // PC Drag
                 img.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('piece', btn.getAttribute('data-piece'));
-                    // Visual feedback
+                    e.dataTransfer.setData('piece', pieceCode);
                     btn.classList.add('dragging');
                 });
                 img.addEventListener('dragend', () => {
                     btn.classList.remove('dragging');
                 });
+
+                // Mobile/Tablet Touch Drag Shim
+                this._setupTouchDrag(img, pieceCode);
             }
         });
     }
+
+    /**
+     * Custom Touch Drag Shim to support piece dragging on mobile devices.
+     * @param {HTMLElement} imgEl - The piece image element.
+     * @param {string} pieceCode - The piece code (e.g. 'wK').
+     */
+    _setupTouchDrag(imgEl, pieceCode) {
+        let touchPiece = null;
+        
+        imgEl.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            
+            // Create a ghost piece to move around following the finger
+            touchPiece = document.createElement('img');
+            touchPiece.src = imgEl.src;
+            touchPiece.style.position = 'fixed';
+            touchPiece.style.width = '45px';
+            touchPiece.style.height = '45px';
+            touchPiece.style.zIndex = '10000';
+            touchPiece.style.pointerEvents = 'none';
+            touchPiece.style.opacity = '0.8';
+            touchPiece.style.left = (touch.clientX - 22) + 'px';
+            touchPiece.style.top = (touch.clientY - 22) + 'px';
+            document.body.appendChild(touchPiece);
+            
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+
+        imgEl.addEventListener('touchmove', (e) => {
+            if (!touchPiece) return;
+            const touch = e.touches[0];
+            touchPiece.style.left = (touch.clientX - 22) + 'px';
+            touchPiece.style.top = (touch.clientY - 22) + 'px';
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+
+        imgEl.addEventListener('touchend', (e) => {
+            if (!touchPiece) return;
+            
+            const touch = e.changedTouches[0];
+            const dropEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            const squareEl = dropEl?.closest('.square-55d63');
+            const squareId = squareEl?.getAttribute('data-square');
+
+            if (squareId) {
+                this.currentPosition[squareId] = pieceCode;
+                this.updateBoardUI();
+                this.updateFENInput();
+                this.validatePosition();
+            }
+
+            if (touchPiece.parentNode) document.body.removeChild(touchPiece);
+            touchPiece = null;
+        }, { passive: false });
+    }
     
+    /**
+     * Setup move and delete tool buttons.
+     */
     setupToolButtons() {
         const deleteBtn = document.getElementById('editor-delete-piece');
         const handBtn = document.getElementById('editor-hand-tool');
@@ -283,7 +400,7 @@ class BoardEditor {
                 } else {
                     this.selectedTool = null;
                 }
-                this.recreateBoard(); // Toggle draggability
+                this.recreateBoard(); 
             });
         }
         
@@ -300,13 +417,15 @@ class BoardEditor {
                 } else {
                     this.selectedTool = null;
                 }
-                this.recreateBoard(); // Toggle draggability
+                this.recreateBoard(); 
             });
         }
     }
     
+    /**
+     * Setup Board Control Buttons (Clear, Flip, Reset).
+     */
     setupControlButtons() {
-        // Clear board
         const clearBtn = document.getElementById('editor-clear-board');
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
@@ -317,7 +436,6 @@ class BoardEditor {
             });
         }
         
-        // Flip board
         const flipBtn = document.getElementById('editor-flip-board');
         if (flipBtn) {
             flipBtn.addEventListener('click', () => {
@@ -338,7 +456,7 @@ class BoardEditor {
             });
         }
         
-        // Apply FEN
+        // Manual FEN application
         const applyFenBtn = document.getElementById('editor-apply-fen');
         if (applyFenBtn) {
             applyFenBtn.addEventListener('click', () => {
@@ -357,18 +475,21 @@ class BoardEditor {
         }
     }
     
+    /**
+     * Complete destruction and re-creation of the board instance.
+     * Needed when changing draggability settings.
+     */
     recreateBoard() {
-        // Destroy old board
         if (this.editorBoard) {
             this.editorBoard.destroy();
         }
         
         const isMoveMode = this.selectedTool === 'move';
 
-        // Create new board
         const config = {
             position: this.currentPosition,
             draggable: isMoveMode,
+            onDragStart: (source, piece) => isMoveMode,
             onDrop: isMoveMode ? this.onPieceMove.bind(this) : undefined,
             dropOffBoard: isMoveMode ? 'trash' : 'snapback',
             pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
@@ -376,22 +497,20 @@ class BoardEditor {
         
         this.editorBoard = Chessboard('editorBoard', config);
         
-        // Re-add click handlers
         setTimeout(() => {
-            this.addBoardClickHandler();
             if (this.editorBoard) this.editorBoard.resize();
         }, 100);
     }
     
+    /**
+     * Handle the main confirmation button.
+     */
     setupDoneButton() {
         const doneBtn = document.getElementById('editor-done-btn');
         if (doneBtn) {
             doneBtn.addEventListener('click', () => {
                 if (this.validatePosition()) {
-                    // Apply position to main board
                     this.applyPositionToMainBoard();
-                    
-                    // Close modal
                     const modal = bootstrap.Modal.getInstance(this.modal);
                     if (modal) modal.hide();
                 }
@@ -399,10 +518,13 @@ class BoardEditor {
         }
     }
     
+    /**
+     * Validate current position (Exactly one white king and one black king required).
+     * @returns {boolean} True if valid.
+     */
     validatePosition() {
         const pieces = Object.values(this.currentPosition);
         
-        // Count kings
         const whiteKings = pieces.filter(p => p === 'wK').length;
         const blackKings = pieces.filter(p => p === 'bK').length;
         
@@ -415,6 +537,10 @@ class BoardEditor {
         return true;
     }
     
+    /**
+     * Show text alert message in the modal.
+     * @param {string} message - Success or error text.
+     */
     showValidationError(message) {
         const errorEl = document.getElementById('editor-validation-error');
         const messageEl = document.getElementById('editor-error-message');
@@ -425,6 +551,9 @@ class BoardEditor {
         }
     }
     
+    /**
+     * Hide validation alerts.
+     */
     hideValidationError() {
         const errorEl = document.getElementById('editor-validation-error');
         if (errorEl) {
@@ -432,6 +561,9 @@ class BoardEditor {
         }
     }
     
+    /**
+     * Update the text input field with the current FEN representation.
+     */
     updateFENInput() {
         const fenInput = document.getElementById('editor-fen-input');
         if (fenInput) {
@@ -439,12 +571,15 @@ class BoardEditor {
         }
     }
     
+    /**
+     * Helper: Convert FEN string to internal position object.
+     * @param {string} fen - FEN string.
+     * @returns {Object} Position object.
+     */
     fenToPosition(fen) {
-        // Convert FEN string to position object
         const parts = fen.split(' ');
         const rows = parts[0].split('/');
         const position = {};
-        
         const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         
         rows.forEach((row, rowIndex) => {
@@ -453,10 +588,8 @@ class BoardEditor {
             
             for (let char of row) {
                 if (char >= '1' && char <= '8') {
-                    // Empty squares
                     fileIndex += parseInt(char);
                 } else {
-                    // Piece
                     const square = files[fileIndex] + rank;
                     const color = char === char.toUpperCase() ? 'w' : 'b';
                     const piece = char.toUpperCase();
@@ -469,8 +602,12 @@ class BoardEditor {
         return position;
     }
     
+    /**
+     * Helper: Convert internal position object to board-part FEN string.
+     * @param {Object} position - Position object.
+     * @returns {string} FEN string.
+     */
     positionToFen(position) {
-        // Convert position object to FEN string (board part only)
         const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         const rows = [];
         
@@ -487,7 +624,6 @@ class BoardEditor {
                         row += emptyCount;
                         emptyCount = 0;
                     }
-                    
                     const color = piece[0];
                     const pieceType = piece[1];
                     row += color === 'w' ? pieceType : pieceType.toLowerCase();
@@ -495,11 +631,7 @@ class BoardEditor {
                     emptyCount++;
                 }
             }
-            
-            if (emptyCount > 0) {
-                row += emptyCount;
-            }
-            
+            if (emptyCount > 0) row += emptyCount;
             rows.push(row);
         }
         
@@ -509,11 +641,12 @@ class BoardEditor {
         return rows.join('/') + ' ' + suffix;
     }
     
+    /**
+     * Apply the current editor position to the main game board.
+     */
     applyPositionToMainBoard() {
         const fen = this.positionToFen(this.currentPosition);
-        console.log('🎯 Applying position:', fen);
         
-        // Check if LOGIC_GAME exists
         if (!window.LOGIC_GAME) {
             console.error('❌ No LOGIC_GAME found');
             alert('Không tìm thấy LOGIC_GAME. Vui lòng reload trang.');
@@ -521,37 +654,23 @@ class BoardEditor {
         }
         
         try {
-            // Use initChessboard to load new position
-            // This properly updates history and board
             if (typeof window.LOGIC_GAME.initChessboard === 'function') {
-                // Get current orientation
                 const currentOrientation = document.getElementById('flip-board-switch')?.checked ? 'black' : 'white';
-                
-                // Initialize with new FEN
                 window.LOGIC_GAME.initChessboard(currentOrientation, fen);
-                console.log('✅ Board initialized with new position');
             } else {
-                // Fallback: manually update
                 const chess = window.LOGIC_GAME.getGame();
-                if (chess) {
-                    chess.load(fen);
-                    console.log('✅ Chess.js loaded FEN');
-                }
-                
-                // Force UI update
-                if (typeof window.LOGIC_GAME.updateUI === 'function') {
-                    window.LOGIC_GAME.updateUI();
-                    console.log('✅ UI updated');
-                }
+                if (chess) chess.load(fen);
+                if (typeof window.LOGIC_GAME.updateUI === 'function') window.LOGIC_GAME.updateUI();
             }
-            
-            console.log('✅ Position applied successfully:', fen);
         } catch (e) {
             console.error('❌ Failed to apply position:', e);
             alert('Lỗi khi áp dụng vị trí: ' + e.message);
         }
     }
 
+    /**
+     * Setup Lightbox logic for full-screen viewing of AI reference image.
+     */
     setupLightbox() {
         const thumbImg = document.getElementById('editor-reference-image');
         const lightbox = document.getElementById('editor-image-lightbox');
@@ -560,7 +679,6 @@ class BoardEditor {
 
         if (!thumbImg || !lightbox || !lightboxImg) return;
 
-        // Open Lightbox
         thumbImg.addEventListener('click', () => {
             if (thumbImg.src && thumbImg.src !== window.location.href) {
                 lightboxImg.src = thumbImg.src;
@@ -568,7 +686,6 @@ class BoardEditor {
             }
         });
 
-        // Close functions
         const closeLightbox = () => {
             lightbox.classList.add('d-none');
             lightboxImg.src = '';
@@ -576,12 +693,10 @@ class BoardEditor {
 
         if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
         
-        // Close on background click
         lightbox.addEventListener('click', (e) => {
             if (e.target === lightbox) closeLightbox();
         });
 
-        // Close on ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !lightbox.classList.contains('d-none')) {
                 closeLightbox();
@@ -590,9 +705,7 @@ class BoardEditor {
     }
 }
 
-
-
-// Initialize when DOM is ready
+// Global initialization
 document.addEventListener('DOMContentLoaded', () => {
     window.BOARD_EDITOR = new BoardEditor();
 });

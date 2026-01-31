@@ -32,11 +32,7 @@ class VisionManager {
             browseBtn: null,
             // Tabs
             liveScanTab: null,
-            otherTabs: [],
-            // Modals
-            invalidFenModal: null,
-            invalidFenRetryBtn: null,
-            invalidFenBody: null
+            otherTabs: []
         };
     }
 
@@ -71,13 +67,6 @@ class VisionManager {
         this.dom.otherTabs = ['pgn-tab', 'fen-tab', 'image-tab']
             .map(id => document.getElementById(id))
             .filter(el => el !== null);
-
-        // Modal elements
-        this.dom.invalidFenModal = document.getElementById('invalidFenModal');
-        if (this.dom.invalidFenModal) {
-            this.dom.invalidFenRetryBtn = this.dom.invalidFenModal.querySelector('#invalidFenModalRetry');
-            this.dom.invalidFenBody = this.dom.invalidFenModal.querySelector('#invalidFenModalBody');
-        }
     }
 
     /**
@@ -88,7 +77,6 @@ class VisionManager {
         this._initTabListeners();
         this._initAutoScanListeners();
         this._initDragAndDropListeners();
-        this._initInvalidFenModal();
         this._initModalListeners();
     }
 
@@ -526,32 +514,6 @@ class VisionManager {
         }
     }
 
-    /**
-     * Initializes the custom Invalid FEN modal.
-     * @private
-     */
-    _initInvalidFenModal() {
-        if (!this.dom.invalidFenModal) {
-            window.showInvalidFenModal = (msg) => alert(msg || 'FEN không hợp lệ');
-            return;
-        }
-
-        const modalInstance = new bootstrap.Modal(this.dom.invalidFenModal);
-        
-        if (this.dom.invalidFenRetryBtn) {
-            this.dom.invalidFenRetryBtn.addEventListener('click', () => {
-                modalInstance.hide();
-                this.performScan();
-            });
-        }
-
-        window.showInvalidFenModal = (message) => {
-            if (this.dom.invalidFenBody && message) {
-                this.dom.invalidFenBody.textContent = message;
-            }
-            modalInstance.show();
-        };
-    }
 }
 
 // Global initialization

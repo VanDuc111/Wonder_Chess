@@ -499,11 +499,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const errorMsg =
               "⚠️ FEN không hợp lệ hoặc thiếu quân Vua. Alice cần nhìn thấy đủ cả 2 quân Vua để phân tích.";
             if (statusEl) statusEl.textContent = errorMsg;
-
-            // Show more prominent error modal
-            if (window.showInvalidFenModal) {
-              window.showInvalidFenModal(errorMsg);
-            }
           } else {
             fetch(
               window.APP_CONST &&

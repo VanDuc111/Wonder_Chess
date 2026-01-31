@@ -2892,14 +2892,18 @@ body.allow-scroll {
 #boardEditorModal .modal-body {
   padding: 1rem 1.25rem;
 }
-@media (max-width: 576.98px) {
+@media (max-width: 767.98px) {
   #boardEditorModal .modal-body {
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem 0.25rem; /* Even tighter padding */
   }
 }
 #boardEditorModal .modal-footer {
   padding: 0.75rem 1.25rem;
-  margin-top: -5px;
+}
+@media (max-width: 767.98px) {
+  #boardEditorModal .modal-footer {
+    padding: 0.5rem;
+  }
 }
 
 /* New Split Layout for Board Editor */
@@ -3120,10 +3124,12 @@ body.allow-scroll {
 }
 
 .btn-piece img {
-  width: 100%;
-  height: 100%;
+  width: 110%; /* Make pieces slightly larger than padding for better visibility */
+  height: 110%;
   -o-object-fit: contain;
      object-fit: contain;
+  -webkit-filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .btn-piece:hover {
@@ -3191,6 +3197,8 @@ body.allow-scroll {
   aspect-ratio: 1/1;
   background-color: var(--color-modal-bg-darker);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  -ms-touch-action: none;
+      touch-action: none; /* Critical for mobile drag and drop */
 }
 
 .editor-controls {
@@ -3249,21 +3257,67 @@ body.allow-scroll {
 
 @media (max-width: 991.98px) {
   .board-editor-container {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    gap: 5px;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 0;
+  }
+  .editor-board-wrapper {
+    -webkit-box-flex: 1;
+        -ms-flex: 1;
+            flex: 1;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: none;
+    -webkit-box-shadow: none;
+            box-shadow: none;
+    -webkit-box-ordinal-group: unset;
+        -ms-flex-order: unset;
+            order: unset;
+  }
+  #editorBoard {
+    width: 100% !important;
+  }
+  .piece-selector {
     -webkit-box-orient: vertical;
     -webkit-box-direction: normal;
         -ms-flex-direction: column;
             flex-direction: column;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    width: auto;
+    padding: 2px;
+    gap: 4px;
+    background: none;
+    border: none;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
   }
-  .editor-board-wrapper {
-    width: 100%;
-    max-width: 480px;
-    margin: 10px 0;
+  .piece-buttons {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+    gap: 4px;
+    grid-template-columns: none;
   }
-  #editorBoard {
-    width: 100% !important;
+  .btn-piece, .btn-editor-tool {
+    width: 40px; /* Base mobile size */
+    height: 40px;
+    padding: 2px;
   }
   .board-editor-split {
     -webkit-box-orient: vertical;
@@ -3272,54 +3326,26 @@ body.allow-scroll {
             flex-direction: column;
   }
   .reference-image-container {
-    height: 300px;
-    margin-bottom: 20px;
-  }
-  .piece-selector {
-    -webkit-box-orient: horizontal;
-    -webkit-box-direction: normal;
-        -ms-flex-direction: row;
-            flex-direction: row;
-    width: 100%;
-    -webkit-box-pack: center;
-        -ms-flex-pack: center;
-            justify-content: center;
-    padding: 10px;
-  }
-  .piece-buttons {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-  }
-  .btn-piece {
-    width: 50px;
-    height: 50px;
-  }
-  .btn-editor-tool {
-    width: 50px;
-    height: 50px;
-  }
-  .editor-board-wrapper {
-    -webkit-box-ordinal-group: 0;
-        -ms-flex-order: -1;
-            order: -1;
-    width: 98% !important; /* Take almost full width on small screens */
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
+    height: 200px; /* Shorter image for mobile to focus on board */
+    margin-top: 10px;
   }
 }
 @media (max-width: 576.98px) {
-  .piece-buttons {
-    grid-template-columns: repeat(3, 1fr);
+  .btn-piece, .btn-editor-tool {
+    width: 36px; /* Even smaller for narrow phones */
+    height: 36px;
+  }
+  .board-editor-container {
+    gap: 2px;
   }
   .editor-actions {
-    -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-            flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Three icons in a row for mobile */
+    gap: 6px;
   }
   .editor-actions .btn {
-    width: 100%;
+    font-size: 0.75rem;
+    padding: 8px 4px;
   }
 }
 /* _auth_modal.scss */
