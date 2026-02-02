@@ -44,7 +44,9 @@
         STOCKFISH_WASM_URL: "https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.min.js",
         BASE_ELO: 850,
         ELO_STEP: 50,
-        DEFAULT_WASM_MOVETIME: 500
+        DEFAULT_WASM_MOVETIME: 500,
+        INIT_DELAY_MS: 2000,
+        DEFAULT_LEVEL: 10
     };
 
     const DEFAULTS = {
@@ -87,7 +89,47 @@
         GAME_OVER_MODAL: 'gameOverModal',
         LOAD_DATA_MODAL: 'loadDataModal',
         BOT_SETTINGS_MODAL: 'bot-settings-modal',
-        FLIP_BOARD_SWITCH: 'flip-board-switch'
+        FLIP_BOARD_SWITCH: 'flip-board-switch',
+        BEST_MOVE_SWITCH: 'best-move-switch',
+        EVAL_BAR_SWITCH: 'eval-bar-switch',
+        MOVE_NOTATE_SWITCH: 'move-notate-switch',
+        PGN_VERTICAL_LIST: 'pgn-history-list-vertical',
+        PGN_VERTICAL_CONT: 'pgn-history-vertical',
+        OPENING_NAME_DISPLAY: 'opening-name',
+        
+        // Bot Settings UI IDs
+        BOT_ENGINE_SELECT: 'bot-engine-select',
+        BOT_LEVEL_SLIDER: 'bot-level-slider',
+        BOT_LEVEL_SELECT: 'bot-level-select',
+        BOT_SIDE_SELECT: 'bot-side-select',
+        BOT_TIME_SELECT: 'bot-time-select',
+        BOT_INCREMENT_SELECT: 'bot-increment-select',
+        BOT_LEVEL_DISPLAY: 'level-value-display',
+        BOT_START_BTN: 'start-bot-game-btn',
+
+        // Board Editor IDs
+        EDITOR_MODAL: 'boardEditorModal',
+        EDITOR_BOARD: 'editorBoard',
+        EDITOR_FEN_INPUT: 'editor-fen-input',
+        EDITOR_REF_IMAGE: 'editor-reference-image',
+        EDITOR_REF_PLACEHOLDER: 'editor-no-image-placeholder',
+        EDITOR_DONE_BTN: 'editor-done-btn',
+        EDITOR_CLEAR_BTN: 'editor-clear-board',
+        EDITOR_FLIP_BTN: 'editor-flip-board',
+        EDITOR_START_BTN: 'editor-start-position',
+        EDITOR_APPLY_FEN_BTN: 'editor-apply-fen',
+        EDITOR_DELETE_TOOL: 'editor-delete-piece',
+        EDITOR_HAND_TOOL: 'editor-hand-tool',
+        EDITOR_VALIDATION_ERROR: 'editor-validation-error',
+        EDITOR_ERROR_MSG: 'editor-error-message',
+        EDITOR_LIGHTBOX: 'editor-image-lightbox',
+        EDITOR_LIGHTBOX_IMG: 'lightbox-img',
+        
+        // Editor Setting Element IDs
+        EDITOR_CASTLE_WK: 'castling-wk',
+        EDITOR_CASTLE_WQ: 'castling-wq',
+        EDITOR_CASTLE_BK: 'castling-bk',
+        EDITOR_CASTLE_BQ: 'castling-bq'
     };
 
     const API = {
@@ -133,7 +175,21 @@
     };
     
     const UI_CONFIG = {
-        EVAL_MAX_PAWNS: 10.0
+        EVAL_MAX_PAWNS: 10.0,
+        MIN_BOT_THINKING_TIME_MS: 1200,
+        RESIZE_DEBOUNCE_MS: 150
+    };
+
+    const QUALITY_THRESHOLDS = {
+        BRILLIANT: 1.5,
+        GREAT: 0.8,
+        GOOD: 0.1,
+        SOLID: -0.3,
+        MISTAKE: -0.7,
+        BLUNDER: -1.5,
+        INACCURATE: -0.3,
+        MISS_WIN_THRESHOLD: 2.5,
+        MISS_WIN_RESULT: 0.5
     };
 
     // Gắn các hằng số vào đối tượng toàn cục
@@ -155,7 +211,12 @@
             MESSAGES,
             ASSETS,
             STRINGS,
-            UI_CONFIG
+            UI_CONFIG,
+            QUALITY_THRESHOLDS,
+            OPENINGS: {
+                ITEMS_PER_PAGE: 20,
+                TRANSITION_MS: 1800
+            }
         };
     }
 })();

@@ -7,7 +7,7 @@ class BotManager {
     constructor() {
         // UI & State Settings
         this.selectedEngine = 'stockfish';
-        this.selectedLevel = 10;
+        this.selectedLevel = window.APP_CONST?.BOT?.DEFAULT_LEVEL || 10;
         this.selectedColor = 'r'; // 'w', 'b', or 'r' (random)
         this.selectedTime = '0'; // minutes
         this.selectedIncrement = 0; // seconds
@@ -15,9 +15,7 @@ class BotManager {
         // Stockfish WASM state
         this.sfEngine = null;
         this.sfIsReady = false;
-        this.STOCKFISH_URL = (window.APP_CONST && window.APP_CONST.BOT) 
-            ? window.APP_CONST.BOT.STOCKFISH_WASM_URL 
-            : "https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.min.js";
+        this.STOCKFISH_URL = window.APP_CONST?.BOT?.STOCKFISH_WASM_URL || "https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.min.js";
 
         this.dom = {
             modal: null,
@@ -40,20 +38,21 @@ class BotManager {
         this.dom.modal = document.getElementById(ids?.BOT_SETTINGS_MODAL || 'bot-settings-modal');
         if (!this.dom.modal) return;
 
-        this.dom.engineSelect = document.getElementById('bot-engine-select');
-        this.dom.levelSlider = document.getElementById('bot-level-slider');
-        this.dom.levelSelect = document.getElementById('bot-level-select');
-        this.dom.sideSelect = document.getElementById('bot-side-select');
-        this.dom.timeSelect = document.getElementById('bot-time-select');
-        this.dom.incrementSelect = document.getElementById('bot-increment-select');
-        this.dom.levelDisplay = document.getElementById('level-value-display');
-        this.dom.startBtn = document.getElementById('start-bot-game-btn');
+        this.dom.engineSelect = document.getElementById(ids?.BOT_ENGINE_SELECT || 'bot-engine-select');
+        this.dom.levelSlider = document.getElementById(ids?.BOT_LEVEL_SLIDER || 'bot-level-slider');
+        this.dom.levelSelect = document.getElementById(ids?.BOT_LEVEL_SELECT || 'bot-level-select');
+        this.dom.sideSelect = document.getElementById(ids?.BOT_SIDE_SELECT || 'bot-side-select');
+        this.dom.timeSelect = document.getElementById(ids?.BOT_TIME_SELECT || 'bot-time-select');
+        this.dom.incrementSelect = document.getElementById(ids?.BOT_INCREMENT_SELECT || 'bot-increment-select');
+        this.dom.levelDisplay = document.getElementById(ids?.BOT_LEVEL_DISPLAY || 'level-value-display');
+        this.dom.startBtn = document.getElementById(ids?.BOT_START_BTN || 'start-bot-game-btn');
 
         this.setupEventListeners();
         this.syncInitialState();
         
         // Auto-initialize Stockfish in background after a short delay
-        setTimeout(() => this.initStockfish(), 2000);
+        const delay = window.APP_CONST?.BOT?.INIT_DELAY_MS || 2000;
+        setTimeout(() => this.initStockfish(), delay);
     }
 
     setupEventListeners() {
@@ -253,7 +252,8 @@ class BotManager {
         
         let boardOrientation = (finalPlayerColor === 'b') ? 'black' : 'white';
 
-        const flipSwitch = document.getElementById('flip-board-switch');
+        const ids = window.APP_CONST?.IDS || {};
+        const flipSwitch = document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch');
         if (flipSwitch) flipSwitch.checked = (boardOrientation === 'black');
 
         const timeLimitMinutes = parseInt(this.selectedTime);

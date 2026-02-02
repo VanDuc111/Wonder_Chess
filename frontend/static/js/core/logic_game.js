@@ -4,401 +4,9 @@
  * Built with an Object-Oriented approach for maintainability and performance.
  */
 
-/**
- * Class representing the User Interface components of the chess game.
- * Manages evaluation bars, highlights, and visual arrows.
- */
-class ChessUI {
-    /**
-     * Create a ChessUI instance and initialize internal DOM cache.
-     */
-    constructor() {
-        /** @type {number} Timestamp of the last invalid FEN modal shown */
-        this._lastInvalidFenModalAt = 0;
-        /** @type {Object<string, HTMLElement|null>} Internal DOM element cache */
-        this.dom = {
-            evalBar: null,
-            evalScore: null,
-            boardCont: null,
-            arrowCont: null,
-            openingName: null
-        };
-    }
 
-    /**
-     * Ensures mandatory DOM elements are cached for performance.
-     * @private
-     */
-    _ensureDom() {
-        // Only re-cache if essential elements are missing
-        if (this.dom.evalBar && document.contains(this.dom.evalBar)) return;
 
-        const ids = window.APP_CONST?.IDS || {};
-        this.dom.evalBar = document.getElementById(ids.EVAL_BAR || 'eval-white-advantage');
-        this.dom.evalScore = document.getElementById(ids.EVAL_SCORE || 'evaluation-score');
-        this.dom.boardCont = document.getElementById('myBoard');
-        this.dom.openingName = document.getElementById('opening-name');
-        this.dom.arrowCont = document.getElementById('arrow-container');
-    }
 
-    /**
-     * Updates the visual evaluation bar based on the current engine score.
-     * @param {number|string} score - The numerical evaluation or mate string (e.g., "+0.5", "M2").
-     * @param {string} fen - Current FEN string.
-     * @param {Object} gameInstance - The chess.js instance.
-     */
-    updateEvaluationBar(score, fen, gameInstance) {
-        try {
-            this._ensureDom();
-            if (!this.dom.evalBar && !this.dom.evalScore) return;
-
-            let formattedScore = "0.00";
-            let percentAdvantage = 50;
-
-            // Check for game over states first
-            if (gameInstance && typeof gameInstance.game_over === 'function' && gameInstance.game_over()) {
-                if (gameInstance.in_checkmate()) {
-                    formattedScore = (gameInstance.turn() === 'b') ? "1-0" : "0-1";
-                    percentAdvantage = (gameInstance.turn() === 'b') ? 100 : 0;
-                } else {
-                    formattedScore = "1/2-1/2";
-                    percentAdvantage = 50;
-                }
-                this._applyEvalUI(percentAdvantage, formattedScore);
-                return;
-            }
-
-            const scoreStr = String(score || "0.00");
-            if (scoreStr.includes('M') || scoreStr.includes('#')) {
-                formattedScore = scoreStr.replace("#", "M");
-                percentAdvantage = scoreStr.includes('-') ? 0 : 100;
-            } else {
-                const numScore = parseFloat(scoreStr);
-                if (!isNaN(numScore)) {
-                    const MATE_VAL = (window.APP_CONST?.ENGINE?.MATE_SCORE_BASE || 1000000) - 500;
-                    if (Math.abs(numScore) > MATE_VAL) {
-                        const moves = (window.APP_CONST?.ENGINE?.MATE_SCORE_BASE || 1000000) - Math.abs(numScore);
-                        formattedScore = (numScore > 0) ? `M+${moves}` : `M-${moves}`;
-                        percentAdvantage = (numScore > 0) ? 100 : 0;
-                    } else {
-                        const MAX_PAWNS = 10.0;
-                        let capped = Math.max(-MAX_PAWNS, Math.min(MAX_PAWNS, numScore));
-                        percentAdvantage = 50 + (capped / (MAX_PAWNS * 2)) * 100;
-                        formattedScore = numScore > 0 ? `+${numScore.toFixed(2)}` : numScore.toFixed(2);
-                    }
-                }
-            }
-            this._applyEvalUI(percentAdvantage, formattedScore);
-        } catch (err) {
-            console.warn('UI Eval Error:', err);
-        }
-    }
-
-    /**
-     * Applies the calculated evaluation to the DOM.
-     * @param {number} percent - Height percentage for the white advantage bar.
-     * @param {string} score - Formatted score text.
-     * @private
-     */
-    _applyEvalUI(percent, score) {
-        if (this.dom.evalBar) this.dom.evalBar.style.height = `${percent}%`;
-        if (this.dom.evalScore) this.dom.evalScore.textContent = score;
-    }
-
-    /**
-     * Synchronizes the evaluation bar height with the chessboard's dynamic height.
-     * Debounced to prevent layout thrashing.
-     */
-    syncBoardAndEvalHeight() {
-        if (this._syncTimeout) clearTimeout(this._syncTimeout);
-        
-        this._syncTimeout = setTimeout(() => {
-            this._ensureDom();
-            const boardArea = document.querySelector('.chess-board-area');
-            const barCont = document.querySelector('.score-bar-container');
-            const wrapper = document.querySelector('.score-alignment-wrapper');
-            
-            if (!boardArea || !barCont || !wrapper) return;
-
-            const h = boardArea.clientHeight;
-            if (h <= 0) return;
-
-            const screenWidth = window.innerWidth;
-            const rootStyles = getComputedStyle(document.documentElement);
-            
-            let offset;
-            if (screenWidth >= 992) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || 45;
-            else if (screenWidth >= 577) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || 55;
-            else offset = parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || 48;
-            
-            const wrapperHeight = h - (offset * 2);
-            wrapper.style.height = `${wrapperHeight}px`;
-            
-            const scoreH = this.dom.evalScore ? this.dom.evalScore.offsetHeight : 0;
-            barCont.style.height = `${wrapperHeight - scoreH - 10}px`;
-        }, 50);
-    }
-
-    /**
-     * Renders a SVG arrow on the board indicating the best move.
-     * @param {string|null} moveUci - Move in UCI format (e.g., "e2e4").
-     */
-    renderBestMoveArrow(moveUci) {
-        this._ensureDom();
-        if (!this.dom.boardCont) return;
-        
-        const enabled = document.getElementById('best-move-switch')?.checked;
-        
-        // If disabled or no move, just clear and exit
-        if (!enabled || !moveUci || moveUci.length < 4) {
-            if (this.dom.arrowCont) this.dom.arrowCont.innerHTML = '';
-            return;
-        }
-
-        if (!this.dom.arrowCont) {
-            this.dom.arrowCont = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            this.dom.arrowCont.id = "arrow-container";
-            Object.assign(this.dom.arrowCont.style, {
-                position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-                pointerEvents: 'none', zIndex: '100'
-            });
-            this.dom.boardCont.appendChild(this.dom.arrowCont);
-        } else {
-            // Optimization: If the same move arrow is already there, don't redraw
-            if (this.dom.arrowCont.getAttribute('data-current-move') === moveUci) return;
-            this.dom.arrowCont.innerHTML = '';
-        }
-        
-        this.dom.arrowCont.setAttribute('data-current-move', moveUci);
-
-        const boardRect = this.dom.boardCont.getBoundingClientRect();
-        this.dom.arrowCont.setAttribute("viewBox", `0 0 ${boardRect.width} ${boardRect.height}`);
-        
-        const fromSq = moveUci.substring(0, 2), toSq = moveUci.substring(2, 4);
-        const fromEl = this.dom.boardCont.querySelector(`.square-${fromSq}`), toEl = this.dom.boardCont.querySelector(`.square-${toSq}`);
-        if (!fromEl || !toEl) return;
-
-        const fromRect = fromEl.getBoundingClientRect();
-        const toRect = toEl.getBoundingClientRect();
-
-        // Tọa độ tương đối so với container của bàn cờ
-        const start = { 
-            x: fromRect.left - boardRect.left + fromRect.width / 2, 
-            y: fromRect.top - boardRect.top + fromRect.height / 2 
-        };
-        const end = { 
-            x: toRect.left - boardRect.left + toRect.width / 2, 
-            y: toRect.top - boardRect.top + toRect.height / 2 
-        };
-
-        const dx = end.x - start.x, dy = end.y - start.y, len = Math.sqrt(dx * dx + dy * dy);
-        const ratio = (len - 10) / len;
-
-        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-        const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-        marker.id = "arrowhead";
-        marker.setAttribute("markerWidth", "6"); marker.setAttribute("markerHeight", "6");
-        marker.setAttribute("refX", "0"); marker.setAttribute("refY", "3");
-        marker.setAttribute("orient", "auto");
-        const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        poly.setAttribute("points", "0 0, 6 3, 0 6");
-        poly.setAttribute("fill", "rgba(76, 175, 80, 0.95)");
-        marker.appendChild(poly); defs.appendChild(marker); this.dom.arrowCont.appendChild(defs);
-
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", start.x); line.setAttribute("y1", start.y);
-        line.setAttribute("x2", start.x + dx * ratio); line.setAttribute("y2", start.y + dy * ratio);
-        line.setAttribute("stroke", "rgba(76, 175, 80, 0.6)"); 
-        line.setAttribute("stroke-width", "4"); 
-        line.setAttribute("marker-end", "url(#arrowhead)");
-        this.dom.arrowCont.appendChild(line);
-    }
-
-    /**
-     * Updates all square highlights (checks, last moves, selections).
-     * @param {Object} gameInstance - The chess.js instance.
-     * @param {Array} history - The app's moveHistory array.
-     * @param {number} curIdx - Current index in the moveHistory.
-     */
-    updateAllHighlights(gameInstance, history, curIdx) {
-        this._ensureDom();
-        if (!this.dom.boardCont) return;
-
-        this.dom.boardCont.querySelectorAll('.square-55d63').forEach(sq => {
-            sq.classList.remove('square-selected', 'highlight-move', 'highlight-check');
-        });
-
-        if (gameInstance.in_check()) {
-            const king = this._findKing(gameInstance.turn(), gameInstance);
-            this.dom.boardCont.querySelector(`.square-${king}`)?.classList.add('highlight-check');
-        }
-
-        const moveEntry = history[curIdx];
-        if (moveEntry && moveEntry.uci) {
-            const from = moveEntry.uci.substring(0, 2);
-            const to = moveEntry.uci.substring(2, 4);
-            this.dom.boardCont.querySelector(`.square-${from}`)?.classList.add('square-selected');
-            this.dom.boardCont.querySelector(`.square-${to}`)?.classList.add('square-selected');
-        }
-    }
-
-    /**
-     * Utility to find the king's square on the board.
-     * @param {'w'|'b'} color - Color of the king to find.
-     * @param {Object} game - The chess.js instance.
-     * @returns {string|null} The square identifier (e.g., "e1") or null.
-     * @private
-     */
-    _findKing(color, game) {
-        const cols = ['a','b','c','d','e','f','g','h'], rows = ['1','2','3','4','5','6','7','8'];
-        for (const c of cols) for (const r of rows) {
-            const p = game.get(c + r);
-            if (p?.type === 'k' && p?.color === color) return c + r;
-        }
-        return null;
-    }
-}
-
-/**
- * Class for detecting and managing chess openings.
- */
-class ChessOpening {
-    /**
-     * Create a ChessOpening instance.
-     */
-    constructor() {
-        /** @type {Array|null} Pre-processed opening dictionary */
-        this.preparedData = null;
-    }
-
-    /**
-     * Pre-processes opening data for high-performance matching.
-     * @returns {Array} List of processed opening objects.
-     * @private
-     */
-    _prepareDictionary() {
-        if (this.preparedData) return this.preparedData;
-        
-        let raw = null;
-        try {
-            if (typeof OPENINGS_DATA !== 'undefined') raw = OPENINGS_DATA;
-        } catch(e) {}
-
-        if (!raw) return [];
-        
-        this.preparedData = raw.map(op => ({
-            ...op,
-            moveArray: op.moves.replace(/\s+/g, ' ').trim().replace(/\d+\.\s+/g, '').replace(/\d+\.\.\.\s+/g, '').split(' ')
-        }));
-        return this.preparedData;
-    }
-
-    /**
-     * Detects opening from move history and updates the history metadata.
-     * @param {Array} history - The app's moveHistory array.
-     * @param {number} curIdx - Index to detect for.
-     * @returns {Object} Result containing opening name and book status.
-     */
-    detectAndUpdate(history, curIdx) {
-        if (!history[curIdx]) return { name: "Chưa bắt đầu", isBookMove: false };
-
-        const dictionary = this._prepareDictionary();
-        const currentMoves = history.slice(1, curIdx + 1).map(h => h.san);
-        
-        if (currentMoves.length === 0) {
-            history[curIdx].opening = "Chưa bắt đầu";
-            history[curIdx].isBookMove = false;
-            return { name: "Chưa bắt đầu", isBookMove: false };
-        }
-
-        let best = null, maxLen = -1;
-        for (const op of dictionary) {
-            const opMoves = op.moveArray;
-            if (opMoves.length > currentMoves.length) continue;
-            
-            let match = true;
-            for (let i = 0; i < opMoves.length; i++) {
-                if (opMoves[i] !== currentMoves[i]) {
-                    match = false;
-                    break;
-                }
-            }
-            
-            if (match && opMoves.length > maxLen) {
-                maxLen = opMoves.length;
-                best = op;
-            }
-        }
-
-        const isKnownBook = (best && maxLen === currentMoves.length);
-        const name = best ? best.name : (currentMoves.length <= 2 ? "Đang khai triển..." : "Khai cuộc không xác định");
-
-        history[curIdx].opening = name;
-        history[curIdx].isBookMove = !!isKnownBook;
-
-        return { name, isBookMove: !!isKnownBook };
-    }
-}
-
-/**
- * Class for interacting with Chess Engines (Stockfish WASM / API).
- */
-class ChessEngine {
-    /**
-     * Create a ChessEngine instance.
-     */
-    constructor() {
-        /** @type {Map<string|number, number>} Cache for parsed scores */
-        this.scoreCache = new Map();
-    }
-
-    /**
-     * Requests the best move for a given FEN.
-     * @param {string} fen - Current board FEN.
-     * @param {number} level - Bot skill level (1-20).
-     * @param {number} time - Calculation time limit.
-     * @returns {Promise<Object|null>} Best move data or null.
-     * @async
-     */
-    async getBestMove(fen, level, time) {
-        if (window.BOT_MANAGER && typeof window.BOT_MANAGER.getBestMove === 'function') {
-            return await window.BOT_MANAGER.getBestMove(fen, level, time);
-        }
-        return null;
-    }
-
-    /**
-     * Requests a deep position evaluation from the server.
-     * @param {string} fen - FEN to evaluate.
-     * @returns {Promise<Object>} API response JSON.
-     * @async
-     */
-    async getDeepEval(fen) {
-        const resp = await fetch(window.APP_CONST?.API?.EVALUATE || '/api/game/evaluate', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ fen })
-        });
-        return await resp.json();
-    }
-
-    /**
-     * Safely parses engine score strings into numeric values.
-     * @param {string|number} s - Input score.
-     * @returns {number} Parsed numerical value.
-     */
-    parseScore(s) {
-        if (s === null || s === undefined) return 0;
-        if (this.scoreCache.has(s)) return this.scoreCache.get(s);
-
-        const scoreStr = String(s);
-        let val = 0;
-        if (scoreStr.includes('M')) val = scoreStr.includes('+') ? 100 : -100;
-        else val = parseFloat(scoreStr) || 0;
-
-        this.scoreCache.set(s, val);
-        return val;
-    }
-}
 
 /**
  * Main Orchestrator Class for WonderChess.
@@ -440,9 +48,10 @@ class ChessCore {
      * @private
      */
     _ensureDom() {
-        if (!this.dom.pgnList) this.dom.pgnList = document.getElementById('pgn-history-list-vertical');
-        if (!this.dom.pgnCont) this.dom.pgnCont = document.getElementById('pgn-history-vertical');
-        if (!this.dom.notateSwitch) this.dom.notateSwitch = document.getElementById('move-notate-switch');
+        const ids = window.APP_CONST?.IDS || {};
+        if (!this.dom.pgnList) this.dom.pgnList = document.getElementById(ids.PGN_VERTICAL_LIST || 'pgn-history-list-vertical');
+        if (!this.dom.pgnCont) this.dom.pgnCont = document.getElementById(ids.PGN_VERTICAL_CONT || 'pgn-history-vertical');
+        if (!this.dom.notateSwitch) this.dom.notateSwitch = document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch');
     }
 
     /**
@@ -451,6 +60,7 @@ class ChessCore {
      * @param {string|null} [fen=null] - Optional FEN to start from.
      */
     initBoard(orientation = 'white', fen = null) {
+        const ids = window.APP_CONST?.IDS || {};
         if (typeof board !== 'undefined' && board) try { board.destroy(); } catch(e){}
 
         // Check for 'op' param (opening slug)
@@ -511,13 +121,20 @@ class ChessCore {
             this.index = 0;
         }
         
-        board = Chessboard('myBoard', {
-            draggable: true, position: this.game.fen(), pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png',
-            orientation, moveSpeed: 150, snapSpeed: 25,
-            onDrop: this.onDrop.bind(this), onDragStart: this.onDragStart.bind(this), onSnapEnd: this.onSnapEnd.bind(this)
+        board = Chessboard(ids.BOARD_ELEMENT || 'myBoard', {
+            draggable: true, 
+            position: this.game.fen(), 
+            pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png',
+            orientation, 
+            moveSpeed: 150, 
+            snapSpeed: 25,
+            onDrop: this.onDrop.bind(this), 
+            onDragStart: this.onDragStart.bind(this), 
+            onSnapEnd: this.onSnapEnd.bind(this)
         });
         
-        if (document.getElementById('flip-board-switch')?.checked) board.orientation('black');
+        const flipSwitch = document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch');
+        if (flipSwitch?.checked) board.orientation('black');
         this._syncOrientationUI();
         
         // Trigger turn end to ensure state is consistent and handle bot moves if necessary
@@ -690,7 +307,7 @@ class ChessCore {
         
         const currentVersion = ++this.boardVersion; // Increment version per bot session
         const startTime = Date.now();
-        const MIN_THINKING_TIME = 1200;
+        const MIN_THINKING_TIME = window.APP_CONST?.UI_CONFIG?.MIN_BOT_THINKING_TIME_MS || 1200;
         
         try {
             const r = await this.engine.getBestMove(this.game.fen(), selectedBotLevel || 10, selectedBotTime);
@@ -796,15 +413,21 @@ class ChessCore {
         const diff = (idx % 2 !== 0) ? (cur - pre) : (pre - cur);
         const isBest = (this.history[idx-1].bestMove === m.uci);
 
-        if (diff > 1.5) return `<span class="move-annotation" title="Brilliant"><img src="static/img/icon/brilliant.svg"></span>`;
-        if (diff > 0.8) return `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
+        const thresholds = window.APP_CONST?.QUALITY_THRESHOLDS || {};
+
+        if (diff > (thresholds.BRILLIANT || 1.5)) return `<span class="move-annotation" title="Brilliant"><img src="static/img/icon/brilliant.svg"></span>`;
+        if (diff > (thresholds.GREAT || 0.8)) return `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
         if (isBest) return `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
-        if (diff > 0.1) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
-        if (diff > -0.3) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
-        if (Math.abs(pre) > 2.5 && Math.abs(cur) < 0.5) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
-        if (diff < -1.5) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
-        if (diff < -0.7) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
-        if (diff <= -0.3) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
+        if (diff > (thresholds.GOOD || 0.1)) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
+        if (diff > (thresholds.SOLID || -0.3)) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
+        
+        const isMissWin = Math.abs(pre) > (thresholds.MISS_WIN_THRESHOLD || 2.5) && 
+                          Math.abs(cur) < (thresholds.MISS_WIN_RESULT || 0.5);
+        if (isMissWin) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
+        
+        if (diff < (thresholds.BLUNDER || -1.5)) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
+        if (diff < (thresholds.MISTAKE || -0.7)) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
+        if (diff <= (thresholds.INACCURATE || -0.3)) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
 
         return '';
     }
@@ -814,26 +437,27 @@ class ChessCore {
      * @private
      */
     _initGlobalListeners() {
+        const ids = window.APP_CONST?.IDS || {};
+        
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('flip-board-switch')?.addEventListener('change', () => { 
+            document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch')?.addEventListener('change', () => { 
                 board?.flip(); 
                 this._syncOrientationUI();
                 this.updateUI(); 
             });
-            document.getElementById('best-move-switch')?.addEventListener('change', () => this.ui.renderBestMoveArrow(this.history[this.index]?.bestMove));
-            document.getElementById('eval-bar-switch')?.addEventListener('change', (e) => {
+            document.getElementById(ids.BEST_MOVE_SWITCH || 'best-move-switch')?.addEventListener('change', () => this.ui.renderBestMoveArrow(this.history[this.index]?.bestMove));
+            document.getElementById(ids.EVAL_BAR_SWITCH || 'eval-bar-switch')?.addEventListener('change', (e) => {
                 const w = document.querySelector('.score-alignment-wrapper');
                 if (w) { 
                     w.style.display = e.target.checked ? 'flex' : 'none'; 
-                    // No board?.resize() needed now as container width is fixed
                     if(e.target.checked) this.ui.syncBoardAndEvalHeight(); 
                 }
             });
-            document.getElementById('move-notate-switch')?.addEventListener('change', () => this._renderPGN());
+            document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch')?.addEventListener('change', () => this._renderPGN());
         });
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            if (e.key.toLowerCase() === 'f') document.getElementById('flip-board-switch')?.click();
+            if (e.key.toLowerCase() === 'f') document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch')?.click();
             if (e.key === 'ArrowLeft') {
                 this.loadFen(this.index - 1);
             } else if (e.key === 'ArrowRight') {
@@ -858,10 +482,11 @@ class ChessCore {
 
         window.addEventListener('resize', () => {
             if (this._resizeTimer) clearTimeout(this._resizeTimer);
-            this._resizeTimer = setTimeout(handleResize, 150);
+            this._resizeTimer = setTimeout(handleResize, window.APP_CONST?.UI_CONFIG?.RESIZE_DEBOUNCE_MS || 150);
         });
 
-        const container = document.getElementById('chessboard-main-container');
+        const ids = window.APP_CONST?.IDS || {};
+        const container = document.getElementById(ids.BOARD_CONTAINER || 'chessboard-main-container');
         if (container && window.ResizeObserver) {
             const ro = new ResizeObserver((entries) => {
                 // Use requestAnimationFrame to sync with browser paint
@@ -945,19 +570,20 @@ class ChessCore {
                 
                 if (m.score === null) continue;
 
+                const thresholds = window.APP_CONST?.QUALITY_THRESHOLDS || {};
                 const cur = this.engine.parseScore(m.score);
                 const pre = this.engine.parseScore(this.history[i-1].score);
                 const diff = isWhiteTurn ? (cur - pre) : (pre - cur);
                 const isBest = (this.history[i-1].bestMove === m.uci);
 
-                if (diff > 1.5) counts.brilliant++;
-                else if (diff > 0.8) counts.great++;
+                if (diff > (thresholds.BRILLIANT || 1.5)) counts.brilliant++;
+                else if (diff > (thresholds.GREAT || 0.8)) counts.great++;
                 else if (isBest) counts.best++;
-                else if (diff > 0.1) counts.good++;
-                else if (diff > -0.3) counts.solid++;
-                else if (diff < -1.5) counts.blunder++;
-                else if (diff < -0.7) counts.mistake++;
-                else if (diff <= -0.3) counts.inacc++;
+                else if (diff > (thresholds.GOOD || 0.1)) counts.good++;
+                else if (diff > (thresholds.SOLID || -0.3)) counts.solid++;
+                else if (diff < (thresholds.BLUNDER || -1.5)) counts.blunder++;
+                else if (diff < (thresholds.MISTAKE || -0.7)) counts.mistake++;
+                else if (diff <= (thresholds.INACCURATE || -0.3)) counts.inacc++;
             }
         }
         return counts;
@@ -1076,7 +702,8 @@ window.LOGIC_GAME = {
     updateUI: () => core.updateUI(),
     loadFen: (i) => core.loadFen(i),
     clearBoard: () => { 
-        fetch('/api/game/clear_cache', {method:'POST'}); 
+        const clearUrl = window.APP_CONST?.API?.CLEAR_CACHE || '/api/game/clear_cache';
+        fetch(clearUrl, {method:'POST'}); 
         core.initBoard(board?.orientation()); 
         core.ui.renderBestMoveArrow(null); 
         if (window.clearCapturedPieces) window.clearCapturedPieces();

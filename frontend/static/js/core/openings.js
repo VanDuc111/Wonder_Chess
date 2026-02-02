@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentFilter = 'all';
     let searchQuery = '';
-    let displayedCount = 20;
-    const itemsPerLoad = 20;
+    const itemsPerLoad = window.APP_CONST?.OPENINGS?.ITEMS_PER_PAGE || 20;
+    let displayedCount = itemsPerLoad;
     let filteredData = [];
 
     // Filter data based on current state
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         position: op.fen,
                         showNotation: false,
                         draggable: false,
-                        pieceTheme: 'static/img/chesspieces/wikipedia/{piece}.png'
+                        pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
                     });
                 }
             }, 50);
@@ -148,9 +148,10 @@ document.addEventListener('DOMContentLoaded', function () {
             overlay.appendChild(span);
         }
 
+        const thinkingTime = window.APP_CONST?.OPENINGS?.TRANSITION_MS || 1800;
         setTimeout(() => {
             window.location.href = `/?op=${slug}`;
-        }, 1800); 
+        }, thinkingTime); 
     }
 
     // Initial load
