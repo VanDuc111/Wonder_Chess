@@ -124,6 +124,27 @@
     --color-modal-bg-end: rgba(16, 16, 22, 0.95);
     --color-modal-bg-dark: #1a1a2e;
     --color-modal-bg-darker: #2c2c44; 
+
+    /* Chat Specific Tokens */
+    --chat-container-bg: linear-gradient(180deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 15, 26, 0.98) 100%);
+    --chat-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    --chat-inset-glow: inset 0 0 20px rgba(138, 180, 248, 0.05);
+    --chat-header-bg: var(--color-glass-subtle);
+    --chat-message-alice-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, var(--color-glass-medium) 100%);
+    --chat-message-user-bg: linear-gradient(135deg, var(--color-glass-background) 0%, var(--color-element-background) 100%);
+    --chat-message-radius: 18px;
+    --chat-message-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1);
+    --chat-message-alice-glow: 0 0 15px rgba(138, 180, 248, 0.05);
+    --chat-message-line-height: 1.6;
+    --chat-avatar-size: 45px;
+    --chat-avatar-glow: 0 0 15px rgba(255, 255, 255, 0.2);
+    --chat-input-radius: 30px;
+    --chat-input-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    --chat-input-focus-shadow: 0 0 15px rgba(76, 175, 80, 0.3), 0 0 30px rgba(0, 0, 0, 0.4);
+    --chat-send-btn-size: 38px;
+    --chat-typing-dot-size: 6px;
+    --chat-overlay-bg: rgba(15, 15, 26, 0.4);
+    --chat-reset-card-bg: rgba(30, 30, 50, 0.95);
     
     /* Transitions */
     --transition-base: all 0.3s ease;
