@@ -43,16 +43,17 @@ class ChessOpening {
      * @returns {Object} Result containing opening name and book status.
      */
     detectAndUpdate(history, curIdx) {
-        if (!history || !history[curIdx]) return { name: "Chưa bắt đầu", isBookMove: false };
+        const strings = window.APP_CONST?.STRINGS || {};
+        if (!history || !history[curIdx]) return { name: strings.OPENING_NOT_STARTED || "Chưa bắt đầu", isBookMove: false };
 
         const dictionary = this._prepareDictionary();
         // Extract plain SAN moves from history up to current index
         const currentMoves = history.slice(1, curIdx + 1).map(h => h.san);
         
         if (currentMoves.length === 0) {
-            history[curIdx].opening = "Chưa bắt đầu";
+            history[curIdx].opening = strings.OPENING_NOT_STARTED || "Chưa bắt đầu";
             history[curIdx].isBookMove = false;
-            return { name: "Chưa bắt đầu", isBookMove: false };
+            return { name: strings.OPENING_NOT_STARTED || "Chưa bắt đầu", isBookMove: false };
         }
 
         let best = null, maxLen = -1;
@@ -75,7 +76,8 @@ class ChessOpening {
         }
 
         const isKnownBook = (best && maxLen === currentMoves.length);
-        const name = best ? best.name : (currentMoves.length <= 2 ? "Đang khai triển..." : "Khai cuộc không xác định");
+        const threshold = window.APP_CONST?.OPENINGS?.BOOK_THRESHOLD || 2;
+        const name = best ? best.name : (currentMoves.length <= threshold ? (strings.OPENING_DEVELOPING || "Đang khai triển...") : (strings.OPENING_UNKNOWN || "Khai cuộc không xác định"));
 
         // Attach metadata to the history item for later reference (PGN icons, etc.)
         history[curIdx].opening = name;

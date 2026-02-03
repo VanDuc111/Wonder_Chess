@@ -4,21 +4,33 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    const ids = window.APP_CONST?.IDS || {};
+    const settingKeys = window.APP_CONST?.SETTINGS?.KEYS || {
+        FLIP: 'flip',
+        BEST_MOVE: 'bestMove',
+        NOTATE: 'notate',
+        EVAL_BAR: 'evalBar'
+    };
+
     const modalSwitches = {
-        flip: document.getElementById('flip-board-switch-modal'),
-        bestMove: document.getElementById('best-move-switch-modal'),
-        notate: document.getElementById('move-notate-switch-modal'),
-        evalBar: document.getElementById('eval-bar-switch-modal')
+        [settingKeys.FLIP]: document.getElementById(ids.FLIP_BOARD_SWITCH_MODAL || 'flip-board-switch-modal'),
+        [settingKeys.BEST_MOVE]: document.getElementById(ids.BEST_MOVE_SWITCH_MODAL || 'best-move-switch-modal'),
+        [settingKeys.NOTATE]: document.getElementById(ids.MOVE_NOTATE_SWITCH_MODAL || 'move-notate-switch-modal'),
+        [settingKeys.EVAL_BAR]: document.getElementById(ids.EVAL_BAR_SWITCH_MODAL || 'eval-bar-switch-modal')
     };
 
     const baseSwitches = {
-        flip: document.getElementById('flip-board-switch'),
-        bestMove: document.getElementById('best-move-switch'),
-        notate: document.getElementById('move-notate-switch'),
-        evalBar: document.getElementById('eval-bar-switch')
+        [settingKeys.FLIP]: document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch'),
+        [settingKeys.BEST_MOVE]: document.getElementById(ids.BEST_MOVE_SWITCH || 'best-move-switch'),
+        [settingKeys.NOTATE]: document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch'),
+        [settingKeys.EVAL_BAR]: document.getElementById(ids.EVAL_BAR_SWITCH || 'eval-bar-switch')
     };
 
-    // Helper to sync modal state to base and trigger logic
+    /**
+     * Helper to sync modal state to base and trigger logic
+     * @param {string} key - Setting key (e.g., 'flip', 'bestMove')
+     * @param {boolean} value - New checked state
+     */
     const updateSetting = (key, value) => {
         // Always sync the hidden base switch first
         if (baseSwitches[key]) {
@@ -28,30 +40,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // Immediate Logic Trigger via LOGIC_GAME interface
         if (window.LOGIC_GAME) {
             switch(key) {
-                case 'flip':
+                case settingKeys.FLIP:
                     if (typeof window.LOGIC_GAME.flipBoard === 'function') {
                         window.LOGIC_GAME.flipBoard();
                     }
                     break;
-                case 'bestMove':
+                case settingKeys.BEST_MOVE:
                     if (typeof window.LOGIC_GAME.renderBestMoveArrow === 'function') {
                         const history = window.LOGIC_GAME.getHistory ? window.LOGIC_GAME.getHistory() : [];
                         const index = window.LOGIC_GAME.getIndex ? window.LOGIC_GAME.getIndex() : 0;
                         window.LOGIC_GAME.renderBestMoveArrow(value ? (history[index]?.bestMove) : null);
                     }
                     break;
-                case 'notate':
+                case settingKeys.NOTATE:
                     if (typeof window.LOGIC_GAME.updatePgnHistory === 'function') {
                         window.LOGIC_GAME.updatePgnHistory();
                     }
                     break;
-                case 'evalBar':
-                    const wrapper = document.querySelector('.score-alignment-wrapper');
+                case settingKeys.EVAL_BAR:
+                    const wrapperSelector = '.score-alignment-wrapper';
+                    const wrapper = document.querySelector(wrapperSelector);
                     if (wrapper) {
                         wrapper.style.display = value ? 'flex' : 'none';
                         if (value) {
                             if (typeof window.LOGIC_GAME.syncBoardAndEvalHeight === 'function') {
-                                setTimeout(() => window.LOGIC_GAME.syncBoardAndEvalHeight(), 50);
+                                setTimeout(() => window.LOGIC_GAME.syncBoardAndEvalHeight(), window.APP_CONST?.UI_CONFIG?.UI_SYNC_DELAY_MS || 50);
                             }
                             if (typeof window.LOGIC_GAME.updateUI === 'function') {
                                 window.LOGIC_GAME.updateUI();
@@ -74,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Handle Modal show - sync from base state (in case changed via keybinds)
-    const settingsModal = document.getElementById('settingsModal');
+    const settingsModal = document.getElementById(ids.SETTINGS_MODAL || 'settingsModal');
     if (settingsModal) {
         settingsModal.addEventListener('show.bs.modal', () => {
             Object.keys(baseSwitches).forEach(key => {

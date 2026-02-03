@@ -8,12 +8,13 @@ class ModalManager {
     }
 
     init() {
-        const loadDataModalEl = document.getElementById(window.APP_CONST?.IDS?.LOAD_DATA_MODAL || "loadDataModal");
+        const ids = window.APP_CONST?.IDS || {};
+        const loadDataModalEl = document.getElementById(ids.LOAD_DATA_MODAL || "loadDataModal");
         if (loadDataModalEl) {
             this.loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
         }
 
-        const gameOverModalEl = document.getElementById("gameOverModal");
+        const gameOverModalEl = document.getElementById(ids.GAME_OVER_MODAL || "gameOverModal");
         if (gameOverModalEl) {
             this.gameOverModalInstance = new bootstrap.Modal(gameOverModalEl, {
                 keyboard: false,
@@ -29,14 +30,16 @@ class ModalManager {
     showLoadDataModal() {
         if (this.loadDataModalInstance) this.loadDataModalInstance.show();
         else {
-            const el = document.getElementById("loadDataModal");
+            const ids = window.APP_CONST?.IDS || {};
+            const el = document.getElementById(ids.LOAD_DATA_MODAL || "loadDataModal");
             if (el) el.style.display = "block";
         }
     }
 
     showGameOverModal(title, body) {
-        const titleEl = document.getElementById("gameOverModalTitle");
-        const bodyEl = document.getElementById("gameOverModalBody");
+        const ids = window.APP_CONST?.IDS || {};
+        const titleEl = document.getElementById(ids.GAME_OVER_MODAL_TITLE || "gameOverModalTitle");
+        const bodyEl = document.getElementById(ids.GAME_OVER_MODAL_BODY || "gameOverModalBody");
 
         if (titleEl) titleEl.textContent = title;
         if (bodyEl) bodyEl.textContent = body;
@@ -47,7 +50,9 @@ class ModalManager {
     }
 
     setupLoadDataLogic() {
-        const confirmLoadBtn = document.getElementById("confirm-load-btn");
+        const ids = window.APP_CONST?.IDS || {};
+        const msgs = window.APP_CONST?.MESSAGES || {};
+        const confirmLoadBtn = document.getElementById(ids.CONFIRM_LOAD_BTN || "confirm-load-btn");
         if (!confirmLoadBtn) return;
 
         confirmLoadBtn.addEventListener("click", async () => {
@@ -56,7 +61,7 @@ class ModalManager {
 
             const activeTab = document.querySelector(".tab-pane.fade.show.active");
             const activeTabId = activeTab ? activeTab.id : null;
-            const loader = document.getElementById("modal-loader-overlay");
+            const loader = document.getElementById(ids.MODAL_LOADER_OVERLAY || "modal-loader-overlay");
 
             if (activeTabId === "image-pane" || activeTabId === "live-scan-pane") {
                 if (loader) loader.classList.remove("d-none");
@@ -64,26 +69,26 @@ class ModalManager {
 
             try {
                 if (activeTabId === "pgn-pane") {
-                    const pgnText = document.getElementById("pgn-input").value.trim();
+                    const pgnText = document.getElementById(ids.PGN_INPUT || "pgn-input").value.trim();
                     if (pgnText) {
                         const tempGame = new Chess();
                         success = tempGame.load_pgn(pgnText);
                         if (success) fenToLoad = tempGame.fen();
                     }
                 } else if (activeTabId === "fen-pane") {
-                    const fenText = document.getElementById("fen-input").value.trim();
+                    const fenText = document.getElementById(ids.FEN_INPUT || "fen-input").value.trim();
                     if (fenText) {
                         const tempGame = new Chess();
                         success = tempGame.load(fenText);
                         if (success) fenToLoad = fenText;
                     }
                 } else if (activeTabId === "image-pane") {
-                    const imageInput = document.getElementById("image-upload-input");
-                    const statusEl = document.getElementById("image-upload-status");
+                    const imageInput = document.getElementById(ids.IMAGE_UPLOAD_INPUT || "image-upload-input");
+                    const statusEl = document.getElementById(ids.IMAGE_UPLOAD_STATUS || "image-upload-status");
 
                     if (!imageInput || imageInput.files.length === 0) {
                         if (loader) loader.classList.add("d-none");
-                        if (statusEl) statusEl.textContent = "Lỗi: Vui lòng chọn một file ảnh.";
+                        if (statusEl) statusEl.textContent = msgs.ERROR_SELECT_IMAGE || "Lỗi: Vui lòng chọn một file ảnh.";
                         return;
                     }
 
@@ -105,8 +110,8 @@ class ModalManager {
                 if (success && fenToLoad) {
                     if (!window.VISION_MANAGER.isValidFen(fenToLoad)) {
                         if (loader) loader.classList.add("d-none");
-                        const statusEl = document.getElementById("scan-status") || document.getElementById("image-upload-status");
-                        if (statusEl) statusEl.textContent = "⚠️ FEN không hợp lệ hoặc thiếu quân Vua.";
+                        const statusEl = document.getElementById(ids.SCAN_STATUS || "scan-status") || document.getElementById(ids.IMAGE_UPLOAD_STATUS || "image-upload-status");
+                        if (statusEl) statusEl.textContent = msgs.ERROR_INVALID_FEN_KING || "⚠️ FEN không hợp lệ hoặc thiếu quân Vua.";
                     } else {
                         window.clearBoard(); 
                         window.initChessboard(window.board?.orientation() || "white", fenToLoad);
@@ -115,7 +120,7 @@ class ModalManager {
                         if (this.loadDataModalInstance) this.loadDataModalInstance.hide();
                     }
                 } else if (activeTabId === "pgn-pane" || activeTabId === "fen-pane") {
-                    alert("Lỗi: Dữ liệu PGN/FEN không hợp lệ.");
+                    alert(msgs.LOAD_ERROR_DATA || "Lỗi: Dữ liệu PGN/FEN không hợp lệ.");
                 }
             } catch (err) {
                 console.error("Lỗi confirm-load:", err);
@@ -126,14 +131,15 @@ class ModalManager {
     }
 
     setupGameOverLogic() {
-        const btnNewGameModal = document.getElementById("modalNewGameBtn");
+        const ids = window.APP_CONST?.IDS || {};
+        const btnNewGameModal = document.getElementById(ids.MODAL_NEW_GAME_BTN || "modalNewGameBtn");
         if (btnNewGameModal) {
             btnNewGameModal.addEventListener("click", () => {
                 if (this.gameOverModalInstance) this.gameOverModalInstance.hide();
 
                 window.clearBoard();
                 const gameInst = window.LOGIC_GAME?.getGame();
-                if (gameInst) window.updateUI(gameInst.fen());
+                if (gameInst) window.updateUI();
 
                 const timeLimitMinutes = parseInt(window.selectedBotTime);
                 if (window.playerColor !== null && !isNaN(timeLimitMinutes) && timeLimitMinutes > 0 && gameInst) {
@@ -151,7 +157,8 @@ class ModalManager {
     }
 
     setupBotSettingsModal() {
-        this._setupCustomModalBehavior("bot-settings-modal", "#nav-play-bot");
+        const ids = window.APP_CONST?.IDS || {};
+        this._setupCustomModalBehavior(ids.BOT_SETTINGS_MODAL || "bot-settings-modal", ids.NAV_PLAY_BOT || "#nav-play-bot");
     }
 
     /**

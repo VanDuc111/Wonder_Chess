@@ -46,25 +46,25 @@ class VisionManager {
         const ids = window.APP_CONST?.IDS || {};
         
         this.dom.video = document.getElementById(ids.WEBCAM_VIDEO || 'webcam-feed');
-        this.dom.scanStatus = document.getElementById('scan-status');
-        this.dom.imageStatus = document.getElementById('image-upload-status');
-        this.dom.autoScanToggle = document.getElementById('auto-scan-toggle');
-        this.dom.captureBtn = document.getElementById('capture-btn');
-        this.dom.debugOverlay = document.getElementById('debug-overlay');
+        this.dom.scanStatus = document.getElementById(ids.SCAN_STATUS || 'scan-status');
+        this.dom.imageStatus = document.getElementById(ids.IMAGE_UPLOAD_STATUS || 'image-upload-status');
+        this.dom.autoScanToggle = document.getElementById(ids.AUTO_SCAN_TOGGLE || 'auto-scan-toggle');
+        this.dom.captureBtn = document.getElementById(ids.CAPTURE_BTN || 'capture-btn');
+        this.dom.debugOverlay = document.getElementById(ids.DEBUG_OVERLAY || 'debug-overlay');
         
         // Drag & Drop elements
-        this.dom.dropZone = document.getElementById('drop-zone');
-        this.dom.imageInput = document.getElementById('image-upload-input');
-        this.dom.filePreview = document.getElementById('file-preview');
-        this.dom.previewImg = document.getElementById('preview-img');
-        this.dom.fileName = document.getElementById('file-name');
-        this.dom.fileSize = document.getElementById('file-size');
-        this.dom.removeFileBtn = document.getElementById('remove-file-btn');
-        this.dom.browseBtn = document.getElementById('browse-btn');
+        this.dom.dropZone = document.getElementById(ids.DROP_ZONE || 'drop-zone');
+        this.dom.imageInput = document.getElementById(ids.IMAGE_UPLOAD_INPUT || 'image-upload-input');
+        this.dom.filePreview = document.getElementById(ids.FILE_PREVIEW || 'file-preview');
+        this.dom.previewImg = document.getElementById(ids.PREVIEW_IMG || 'preview-img');
+        this.dom.fileName = document.getElementById(ids.FILE_NAME || 'file-name');
+        this.dom.fileSize = document.getElementById(ids.FILE_SIZE || 'file-size');
+        this.dom.removeFileBtn = document.getElementById(ids.REMOVE_FILE_BTN || 'remove-file-btn');
+        this.dom.browseBtn = document.getElementById(ids.BROWSE_BTN || 'browse-btn');
 
         // Tabs
-        this.dom.liveScanTab = document.getElementById('live-scan-tab');
-        this.dom.otherTabs = ['pgn-tab', 'fen-tab', 'image-tab']
+        this.dom.liveScanTab = document.getElementById(ids.LIVE_SCAN_TAB || 'live-scan-tab');
+        this.dom.otherTabs = ['pgn-tab', 'fen-tab', 'image-tab'] // Standard Bootstrap IDs
             .map(id => document.getElementById(id))
             .filter(el => el !== null);
     }
@@ -92,7 +92,7 @@ class VisionManager {
             this.dom.debugOverlay.style.display = 'none';
         }
         if (this.dom.scanStatus) {
-            this.dom.scanStatus.textContent = 'Sẵn sàng...';
+            this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.ALICE_IDLE || 'Sẵn sàng...';
             this.dom.scanStatus.style.color = '';
         }
         if (this.dom.autoScanToggle) {
@@ -118,7 +118,8 @@ class VisionManager {
      * @private
      */
     _initModalListeners() {
-        const modalEl = document.getElementById('loadDataModal');
+        const modalId = window.APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
+        const modalEl = document.getElementById(modalId);
         if (!modalEl) return;
 
         // Reset and stop when hidden
@@ -156,15 +157,16 @@ class VisionManager {
     _initAutoScanListeners() {
         if (this.dom.autoScanToggle) {
             this.dom.autoScanToggle.addEventListener('change', (e) => {
+                const msg = window.APP_CONST?.MESSAGES || {};
                 if (e.target.checked) {
-                    if (this.dom.scanStatus) this.dom.scanStatus.textContent = '🟢 Chế độ rảnh tay đã bật.';
+                    if (this.dom.scanStatus) this.dom.scanStatus.textContent = msg.VISION_HANDS_FREE_ON || '🟢 Chế độ rảnh tay đã bật.';
                     this.performScan();
                 } else {
                     if (this.autoScanInterval) {
                         clearTimeout(this.autoScanInterval);
                         this.autoScanInterval = null;
                     }
-                    if (this.dom.scanStatus) this.dom.scanStatus.textContent = '🔴 Đã dừng quét tự động.';
+                    if (this.dom.scanStatus) this.dom.scanStatus.textContent = msg.VISION_HANDS_FREE_OFF || '🔴 Đã dừng quét tự động.';
                 }
             });
         }
@@ -231,7 +233,7 @@ class VisionManager {
                 if (this.dom.previewImg) this.dom.previewImg.src = '';
                 this.dom.filePreview?.classList.add('d-none');
                 this.dom.dropZone?.classList.remove('has-file');
-                if (this.dom.imageStatus) this.dom.imageStatus.textContent = "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
+                if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SUPPORTED_FORMATS || "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
             });
         }
     }
@@ -258,7 +260,7 @@ class VisionManager {
             
             this.dom.filePreview?.classList.remove('d-none');
             this.dom.dropZone?.classList.add('has-file');
-            if (this.dom.imageStatus) this.dom.imageStatus.textContent = "Đang tải lên và phân tích...";
+            if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_ANALYZING || "Đang tải lên và phân tích...";
         };
         reader.readAsDataURL(file);
 
@@ -267,10 +269,11 @@ class VisionManager {
             const data = await this.analyzeUpload(file);
             
             if (data.success) {
-                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = "✅ Phân tích thành công!";
+                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_ANALYZE_SUCCESS || "✅ Phân tích thành công!";
                  
                  // Close Modal & Open Editor
-                const loadDataModalEl = document.getElementById('loadDataModal');
+                const modalId = window.APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
+                const loadDataModalEl = document.getElementById(modalId);
                 const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
                 if (loadDataModal) {
                     loadDataModal.hide();
@@ -280,14 +283,14 @@ class VisionManager {
                     if (window.BOARD_EDITOR) {
                          window.BOARD_EDITOR.openWithFen(data.fen, data.debug_image);
                     }
-                }, 300);
+                }, window.APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
 
             } else {
-                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = "❌ Lỗi: " + data.error;
+                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = (window.APP_CONST?.MESSAGES?.VISION_ANALYZE_ERROR || "❌ Lỗi: ") + data.error;
             }
         } catch (e) {
             console.error(e);
-            if (this.dom.imageStatus) this.dom.imageStatus.textContent = "❌ Lỗi kết nối server.";
+            if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SERVER_ERROR || "❌ Lỗi kết nối server.";
         }
     }
 
@@ -298,7 +301,7 @@ class VisionManager {
      */
     _formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
-        const k = 1024, dm = decimals < 0 ? 0 : decimals;
+        const k = window.APP_CONST?.VISION?.BYTES_K || 1024, dm = decimals < 0 ? 0 : decimals;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
@@ -319,7 +322,7 @@ class VisionManager {
             this.currentWebcamStream = stream;
         } catch (err) {
             console.error("Lỗi bật webcam:", err);
-            if (this.dom.scanStatus) this.dom.scanStatus.textContent = 'Lỗi: Không thể truy cập camera.';
+            if (this.dom.scanStatus) this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_CAMERA_ERROR || 'Lỗi: Không thể truy cập camera.';
         }
     }
 
@@ -340,12 +343,12 @@ class VisionManager {
     async performScan() {
         this._ensureDom();
         if (!this.currentWebcamStream) {
-            if (this.dom.scanStatus) this.dom.scanStatus.textContent = '⚠️ Camera chưa bật!';
+            if (this.dom.scanStatus) this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_CAMERA_NOT_ON || '⚠️ Camera chưa bật!';
             if (this.dom.autoScanToggle) this.dom.autoScanToggle.checked = false;
             return;
         }
 
-        if (this.dom.scanStatus) this.dom.scanStatus.textContent = '🔄 Đang quét...';
+        if (this.dom.scanStatus) this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SCANNING || '🔄 Đang quét...';
 
         try {
             const canvas = document.createElement('canvas');
@@ -354,7 +357,7 @@ class VisionManager {
             const context = canvas.getContext('2d');
             context.drawImage(this.dom.video, 0, 0, canvas.width, canvas.height);
 
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', window.APP_CONST?.VISION?.JPEG_QUALITY || 0.8));
             const formData = new FormData();
             formData.append('file', blob, 'capture.jpg');
 
@@ -364,7 +367,7 @@ class VisionManager {
 
             if (data.success) {
                 if (this.dom.scanStatus) {
-                    this.dom.scanStatus.textContent = '✅ Đã cập nhật thế cờ!';
+                    this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SCAN_SUCCESS || '✅ Đã cập nhật thế cờ!';
                     this.dom.scanStatus.style.color = 'green';
                 }
                 
@@ -376,14 +379,17 @@ class VisionManager {
                 if (data.debug_image && this.dom.debugOverlay) {
                     this.dom.debugOverlay.src = 'data:image/jpeg;base64,' + data.debug_image;
                     this.dom.debugOverlay.style.display = 'block';
-                    setTimeout(() => { if (this.dom.debugOverlay) this.dom.debugOverlay.style.display = 'none'; }, 1500);
+                    setTimeout(() => { 
+                        if (this.dom.debugOverlay) this.dom.debugOverlay.style.display = 'none'; 
+                    }, window.APP_CONST?.VISION?.DEBUG_SHOW_DURATION_MS || 1500);
                 }
 
                 // --- NEW FLOW: Open Editor instead of direct apply ---
                 const newFen = data.fen;
                 
                 // Close the Load Data Modal first to avoid stacking modals
-                const loadDataModalEl = document.getElementById('loadDataModal');
+                const modalId = window.APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
+                const loadDataModalEl = document.getElementById(modalId);
                 const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
                 if (loadDataModal) {
                     loadDataModal.hide();
@@ -398,7 +404,7 @@ class VisionManager {
                         // Fallback
                         if (window.initChessboard) window.initChessboard('white', newFen);
                     }
-                }, 300);
+                }, window.APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
             } else {
                 this.showFriendlyError(this.dom.scanStatus, data.error);
             }
@@ -497,20 +503,22 @@ class VisionManager {
                 </div>
             `;
             // Append to the modal body or near the scan status
-            const scannerPane = document.getElementById('live-scan-pane');
+            const scannerId = window.APP_CONST?.IDS?.LIVE_SCAN_PANE || 'live-scan-pane';
+            const scannerPane = document.getElementById(scannerId);
             if (scannerPane) scannerPane.appendChild(confirmEl);
         }
 
-        const img = confirmEl.querySelector('#warped-preview-img');
+        const warpedIds = window.APP_CONST?.IDS || {};
+        const img = confirmEl.querySelector('#' + (warpedIds.WARPED_PREVIEW_IMG || 'warped-preview-img'));
         if (img) {
             img.src = 'data:image/jpeg;base64,' + base64;
             confirmEl.style.display = 'block';
             
-            // Auto-hide after 3 seconds or on next scan
+            // Auto-hide after duration or on next scan
             if (this._warpedTimeout) clearTimeout(this._warpedTimeout);
             this._warpedTimeout = setTimeout(() => {
                 confirmEl.style.display = 'none';
-            }, 3000);
+            }, window.APP_CONST?.VISION?.WARPED_PREVIEW_DURATION_MS || 3000);
         }
     }
 

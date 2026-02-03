@@ -1,13 +1,17 @@
 // Dữ liệu OPENINGS_DATA hiện tại được lấy từ file opening_data.js
 
 document.addEventListener('DOMContentLoaded', function () {
-    const gridEl = document.getElementById('opening-grid');
-    const searchInput = document.getElementById('opening-search');
+    const ids = window.APP_CONST?.IDS || {};
+    const config = window.APP_CONST?.OPENINGS || {};
+    const msgs = window.APP_CONST?.MESSAGES || {};
+
+    const gridEl = document.getElementById(ids.OPENING_GRID || 'opening-grid');
+    const searchInput = document.getElementById(ids.OPENING_SEARCH || 'opening-search');
     const filterBtns = document.querySelectorAll('.category-btn');
 
     let currentFilter = 'all';
     let searchQuery = '';
-    const itemsPerLoad = window.APP_CONST?.OPENINGS?.ITEMS_PER_PAGE || 20;
+    const itemsPerLoad = config.ITEMS_PER_PAGE || 20;
     let displayedCount = itemsPerLoad;
     let filteredData = [];
 
@@ -58,7 +62,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Initialize board in next tick
             setTimeout(() => {
-                if (document.getElementById(boardId)) {
+                const boardDiv = document.getElementById(boardId);
+                if (boardDiv) {
                     Chessboard(boardId, {
                         position: op.fen,
                         showNotation: false,
@@ -66,32 +71,34 @@ document.addEventListener('DOMContentLoaded', function () {
                         pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
                     });
                 }
-            }, 50);
+            }, config.BOARD_INIT_DELAY_MS || 50);
         }
         
         gridEl.appendChild(fragment);
 
         // Update "No results" message
+        const noResultsId = ids.OPENING_NO_RESULTS || 'no-results-msg';
         if (filteredData.length === 0) {
-            if (!document.getElementById('no-results-msg')) {
-                gridEl.insertAdjacentHTML('beforeend', `<div id="no-results-msg" class="col-12 text-center text-white-50 py-5">
-                    Không tìm thấy khai cuộc nào phù hợp.
+            if (!document.getElementById(noResultsId)) {
+                gridEl.insertAdjacentHTML('beforeend', `<div id="${noResultsId}" class="col-12 text-center text-white-50 py-5">
+                    ${msgs.OPENING_SEARCH_EMPTY || "Không tìm thấy khai cuộc nào phù hợp."}
                 </div>`);
             }
         } else {
-            const msg = document.getElementById('no-results-msg');
+            const msg = document.getElementById(noResultsId);
             if (msg) msg.remove();
         }
 
         // Add "Load More" button if needed
-        const existingLoadMore = document.getElementById('load-more-btn');
+        const loadMoreId = ids.OPENING_LOAD_MORE || 'load-more-btn';
+        const existingLoadMore = document.getElementById(loadMoreId);
         if (existingLoadMore) existingLoadMore.remove();
 
         if (displayedCount < filteredData.length) {
             const loadMoreBtn = document.createElement('div');
-            loadMoreBtn.id = 'load-more-btn';
+            loadMoreBtn.id = loadMoreId;
             loadMoreBtn.className = 'col-12 text-center py-4';
-            loadMoreBtn.innerHTML = `<button class="btn btn-outline-light px-5 btn-lg rounded-pill" style="border-color: rgba(255,255,255,0.2)">Xem thêm</button>`;
+            loadMoreBtn.innerHTML = `<button class="btn btn-outline-light px-5 btn-lg rounded-pill" style="border-color: rgba(255,255,255,0.2)">${msgs.OPENING_LOAD_MORE || "Xem thêm"}</button>`;
             loadMoreBtn.onclick = () => {
                 displayedCount += itemsPerLoad;
                 renderOpenings(true);
@@ -132,12 +139,21 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function triggerRabbitHole(slug, cardElement) {
-        const overlay = document.getElementById('rabbit-hole-overlay');
+        const overlayId = ids.RABBIT_HOLE_OVERLAY || 'rabbit-hole-overlay';
+        const overlay = document.getElementById(overlayId);
+        if (!overlay) {
+            window.location.href = `/?op=${slug}`;
+            return;
+        }
+
         cardElement.classList.add('sucking-in');
         overlay.classList.add('active');
         
-        const pieces = ['♔', '♕', '♖', '♗', '♘', '♙', '♚', '♛', '♜', '♝', '♞', '♟'];
-        for(let i=0; i<20; i++) {
+        const animConfig = config.ANIMATION || {};
+        const pieces = animConfig.PIECE_SYMBOLS || ['♔', '♕', '♖', '♗', '♘', '♙', '♚', '♛', '♜', '♝', '♞', '♟'];
+        const pieceCount = animConfig.FLOATING_PIECE_COUNT || 20;
+
+        for(let i=0; i < pieceCount; i++) {
             const span = document.createElement('span');
             span.classList.add('floating-piece');
             span.textContent = pieces[Math.floor(Math.random() * pieces.length)];
@@ -148,10 +164,10 @@ document.addEventListener('DOMContentLoaded', function () {
             overlay.appendChild(span);
         }
 
-        const thinkingTime = window.APP_CONST?.OPENINGS?.TRANSITION_MS || 1800;
+        const transitionTime = config.TRANSITION_MS || 1800;
         setTimeout(() => {
             window.location.href = `/?op=${slug}`;
-        }, thinkingTime); 
+        }, transitionTime); 
     }
 
     // Initial load

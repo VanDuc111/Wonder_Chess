@@ -5,41 +5,20 @@
 
 class CapturedPiecesManager {
     constructor() {
-        this.pieceValues = window.APP_CONST?.PIECE_VALUES || {
-            'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9,
-            'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9
-        };
-        
-        this.pieceImages = window.APP_CONST?.PATHS?.PIECE_IMAGES || {
-            'p': 'img/chesspieces/wikipedia/bP.png',
-            'n': 'img/chesspieces/wikipedia/bN.png',
-            'b': 'img/chesspieces/wikipedia/bB.png',
-            'r': 'img/chesspieces/wikipedia/bR.png',
-            'q': 'img/chesspieces/wikipedia/bQ.png',
-            'P': 'img/chesspieces/wikipedia/wP.png',
-            'N': 'img/chesspieces/wikipedia/wN.png',
-            'B': 'img/chesspieces/wikipedia/wB.png',
-            'R': 'img/chesspieces/wikipedia/wR.png',
-            'Q': 'img/chesspieces/wikipedia/wQ.png'
-        };
-        
         this.dom = {
             capturedByWhite: null,
             capturedByBlack: null
         };
+        this._lastStateKey = null;
     }
     
     /**
      * Initialize DOM references
      */
     init() {
-        const ids = window.APP_CONST?.IDS;
-        this.dom.capturedByWhite = document.getElementById(ids?.TIMER_WHITE ? 'captured-by-white' : 'captured-by-white'); // Fix if ID differs
-        this.dom.capturedByBlack = document.getElementById('captured-by-black');
-        
-        // Use generic Ids if available in constants later
-        this.dom.capturedByWhite = document.getElementById('captured-by-white');
-        this.dom.capturedByBlack = document.getElementById('captured-by-black');
+        const ids = window.APP_CONST?.IDS || {};
+        this.dom.capturedByWhite = document.getElementById(ids.CAPTURED_WHITE || 'captured-by-white');
+        this.dom.capturedByBlack = document.getElementById(ids.CAPTURED_BLACK || 'captured-by-black');
     }
     
     /**
@@ -50,15 +29,11 @@ class CapturedPiecesManager {
     calculateCaptured(game) {
         if (!game) return { white: [], black: [], advantage: 0 };
         
-        const startingPieces = window.APP_CONST?.CHESS_RULES?.STARTING_PIECES || {
-            'p': 8, 'n': 2, 'b': 2, 'r': 2, 'q': 1, 'k': 1,
-            'P': 8, 'N': 2, 'B': 2, 'R': 2, 'Q': 1, 'K': 1
-        };
+        const startingPieces = window.APP_CONST?.CHESS_RULES?.STARTING_PIECES || {};
+        const pieceValues = window.APP_CONST?.PIECE_VALUES || {};
         
-        const currentPieces = {
-            'p': 0, 'n': 0, 'b': 0, 'r': 0, 'q': 0, 'k': 0,
-            'P': 0, 'N': 0, 'B': 0, 'R': 0, 'Q': 0, 'K': 0
-        };
+        const currentPieces = {};
+        Object.keys(startingPieces).forEach(p => currentPieces[p] = 0);
         
         // Count current pieces on board
         const board = game.board();
@@ -88,13 +63,13 @@ class CapturedPiecesManager {
         }
         
         // Sort by value (highest first)
-        const sortByValue = (a, b) => this.pieceValues[b] - this.pieceValues[a];
+        const sortByValue = (a, b) => (pieceValues[b] || 0) - (pieceValues[a] || 0);
         capturedByWhite.sort(sortByValue);
         capturedByBlack.sort(sortByValue);
         
         // Calculate material advantage
-        const whiteValue = capturedByWhite.reduce((sum, p) => sum + this.pieceValues[p], 0);
-        const blackValue = capturedByBlack.reduce((sum, p) => sum + this.pieceValues[p], 0);
+        const whiteValue = capturedByWhite.reduce((sum, p) => sum + (pieceValues[p] || 0), 0);
+        const blackValue = capturedByBlack.reduce((sum, p) => sum + (pieceValues[p] || 0), 0);
         const advantage = whiteValue - blackValue;
         
         return {
@@ -139,10 +114,15 @@ class CapturedPiecesManager {
         container.innerHTML = '';
         
         // Add piece images
+        const pieceImages = window.APP_CONST?.PATHS?.PIECE_IMAGES || {};
+        const staticPath = window.APP_CONST?.PATHS?.STATIC || '/static/';
+
         pieces.forEach(piece => {
             const img = document.createElement('div');
             img.className = 'captured-piece';
-            img.style.backgroundImage = `url('${window.APP_CONST?.PATHS?.STATIC || '/static/'}${this.pieceImages[piece]}')`;
+            if (pieceImages[piece]) {
+                img.style.backgroundImage = `url('${staticPath}${pieceImages[piece]}')`;
+            }
             img.title = this.getPieceName(piece);
             container.appendChild(img);
         });
@@ -162,16 +142,7 @@ class CapturedPiecesManager {
      * @returns {string} Piece name
      */
     getPieceName(piece) {
-        if (window.APP_CONST?.PIECE_NAMES_VN) {
-            return window.APP_CONST.PIECE_NAMES_VN[piece] || '';
-        }
-        const names = {
-            'p': 'Tốt đen', 'n': 'Mã đen', 'b': 'Tượng đen', 
-            'r': 'Xe đen', 'q': 'Hậu đen',
-            'P': 'Tốt trắng', 'N': 'Mã trắng', 'B': 'Tượng trắng',
-            'R': 'Xe trắng', 'Q': 'Hậu trắng'
-        };
-        return names[piece] || '';
+        return window.APP_CONST?.PIECE_NAMES_VN?.[piece] || '';
     }
     
     /**

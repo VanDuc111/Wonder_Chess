@@ -16,7 +16,7 @@ class BoardEditor {
         /** @type {string} Current turn ('w'' or 'b') */
         this.currentTurn = 'w';
         /** @type {string} Castling rights string */
-        this.currentCastling = 'KQkq';
+        this.currentCastling = window.APP_CONST?.EDITOR?.DEFAULT_CASTLING || 'KQkq';
         /** @type {HTMLElement|null} Modal container */
         this.modal = null;
         /** @type {boolean} Flag for AI reference image presence */
@@ -69,7 +69,7 @@ class BoardEditor {
         this._toggleAIPreview(debugImage);
         
         // Ensure UI is ready after modal transition
-        setTimeout(() => this.recreateBoard(), 200);
+        setTimeout(() => this.recreateBoard(), window.APP_CONST?.EDITOR?.RECREATE_DELAY || 200);
     }
     
     /**
@@ -120,9 +120,10 @@ class BoardEditor {
         }
         
         this._isOpeningWithAI = false;
+        this.selectedTool = null;
         
         // Use a short delay even in onModalShown to guarantee container dims
-        setTimeout(() => this.recreateBoard(), 50);
+        setTimeout(() => this.recreateBoard(), window.APP_CONST?.EDITOR?.ON_SHOWN_DELAY || 50);
     }
     
     /**
@@ -202,7 +203,8 @@ class BoardEditor {
         this.updateFENInput();
         
         // Multi-stage resize to handle CSS transitions
-        [150, 400, 800].forEach(d => setTimeout(() => this.editorBoard?.resize(), d));
+        const stages = window.APP_CONST?.EDITOR?.RESIZE_STAGES || [150, 400, 800];
+        stages.forEach(d => setTimeout(() => this.editorBoard?.resize(), d));
     }
 
     /**
@@ -255,7 +257,7 @@ class BoardEditor {
         
         this.updateFENInput();
         this.validatePosition();
-        setTimeout(() => this.updateBoardUI(), 50);
+        setTimeout(() => this.updateBoardUI(), window.APP_CONST?.EDITOR?.SYNC_DELAY || 50);
     }
     
     /**
@@ -267,7 +269,8 @@ class BoardEditor {
         if (!boardEl || this._boardInteractionsInitialized) return;
         
         boardEl.addEventListener('click', (e) => {
-            const sq = e.target.closest('.square-55d63')?.getAttribute('data-square');
+            const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
+            const sq = e.target.closest(sqSelector)?.getAttribute('data-square');
             if (sq) this.handleSquareClick(sq);
         });
         
@@ -281,7 +284,8 @@ class BoardEditor {
         boardEl.addEventListener('drop', (e) => {
             e.preventDefault();
             const p = e.dataTransfer.getData('piece');
-            const sq = e.target.closest('.square-55d63')?.getAttribute('data-square');
+            const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
+            const sq = e.target.closest(sqSelector)?.getAttribute('data-square');
             if (p && sq) {
                 this.currentPosition[sq] = p;
                 this._syncAll();
@@ -367,10 +371,20 @@ class BoardEditor {
             const touch = e.touches[0];
             touchPiece = document.createElement('img');
             touchPiece.src = imgEl.src;
+            const size = window.APP_CONST?.EDITOR?.TOUCH_PIECE_SIZE || 45;
+            const offset = window.APP_CONST?.EDITOR?.TOUCH_PIECE_OFFSET || 22;
+            const zIndex = window.APP_CONST?.EDITOR?.TOUCH_PIECE_Z_INDEX || 10000;
+            const opacity = window.APP_CONST?.EDITOR?.TOUCH_PIECE_OPACITY || 0.8;
+
             Object.assign(touchPiece.style, {
-                position: 'fixed', width: '45px', height: '45px', zIndex: '10000',
-                pointerEvents: 'none', opacity: '0.8',
-                left: (touch.clientX - 22) + 'px', top: (touch.clientY - 22) + 'px'
+                position: 'fixed', 
+                width: size + 'px', 
+                height: size + 'px', 
+                zIndex: zIndex,
+                pointerEvents: 'none', 
+                opacity: opacity,
+                left: (touch.clientX - offset) + 'px', 
+                top: (touch.clientY - offset) + 'px'
             });
             document.body.appendChild(touchPiece);
             if (e.cancelable) e.preventDefault();
@@ -379,8 +393,9 @@ class BoardEditor {
         const move = (e) => {
             if (!touchPiece) return;
             const t = e.touches[0];
-            touchPiece.style.left = (t.clientX - 22) + 'px';
-            touchPiece.style.top = (t.clientY - 22) + 'px';
+            const offset = window.APP_CONST?.EDITOR?.TOUCH_PIECE_OFFSET || 22;
+            touchPiece.style.left = (t.clientX - offset) + 'px';
+            touchPiece.style.top = (t.clientY - offset) + 'px';
             if (e.cancelable) e.preventDefault();
         };
         imgEl.addEventListener('touchmove', move, { passive: false });
@@ -388,7 +403,8 @@ class BoardEditor {
         imgEl.addEventListener('touchend', (e) => {
             if (!touchPiece) return;
             const t = e.changedTouches[0];
-            const sq = document.elementFromPoint(t.clientX, t.clientY)?.closest('.square-55d63')?.getAttribute('data-square');
+            const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
+            const sq = document.elementFromPoint(t.clientX, t.clientY)?.closest(sqSelector)?.getAttribute('data-square');
             if (sq) {
                 this.currentPosition[sq] = pieceCode;
                 this._syncAll();
@@ -455,10 +471,10 @@ class BoardEditor {
             const input = document.getElementById(ids.EDITOR_FEN_INPUT || 'editor-fen-input');
             if (input) {
                 try {
-                    this._loadFenToState(input.value.trim());
+                     this._loadFenToState(input.value.trim());
                     this.recreateBoard();
                 } catch (e) {
-                    this.showValidationError('FEN không hợp lệ');
+                    this.showValidationError(window.APP_CONST?.MESSAGES?.ERROR_INVALID_FEN || 'FEN không hợp lệ');
                 }
             }
         });
@@ -526,7 +542,8 @@ class BoardEditor {
      */
     fenToPosition(fen) {
         const rows = fen.split(' ')[0].split('/');
-        const pos = {}, files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const pos = {};
+        const files = window.APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         rows.forEach((row, i) => {
             const rank = 8 - i;
             let fileIdx = 0;
@@ -545,7 +562,8 @@ class BoardEditor {
      * Utility: Converts position object to complete FEN string.
      */
     positionToFen(pos) {
-        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], rows = [];
+        const files = window.APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const rows = [];
         for (let r = 8; r >= 1; r--) {
             let row = '', empty = 0;
             for (let f of files) {
@@ -568,7 +586,7 @@ class BoardEditor {
      */
     applyPositionToMainBoard() {
         const fen = this.positionToFen(this.currentPosition);
-        if (!window.LOGIC_GAME) return alert('Lỗi: Hệ thống chưa sẵn sàng.');
+        if (!window.LOGIC_GAME) return alert(window.APP_CONST?.MESSAGES?.SYSTEM_NOT_READY || 'Lỗi: Hệ thống chưa sẵn sàng.');
         
         try {
             const ids = window.APP_CONST?.IDS || {};

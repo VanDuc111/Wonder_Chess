@@ -8,14 +8,20 @@ class NavigationManager {
     }
 
     init() {
-        this.modeLinks = document.querySelectorAll(".nav-mode-link");
-        this.buttonGroup = document.querySelector(".button-group-container");
-        this.pgnHistoryEl = document.getElementById("pgn-history-list-vertical");
+        const ids = window.APP_CONST?.IDS || {};
+        const classes = window.APP_CONST?.CLASSES || {};
+
+        this.modeLinks = document.querySelectorAll(classes.NAV_MODE_LINK || ".nav-mode-link");
+        this.buttonGroup = document.querySelector(ids.BTN_GROUP_CONT || ".button-group-container");
+        this.pgnHistoryEl = document.getElementById(ids.PGN_VERTICAL_LIST || "pgn-history-list-vertical");
 
         this.setupEventListeners();
     }
 
     setupEventListeners() {
+        const classes = window.APP_CONST?.CLASSES || {};
+        const modes = window.APP_CONST?.MODES || {};
+
         // Navbar Mode Switching
         this.modeLinks.forEach((link) => {
             link.addEventListener("click", (event) => {
@@ -29,13 +35,13 @@ class NavigationManager {
                 }
 
                 event.preventDefault();
-                this.modeLinks.forEach((item) => item.classList.remove("active"));
-                event.currentTarget.classList.add("active");
+                this.modeLinks.forEach((item) => item.classList.remove(classes.NAV_ACTIVE || "active"));
+                event.currentTarget.classList.add(classes.NAV_ACTIVE || "active");
 
                 const selectedMode = event.currentTarget.getAttribute("data-mode");
-                if (selectedMode === "analyze") {
+                if (selectedMode === (modes.ANALYZE || "analyze")) {
                     this.setAnalyzeMode();
-                } else if (selectedMode === "play") {
+                } else if (selectedMode === (modes.PLAY || "play")) {
                     this.collapseNavbar();
                 }
             });
@@ -48,18 +54,19 @@ class NavigationManager {
                 if (!btn) return;
                 const action = btn.getAttribute("data-action");
                 const logic = window.LOGIC_GAME;
+                const actions = window.APP_CONST?.ACTIONS || {};
                 if (!logic) return;
 
                 const idx = logic.getIndex();
                 const hist = logic.getHistory();
 
                 switch (action) {
-                    case "first": logic.loadFen(0); break;
-                    case "prev":  logic.loadFen(idx - 1); break;
-                    case "next":  logic.loadFen(idx + 1); break;
-                    case "last":  logic.loadFen(hist.length - 1); break;
-                    case "clear": window.clearBoard(); break;
-                    case "load":
+                    case (actions.FIRST || "first"): logic.loadFen(0); break;
+                    case (actions.PREV || "prev"):  logic.loadFen(idx - 1); break;
+                    case (actions.NEXT || "next"):  logic.loadFen(idx + 1); break;
+                    case (actions.LAST || "last"):  logic.loadFen(hist.length - 1); break;
+                    case (actions.CLEAR || "clear"): window.clearBoard(); break;
+                    case (actions.LOAD || "load"):
                         if (window.MODAL_MANAGER) window.MODAL_MANAGER.showLoadDataModal();
                         break;
                 }
@@ -68,8 +75,9 @@ class NavigationManager {
 
         // PGN History Click
         if (this.pgnHistoryEl) {
+            const classes = window.APP_CONST?.CLASSES || {};
             this.pgnHistoryEl.addEventListener("click", (e) => {
-                const mv = e.target.closest(".move-cell");
+                const mv = e.target.closest(classes.MOVE_CELL || ".move-cell");
                 if (!mv) return;
                 const idx = parseInt(mv.getAttribute("data-index"));
                 if (!isNaN(idx) && window.LOGIC_GAME) window.LOGIC_GAME.loadFen(idx);
@@ -94,20 +102,22 @@ class NavigationManager {
 
         if (window.initChessboard) window.initChessboard("white");
 
+        const classes = window.APP_CONST?.CLASSES || {};
         const scoreWrapper = document.querySelector(".score-alignment-wrapper");
-        if (scoreWrapper) scoreWrapper.classList.remove("rotated-score");
+        if (scoreWrapper) scoreWrapper.classList.remove(classes.ROTATED_SCORE || "rotated-score");
         
         const boardContainer = document.querySelector(".chess-board-area");
-        if (boardContainer) boardContainer.classList.remove("rotated-board");
+        if (boardContainer) boardContainer.classList.remove(classes.ROTATED_BOARD || "rotated-board");
 
-        if (window.updateUI) window.updateUI(window.STARTING_FEN);
-        if (window.LOGIC_GAME) window.LOGIC_GAME.handleScoreUpdate("0.00");
+        if (window.updateUI) window.updateUI(window.STARTING_FEN || window.APP_CONST?.STARTING_FEN);
+        if (window.LOGIC_GAME) window.LOGIC_GAME.handleScoreUpdate(window.APP_CONST?.STRINGS?.EVAL_DEFAULT || "0.00");
 
         this.collapseNavbar();
     }
 
     collapseNavbar() {
-        const navbarCollapse = document.getElementById("navbarNav");
+        const ids = window.APP_CONST?.IDS || {};
+        const navbarCollapse = document.getElementById(ids.NAV_BAR_NAV || "navbarNav");
         if (navbarCollapse && navbarCollapse.classList.contains("show")) {
             const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse) || new bootstrap.Collapse(navbarCollapse);
             bsCollapse.hide();

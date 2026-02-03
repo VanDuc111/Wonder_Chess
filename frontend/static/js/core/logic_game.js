@@ -36,23 +36,9 @@ class ChessCore {
 
         this._initGlobalListeners();
         this._setupResize();
-        this.dom = {
-            pgnList: null,
-            pgnCont: null,
-            notateSwitch: null
-        };
     }
 
-    /**
-     * Ensures mandatory DOM elements for the core loop are cached.
-     * @private
-     */
-    _ensureDom() {
-        const ids = window.APP_CONST?.IDS || {};
-        if (!this.dom.pgnList) this.dom.pgnList = document.getElementById(ids.PGN_VERTICAL_LIST || 'pgn-history-list-vertical');
-        if (!this.dom.pgnCont) this.dom.pgnCont = document.getElementById(ids.PGN_VERTICAL_CONT || 'pgn-history-vertical');
-        if (!this.dom.notateSwitch) this.dom.notateSwitch = document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch');
-    }
+
 
     /**
      * Initializes a new chessboard or resets current one.
@@ -135,7 +121,7 @@ class ChessCore {
         
         const flipSwitch = document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch');
         if (flipSwitch?.checked) board.orientation('black');
-        this._syncOrientationUI();
+        this.ui.syncOrientation(board.orientation() === 'black');
         
         // Trigger turn end to ensure state is consistent and handle bot moves if necessary
         this.onTurnEnd(); 
@@ -277,7 +263,7 @@ class ChessCore {
                 
                 if (savedIdx === this.index) {
                     this.ui.renderBestMoveArrow(d.engine_results.best_move);
-                    this._renderPGN();
+                    this.ui.renderPGNTable(this.history, this.index, this.engine);
                     if (window.ALICE_CHAT) window.ALICE_CHAT.checkCoachComment();
                 }
             }
@@ -359,78 +345,15 @@ class ChessCore {
         const op = this.opening.detectAndUpdate(this.history, this.index);
         if (this.ui.dom.openingName) this.ui.dom.openingName.textContent = op.name;
 
-        this._renderPGN();
-        this._syncButtons();
+        this.ui.renderPGNTable(this.history, this.index, this.engine);
+        this.ui.updateNavButtons(this.index <= 0, this.index >= this.history.length - 1);
 
         if (currentState.score !== undefined && currentState.score !== null) {
             this.ui.updateEvaluationBar(currentState.score, currentState.fen, this.game);
         }
     }
 
-    /**
-     * Renders the vertical PGN history table.
-     * @private
-     */
-    _renderPGN() {
-        this._ensureDom();
-        if (!this.dom.pgnList) return;
-        
-        // Cache check to avoid redundant innerHTML sets. Include score to update icons when engine results arrive.
-        const currentScore = this.history[this.index]?.score || '';
-        const stateKey = `len:${this.history.length}-idx:${this.index}-sc:${currentScore}`;
-        if (this._lastPgnStateKey === stateKey) return;
-        this._lastPgnStateKey = stateKey;
-        
-        const htmlParts = [];
-        for (let i = 1; i < this.history.length; i += 2) {
-            const w = this.history[i], b = this.history[i + 1];
-            const wH = (i === this.index) ? 'current-move-highlight' : '';
-            const bH = (b && (i+1) === this.index) ? 'current-move-highlight' : '';
-            
-            htmlParts.push(`<tr><td class="move-number-cell">${Math.floor((i-1)/2)+1}.</td>`);
-            htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${this._annot(w, i)}</td>`);
-            htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${b ? this._annot(b, i+1) : ''}</td></tr>`);
-        }
-        
-        this.dom.pgnList.innerHTML = htmlParts.join('');
-        if (this.dom.pgnCont) this.dom.pgnCont.scrollTop = this.dom.pgnCont.scrollHeight;
-    }
 
-    /**
-     * Generates annotation icons based on move quality.
-     * @param {Object} m - The move history item.
-     * @param {number} idx - Index of the move.
-     * @returns {string} HTML string containing icons.
-     * @private
-     */
-    _annot(m, idx) {
-        if (!this.dom.notateSwitch?.checked) return '';
-        if (m.isBookMove) return `<span class="move-annotation" title="Book Move"><img src="static/img/icon/book.svg"></span>`;
-        if (m.score === null || m.score === undefined || idx === 0 || !this.history[idx-1]) return '';
-
-        const cur = this.engine.parseScore(m.score);
-        const pre = this.engine.parseScore(this.history[idx-1].score);
-        const diff = (idx % 2 !== 0) ? (cur - pre) : (pre - cur);
-        const isBest = (this.history[idx-1].bestMove === m.uci);
-
-        const thresholds = window.APP_CONST?.QUALITY_THRESHOLDS || {};
-
-        if (diff > (thresholds.BRILLIANT || 1.5)) return `<span class="move-annotation" title="Brilliant"><img src="static/img/icon/brilliant.svg"></span>`;
-        if (diff > (thresholds.GREAT || 0.8)) return `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
-        if (isBest) return `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
-        if (diff > (thresholds.GOOD || 0.1)) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
-        if (diff > (thresholds.SOLID || -0.3)) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
-        
-        const isMissWin = Math.abs(pre) > (thresholds.MISS_WIN_THRESHOLD || 2.5) && 
-                          Math.abs(cur) < (thresholds.MISS_WIN_RESULT || 0.5);
-        if (isMissWin) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
-        
-        if (diff < (thresholds.BLUNDER || -1.5)) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
-        if (diff < (thresholds.MISTAKE || -0.7)) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
-        if (diff <= (thresholds.INACCURATE || -0.3)) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
-
-        return '';
-    }
 
     /**
      * Initializes global event listeners (UI switches, keys).
@@ -442,7 +365,7 @@ class ChessCore {
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch')?.addEventListener('change', () => { 
                 board?.flip(); 
-                this._syncOrientationUI();
+                this.ui.syncOrientation(board?.orientation() === 'black');
                 this.updateUI(); 
             });
             document.getElementById(ids.BEST_MOVE_SWITCH || 'best-move-switch')?.addEventListener('change', () => this.ui.renderBestMoveArrow(this.history[this.index]?.bestMove));
@@ -453,7 +376,7 @@ class ChessCore {
                     if(e.target.checked) this.ui.syncBoardAndEvalHeight(); 
                 }
             });
-            document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch')?.addEventListener('change', () => this._renderPGN());
+            document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch')?.addEventListener('change', () => this.ui.renderPGNTable(this.history, this.index, this.engine));
         });
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -497,17 +420,7 @@ class ChessCore {
         window._boardResizeInitialized = true;
     }
 
-    /**
-     * Syncs navigation button states (enabled/disabled).
-     * @private
-     */
-    _syncButtons() {
-        const isF = this.index <= 0, isL = this.index >= this.history.length - 1;
-        try {
-            $('[data-action="first"], [data-action="prev"]').prop('disabled', isF);
-            $('[data-action="next"], [data-action="last"]').prop('disabled', isL);
-        } catch (e) {}
-    }
+
 
     /**
      * Displays a Modal when game is over.
@@ -519,30 +432,8 @@ class ChessCore {
         let t = title || "Ván đấu kết thúc";
         let b = message || (this.game.in_checkmate() ? `Chiếu hết! ${this.game.turn() === 'b' ? 'Trắng' : 'Đen'} thắng.` : "Hòa!");
         
-        if (window.showGameOverModal) {
-            // Hiện kết quả ngay lập tức
-            window.showGameOverModal(t, b);
-            
-            const shuffler = document.getElementById('game-over-stats-shuffler');
-            const statsGrid = document.getElementById('game-over-stats');
-            
-            if (shuffler) shuffler.classList.remove('d-none');
-            if (statsGrid) statsGrid.classList.add('d-none');
-
-            // hiệu ứng xáo trộn icon
-            setTimeout(() => {
-                const stats = this._calculatePlayerStats();
-                this._renderPlayerStats(stats);
-                
-                if (shuffler) shuffler.classList.add('d-none');
-                if (statsGrid) {
-                    statsGrid.classList.remove('d-none');
-                    statsGrid.style.opacity = '0';
-                    statsGrid.style.transition = 'opacity 0.6s ease';
-                    setTimeout(() => statsGrid.style.opacity = '1', 10);
-                }
-            }, 2500); 
-        }
+        const stats = this._calculatePlayerStats();
+        this.ui.showGameOverModal(t, b, stats);
     }
 
     /**
@@ -589,41 +480,7 @@ class ChessCore {
         return counts;
     }
 
-    /**
-     * Renders top 3 stats to the modal, filtering out zero values.
-     * @private
-     */
-    _renderPlayerStats(counts) {
-        const statsGrid = document.getElementById('game-over-stats');
-        if (!statsGrid) return;
 
-        const all = [
-            { label: 'Thiên tài', val: counts.brilliant, class: 'stat-brilliant', priority: 100 },
-            { label: 'Sai lầm nghiêm trọng', val: counts.blunder, class: 'stat-blunder', priority: 90 },
-            { label: 'Tốt nhất', val: counts.best, class: 'stat-best', priority: 80 },
-            { label: 'Lý thuyết', val: counts.book, class: 'stat-book', priority: 75 },
-            { label: 'Tuyệt vời', val: counts.great, class: 'stat-good', priority: 70 },
-            { label: 'Tốt', val: counts.good, class: 'stat-good', priority: 60 },
-            { label: 'Vững chắc', val: counts.solid, class: 'stat-solid', priority: 50 },
-            { label: 'Sai lầm', val: counts.mistake, class: 'stat-mistake', priority: 40 },
-            { label: 'Không chính xác', val: counts.inacc, class: 'stat-inacc', priority: 30 }
-        ];
-
-        // CHỈ giữ lại các chỉ số có giá trị > 0
-        let filtered = all.filter(i => i.val > 0).sort((a, b) => b.priority - a.priority).slice(0, 3);
-        
-        // Nếu không có bất kỳ chỉ số nào > 0 (hiếm gặp), hiển thị Tốt nhất, Tốt, Vững chắc mặc định là 0
-        if (filtered.length === 0) {
-            filtered = all.filter(i => ['Tốt nhất', 'Tốt', 'Vững chắc'].includes(i.label)).slice(0, 3);
-        }
-
-        statsGrid.innerHTML = filtered.map(i => `
-            <div class="stat-item">
-                <span class="stat-value ${i.class}">${i.val}</span>
-                <span class="stat-label">${i.label}</span>
-            </div>
-        `).join('');
-    }
 
     /**
      * Chessboard event for move start.
@@ -652,19 +509,7 @@ class ChessCore {
      */
     onSnapEnd() { if (board && board.fen() !== this.game.fen()) board.position(this.game.fen(), false); }
 
-    /**
-     * Synchronizes UI components (timers, eval bar) with the board orientation.
-     * @private
-     */
-    _syncOrientationUI() {
-        if (!board) return;
-        const isFlipped = board.orientation() === 'black';
-        const boardArea = document.querySelector('.chess-board-area');
-        const scoreWrapper = document.querySelector('.score-alignment-wrapper');
-        
-        if (boardArea) boardArea.classList.toggle('rotated-board', isFlipped);
-        if (scoreWrapper) scoreWrapper.classList.toggle('rotated-score', isFlipped);
-    }
+
 
     /**
      * Loads a specific FEN from the move history.
@@ -681,6 +526,34 @@ class ChessCore {
             if (window.updateCapturedPieces) {
                 window.updateCapturedPieces(this.game);
             }
+        }
+    }
+    /**
+     * Resets the game state and clears backend cache.
+     */
+    async clearBoard() {
+        const clearUrl = window.APP_CONST?.API?.CLEAR_CACHE || '/api/game/clear_cache';
+        try {
+            await fetch(clearUrl, { method: 'POST' });
+        } catch (e) {
+            console.warn("Failed to clear backend cache", e);
+        }
+
+        const currentOrientation = (typeof board !== 'undefined' && board) ? board.orientation() : 'white';
+        this.initBoard(currentOrientation);
+        this.ui.renderBestMoveArrow(null);
+        
+        if (window.clearCapturedPieces) window.clearCapturedPieces();
+    }
+
+    /**
+     * Flips the board orientation and syncs UI helpers.
+     */
+    flipBoard() {
+        if (typeof board !== 'undefined' && board) {
+            board.flip();
+            this._syncOrientationUI();
+            this.updateUI();
         }
     }
 }
@@ -701,15 +574,9 @@ window.LOGIC_GAME = {
     handleBotTurn: () => core.botGo(),
     updateUI: () => core.updateUI(),
     loadFen: (i) => core.loadFen(i),
-    clearBoard: () => { 
-        const clearUrl = window.APP_CONST?.API?.CLEAR_CACHE || '/api/game/clear_cache';
-        fetch(clearUrl, {method:'POST'}); 
-        core.initBoard(board?.orientation()); 
-        core.ui.renderBestMoveArrow(null); 
-        if (window.clearCapturedPieces) window.clearCapturedPieces();
-    },
+    clearBoard: () => core.clearBoard(),
     updateAllHighlights: () => core.ui.updateAllHighlights(core.game, core.history, core.index),
-    updatePgnHistory: () => core._renderPGN(),
+    updatePgnHistory: () => core.ui.renderPGNTable(core.history, core.index, core.engine),
     fetchDeepEvaluation: (f) => core.engine.getDeepEval(f),
     renderBestMoveArrow: (m) => core.ui.renderBestMoveArrow(m),
     handleScoreUpdate: (s, f) => core.ui.updateEvaluationBar(s, f, core.game),
@@ -717,13 +584,7 @@ window.LOGIC_GAME = {
     showGameOver: (t, m) => core._showGameOver(t, m),
     onDragStart: (s, p, po, o) => core.onDragStart(s, p, po, o),
     onSnapEnd: () => core.onSnapEnd(),
-    flipBoard: () => {
-        if (typeof board !== 'undefined' && board) {
-            board.flip();
-            core._syncOrientationUI();
-            core.updateUI();
-        }
-    },
+    flipBoard: () => core.flipBoard(),
     // Expose core properties for debugging or main.js compatibility
     getGame: () => core.game,
     getHistory: () => core.history,

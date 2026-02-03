@@ -1,24 +1,31 @@
 /* auth_manager.js */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const signInForm = document.getElementById('signin-form');
-    const signUpForm = document.getElementById('signup-form');
-    const logoutBtn = document.getElementById('btn-logout');
+    const ids = window.APP_CONST?.IDS || {};
+    const api = window.APP_CONST?.API || {};
+    const msgs = window.APP_CONST?.MESSAGES || {};
+
+    const signInForm = document.getElementById(ids.SIGNIN_FORM || 'signin-form');
+    const signUpForm = document.getElementById(ids.SIGNUP_FORM || 'signup-form');
+    const logoutBtn = document.getElementById(ids.LOGOUT_BTN || 'btn-logout');
 
     // Utility to show/hide loading state on buttons
     const setBtnLoading = (form, isLoading) => {
-        const btn = form.querySelector('.btn-auth-submit');
+        const authSubmitSelector = ids.BTN_AUTH_SUBMIT || '.btn-auth-submit';
+        const btn = form.querySelector(authSubmitSelector);
+        if (!btn) return;
+
         const spinner = btn.querySelector('.spinner-border');
         const text = btn.querySelector('span');
 
         if (isLoading) {
             btn.disabled = true;
-            spinner.classList.remove('d-none');
-            text.classList.add('d-none');
+            if (spinner) spinner.classList.remove('d-none');
+            if (text) text.classList.add('d-none');
         } else {
             btn.disabled = false;
-            spinner.classList.add('d-none');
-            text.classList.remove('d-none');
+            if (spinner) spinner.classList.add('d-none');
+            if (text) text.classList.remove('d-none');
         }
     };
 
@@ -32,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = Object.fromEntries(formData.entries());
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch(api.AUTH_LOGIN || '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -41,13 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
 
                 if (result.success) {
-                    window.location.reload(); // Reload to update navbar state
+                    window.location.reload(); 
                 } else {
-                    alert(result.message || 'Đăng nhập không thành công.');
+                    alert(result.message || msgs.AUTH_LOGIN_ERROR || 'Đăng nhập không thành công.');
                 }
             } catch (error) {
                 console.error('Login Error:', error);
-                alert('Có lỗi xảy ra, vui lòng thử lại.');
+                alert(msgs.AUTH_SYSTEM_ERROR || 'Có lỗi xảy ra, vui lòng thử lại.');
             } finally {
                 setBtnLoading(signInForm, false);
             }
@@ -64,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = Object.fromEntries(formData.entries());
 
             try {
-                const response = await fetch('/api/auth/signup', {
+                const response = await fetch(api.AUTH_SIGNUP || '/api/auth/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -75,30 +82,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.success) {
                     window.location.reload();
                 } else {
-                    alert(result.message || 'Đăng ký không thành công.');
+                    alert(result.message || msgs.AUTH_SIGNUP_ERROR || 'Đăng ký không thành công.');
                 }
             } catch (error) {
                 console.error('Signup Error:', error);
-                alert('Có lỗi xảy ra, vui lòng thử lại.');
+                alert(msgs.AUTH_SYSTEM_ERROR || 'Có lỗi xảy ra, vui lòng thử lại.');
             } finally {
                 setBtnLoading(signUpForm, false);
             }
         });
     }
 
-    // Logout logic is handled by standard anchor tag, 
-    // but we can add a confirmation if needed.
-    // The link already goes to /api/auth/logout which redirects back.
-    // In our auth_routes.py /logout returns JSON, so we might need a small fix there 
-    // if we want it to redirect. Let's make it a fetch call for better UX.
-
+    // Handle Logout
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const response = await fetch('/api/auth/logout');
-            const result = await response.json();
-            if (result.success) {
-                window.location.reload();
+            try {
+                const response = await fetch(api.AUTH_LOGOUT || '/api/auth/logout');
+                const result = await response.json();
+                if (result.success) {
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error('Logout Error:', err);
+                window.location.reload(); // Fallback reload
             }
         });
     }

@@ -4,34 +4,38 @@
  */
 
 // Global Game State
+// Global Game State
 window.board = null;
 window.STARTING_FEN = window.APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 // Bot configuration (synced with BOT_MANAGER)
-window.selectedBotColor = "r";
+const defaults = window.APP_CONST?.DEFAULTS || {};
+window.selectedBotColor = defaults.BOT_COLOR || "r";
 window.selectedBotEngine = "stockfish";
-window.selectedBotLevel = 10;
-window.selectedBotTime = "0";
+window.selectedBotLevel = window.APP_CONST?.BOT?.DEFAULT_LEVEL || 10;
+window.selectedBotTime = defaults.BOT_TIME_MINUTES || "0";
 window.selectedBotIncrement = 0;
-window.playerColor = null;
+window.playerColor = defaults.PLAYER_COLOR !== undefined ? defaults.PLAYER_COLOR : null;
 window.isPlayerTurn = true;
 
 document.addEventListener("DOMContentLoaded", () => {
     // 0. Preload piece images
     const pieces = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"];
+    const theme = window.APP_CONST?.PATHS?.PIECE_THEME || 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png';
     pieces.forEach((p) => {
         const img = new Image();
-        img.src = `https://chessboardjs.com/img/chesspieces/wikipedia/${p}.png`;
+        img.src = theme.replace('{piece}', p);
     });
 
     // 1. Initialize Global Entities
     if (window.ALICE_CHAT) window.ALICE_CHAT.init();
     
     // 2. Start Application
-    const displayName = window.USER_DATA?.isAuthenticated ? window.USER_DATA.displayName : "bạn";
+    const displayName = window.USER_DATA?.isAuthenticated ? window.USER_DATA.displayName : (window.APP_CONST?.CHAT?.DEFAULT_NICKNAME || "bạn");
 
     // Chatbot welcome message
-    const chatbotMessages = document.getElementById("chatbot-messages");
+    const ids = window.APP_CONST?.IDS || {};
+    const chatbotMessages = document.getElementById(ids.CHATBOT_MESSAGES || "chatbot-messages");
     if (chatbotMessages && !sessionStorage.getItem("alice_welcomed")) {
         const welcomeMessage = window.APP_CONST?.MESSAGES?.WELCOME
             ? window.APP_CONST.MESSAGES.WELCOME(displayName)
@@ -47,7 +51,8 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch(window.APP_CONST?.API?.CLEAR_CACHE || "/api/game/clear_cache", { method: "POST" });
 
     // Initialize the main board if present
-    if (document.getElementById("myBoard")) {
+    const boardElId = window.APP_CONST?.IDS?.BOARD_ELEMENT || "myBoard";
+    if (document.getElementById(boardElId)) {
         window.initChessboard();
     }
 });

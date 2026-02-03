@@ -5,6 +5,7 @@
 
 class ChessTimer {
     constructor() {
+        const timersConst = window.APP_CONST?.TIMERS || {};
         /** @type {number} White's remaining time in seconds */
         this.whiteTime = 0;
         /** @type {number} Black's remaining time in seconds */
@@ -74,7 +75,7 @@ class ChessTimer {
             if (el) {
                 el.style.display = 'none';
                 el.classList.remove('active');
-                el.textContent = '0:00';
+                el.textContent = window.APP_CONST?.TIMERS?.DEFAULT_DISPLAY || '0:00';
             }
         };
         resetEl(this.dom.timerWhite);
@@ -87,7 +88,8 @@ class ChessTimer {
      */
     init(minutes) {
         this.reset();
-        const initialTimeSeconds = minutes * 60;
+        const secondsPerMinute = window.APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60;
+        const initialTimeSeconds = minutes * secondsPerMinute;
         this.whiteTime = initialTimeSeconds;
         this.blackTime = initialTimeSeconds;
         this.isTimedGame = true;
@@ -155,7 +157,7 @@ class ChessTimer {
                 if (this.blackTime <= 0) this._handleTimeUp('b');
             }
             this.updateDisplay();
-        }, 1000);
+        }, window.APP_CONST?.TIMERS?.TICK_MS || 1000);
     }
 
     /**
@@ -185,21 +187,29 @@ class ChessTimer {
     }
 }
 
-// Global initialization
-window.TIMER_MANAGER = new ChessTimer();
+/**
+ * Global instance initialization with JSDoc for IDE support.
+ * @type {ChessTimer}
+ */
+const timerManagerInstance = new ChessTimer();
+window.TIMER_MANAGER = timerManagerInstance;
 
 // Compatibility wrappers for existing code
 window.startTimer = (color) => {
     const inc = (typeof selectedBotIncrement !== 'undefined') ? selectedBotIncrement : 0;
-    window.TIMER_MANAGER.start(color, inc);
+    timerManagerInstance.start(color, inc);
 };
-window.resetTimers = () => window.TIMER_MANAGER.reset();
-window.initTimers = (m) => window.TIMER_MANAGER.init(m);
+
+window.resetTimers = () => timerManagerInstance.reset();
+window.initTimers = (m) => timerManagerInstance.init(m);
+
+// Sync global legacy flags with the instance
 Object.defineProperty(window, 'isTimedGame', {
-    get: () => window.TIMER_MANAGER.isTimedGame,
-    set: (v) => { window.TIMER_MANAGER.isTimedGame = v; }
+    get: () => timerManagerInstance.isTimedGame,
+    set: (v) => { timerManagerInstance.isTimedGame = v; }
 });
+
 Object.defineProperty(window, 'timerInterval', {
-    get: () => window.TIMER_MANAGER.timerInterval,
-    set: (v) => { window.TIMER_MANAGER.timerInterval = v; }
+    get: () => timerManagerInstance.timerInterval,
+    set: (v) => { timerManagerInstance.timerInterval = v; }
 });

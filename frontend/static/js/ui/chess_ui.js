@@ -16,7 +16,10 @@ class ChessUI {
             evalScore: null,
             boardCont: null,
             arrowCont: null,
-            openingName: null
+            openingName: null,
+            pgnList: null,
+            pgnCont: null,
+            notateSwitch: null
         };
     }
 
@@ -25,15 +28,18 @@ class ChessUI {
      * @private
      */
     _ensureDom() {
+        const ids = window.APP_CONST?.IDS || {};
         // Only re-cache if essential elements are missing
         if (this.dom.evalBar && document.contains(this.dom.evalBar)) return;
 
-        const ids = window.APP_CONST?.IDS || {};
         this.dom.evalBar = document.getElementById(ids.EVAL_BAR || 'eval-white-advantage');
         this.dom.evalScore = document.getElementById(ids.EVAL_SCORE || 'evaluation-score');
-        this.dom.boardCont = document.getElementById('myBoard');
-        this.dom.openingName = document.getElementById('opening-name');
-        this.dom.arrowCont = document.getElementById('arrow-container');
+        this.dom.boardCont = document.getElementById(ids.BOARD_ELEMENT || 'myBoard');
+        this.dom.openingName = document.getElementById(ids.OPENING_NAME_DISPLAY || 'opening-name');
+        this.dom.arrowCont = document.getElementById(ids.ARROW_CONTAINER || 'arrow-container');
+        this.dom.pgnList = document.getElementById(ids.PGN_VERTICAL_LIST || 'pgn-history-list-vertical');
+        this.dom.pgnCont = document.getElementById(ids.PGN_VERTICAL_CONT || 'pgn-history-vertical');
+        this.dom.notateSwitch = document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch');
     }
 
     /**
@@ -47,16 +53,17 @@ class ChessUI {
             this._ensureDom();
             if (!this.dom.evalBar && !this.dom.evalScore) return;
 
-            let formattedScore = "0.00";
+            const strings = window.APP_CONST?.STRINGS || {};
+            let formattedScore = strings.EVAL_DEFAULT || "0.00";
             let percentAdvantage = 50;
 
             // Check for game over states first
             if (gameInstance && typeof gameInstance.game_over === 'function' && gameInstance.game_over()) {
                 if (gameInstance.in_checkmate()) {
-                    formattedScore = (gameInstance.turn() === 'b') ? "1-0" : "0-1";
+                    formattedScore = (gameInstance.turn() === 'b') ? strings.SCORE_WHITE_WIN : strings.SCORE_BLACK_WIN;
                     percentAdvantage = (gameInstance.turn() === 'b') ? 100 : 0;
                 } else {
-                    formattedScore = "1/2-1/2";
+                    formattedScore = strings.SCORE_DRAW || "1/2-1/2";
                     percentAdvantage = 50;
                 }
                 this._applyEvalUI(percentAdvantage, formattedScore);
@@ -70,13 +77,16 @@ class ChessUI {
             } else {
                 const numScore = parseFloat(scoreStr);
                 if (!isNaN(numScore)) {
-                    const MATE_VAL = (window.APP_CONST?.ENGINE?.MATE_SCORE_BASE || 1000000) - 500;
+                    const mateBase = window.APP_CONST?.ENGINE?.MATE_SCORE_BASE || 1000000;
+                    const mateAdjust = window.APP_CONST?.ENGINE?.MATE_DEPTH_ADJUSTMENT || 500;
+                    const MATE_VAL = mateBase - mateAdjust;
+
                     if (Math.abs(numScore) > MATE_VAL) {
-                        const moves = (window.APP_CONST?.ENGINE?.MATE_SCORE_BASE || 1000000) - Math.abs(numScore);
+                        const moves = mateBase - Math.abs(numScore);
                         formattedScore = (numScore > 0) ? `M+${moves}` : `M-${moves}`;
                         percentAdvantage = (numScore > 0) ? 100 : 0;
                     } else {
-                        const MAX_PAWNS = 10.0;
+                        const MAX_PAWNS = window.APP_CONST?.UI_CONFIG?.EVAL_MAX_PAWNS || 10.0;
                         let capped = Math.max(-MAX_PAWNS, Math.min(MAX_PAWNS, numScore));
                         percentAdvantage = 50 + (capped / (MAX_PAWNS * 2)) * 100;
                         formattedScore = numScore > 0 ? `+${numScore.toFixed(2)}` : numScore.toFixed(2);
@@ -95,9 +105,10 @@ class ChessUI {
      */
     updateEvaluationGameOver(winner) {
         this._ensureDom();
-        if (winner === 'w') this._applyEvalUI(100, "1-0");
-        else if (winner === 'b') this._applyEvalUI(0, "0-1");
-        else this._applyEvalUI(50, "1/2-1/2");
+        const strings = window.APP_CONST?.STRINGS || {};
+        if (winner === 'w') this._applyEvalUI(100, strings.SCORE_WHITE_WIN || "1-0");
+        else if (winner === 'b') this._applyEvalUI(0, strings.SCORE_BLACK_WIN || "0-1");
+        else this._applyEvalUI(50, strings.SCORE_DRAW || "1/2-1/2");
     }
 
     /**
@@ -120,6 +131,9 @@ class ChessUI {
         
         this._syncTimeout = setTimeout(() => {
             this._ensureDom();
+            const config = window.APP_CONST?.UI_CONFIG || {};
+            const offsets = config.EVAL_OFFSETS || {};
+            
             const boardArea = document.querySelector('.chess-board-area');
             const barCont = document.querySelector('.score-bar-container');
             const wrapper = document.querySelector('.score-alignment-wrapper');
@@ -133,16 +147,16 @@ class ChessUI {
             const rootStyles = getComputedStyle(document.documentElement);
             
             let offset;
-            if (screenWidth >= 992) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || 45;
-            else if (screenWidth >= 577) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || 55;
-            else offset = parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || 48;
+            if (screenWidth >= (offsets.BREAKPOINT_LG || 992)) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || (offsets.DESKTOP || 45);
+            else if (screenWidth >= (offsets.BREAKPOINT_MD || 577)) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || (offsets.TABLET || 55);
+            else offset = parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || (offsets.MOBILE || 48);
             
             const wrapperHeight = h - (offset * 2);
             wrapper.style.height = `${wrapperHeight}px`;
             
             const scoreH = this.dom.evalScore ? this.dom.evalScore.offsetHeight : 0;
             barCont.style.height = `${wrapperHeight - scoreH - 10}px`;
-        }, 50);
+        }, window.APP_CONST?.UI_CONFIG?.UI_SYNC_DELAY_MS || 50);
     }
 
     /**
@@ -153,7 +167,8 @@ class ChessUI {
         this._ensureDom();
         if (!this.dom.boardCont) return;
         
-        const enabled = document.getElementById('best-move-switch')?.checked;
+        const ids = window.APP_CONST?.IDS || {};
+        const enabled = document.getElementById(ids.BEST_MOVE_SWITCH || 'best-move-switch')?.checked;
         
         // If disabled or no move, just clear and exit
         if (!enabled || !moveUci || moveUci.length < 4) {
@@ -166,12 +181,15 @@ class ChessUI {
         const isAttached = this.dom.arrowCont && this.dom.boardCont.contains(this.dom.arrowCont);
 
         if (!this.dom.arrowCont || !isAttached) {
+            const arrowIds = window.APP_CONST?.IDS || {};
+            const arrowStyles = window.APP_CONST?.UI_CONFIG?.ARROW || {};
+
             if (!this.dom.arrowCont) {
                 this.dom.arrowCont = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                this.dom.arrowCont.id = "arrow-container";
+                this.dom.arrowCont.id = arrowIds.ARROW_CONTAINER || "arrow-container";
                 Object.assign(this.dom.arrowCont.style, {
                     position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-                    pointerEvents: 'none', zIndex: '100'
+                    pointerEvents: 'none', zIndex: arrowStyles.Z_INDEX || '100'
                 });
             }
             // (Re)attach to current board container
@@ -207,6 +225,8 @@ class ChessUI {
         const dx = end.x - start.x, dy = end.y - start.y, len = Math.sqrt(dx * dx + dy * dy);
         const ratio = (len - 10) / len;
 
+        const arrowStyles = window.APP_CONST?.UI_CONFIG?.ARROW || {};
+
         const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
         const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
         marker.id = "arrowhead";
@@ -215,14 +235,14 @@ class ChessUI {
         marker.setAttribute("orient", "auto");
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         poly.setAttribute("points", "0 0, 6 3, 0 6");
-        poly.setAttribute("fill", "rgba(76, 175, 80, 0.95)");
+        poly.setAttribute("fill", arrowStyles.COLOR || "rgba(76, 175, 80, 0.95)");
         marker.appendChild(poly); defs.appendChild(marker); this.dom.arrowCont.appendChild(defs);
-
+ 
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
         line.setAttribute("x1", start.x); line.setAttribute("y1", start.y);
         line.setAttribute("x2", start.x + dx * ratio); line.setAttribute("y2", start.y + dy * ratio);
-        line.setAttribute("stroke", "rgba(76, 175, 80, 0.6)"); 
-        line.setAttribute("stroke-width", "4"); 
+        line.setAttribute("stroke", arrowStyles.COLOR_LINE || "rgba(76, 175, 80, 0.6)"); 
+        line.setAttribute("stroke-width", arrowStyles.WIDTH || "4"); 
         line.setAttribute("marker-end", "url(#arrowhead)");
         this.dom.arrowCont.appendChild(line);
     }
@@ -236,22 +256,26 @@ class ChessUI {
     updateAllHighlights(gameInstance, history, curIdx) {
         this._ensureDom();
         if (!this.dom.boardCont) return;
+        
+        const classes = window.APP_CONST?.CLASSES || {};
+        const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
 
-        this.dom.boardCont.querySelectorAll('.square-55d63').forEach(sq => {
-            sq.classList.remove('square-selected', 'highlight-move', 'highlight-check');
+        this.dom.boardCont.querySelectorAll(sqSelector).forEach(sq => {
+            sq.classList.remove(classes.SQUARE_SELECTED || 'square-selected', classes.HIGHLIGHT_MOVE || 'highlight-move', classes.HIGHLIGHT_CHECK || 'highlight-check');
         });
 
         if (gameInstance.in_check()) {
             const king = this._findKing(gameInstance.turn(), gameInstance);
-            this.dom.boardCont.querySelector(`.square-${king}`)?.classList.add('highlight-check');
+            this.dom.boardCont.querySelector(`.square-${king}`)?.classList.add(classes.HIGHLIGHT_CHECK || 'highlight-check');
         }
 
         const moveEntry = history[curIdx];
         if (moveEntry && moveEntry.uci) {
+            const classes = window.APP_CONST?.CLASSES || {};
             const from = moveEntry.uci.substring(0, 2);
             const to = moveEntry.uci.substring(2, 4);
-            this.dom.boardCont.querySelector(`.square-${from}`)?.classList.add('square-selected');
-            this.dom.boardCont.querySelector(`.square-${to}`)?.classList.add('square-selected');
+            this.dom.boardCont.querySelector(`.square-${from}`)?.classList.add(classes.SQUARE_SELECTED || 'square-selected');
+            this.dom.boardCont.querySelector(`.square-${to}`)?.classList.add(classes.SQUARE_SELECTED || 'square-selected');
         }
     }
 
@@ -263,11 +287,161 @@ class ChessUI {
      * @private
      */
     _findKing(color, game) {
-        const cols = ['a','b','c','d','e','f','g','h'], rows = ['1','2','3','4','5','6','7','8'];
-        for (const c of cols) for (const r of rows) {
-            const p = game.get(c + r);
-            if (p?.type === 'k' && p?.color === color) return c + r;
+        const files = window.APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+        
+        for (const f of files) {
+            for (const r of ranks) {
+                const p = game.get(f + r);
+                if (p?.type === 'k' && p?.color === color) return f + r;
+            }
         }
         return null;
+    }
+    /**
+     * Renders the vertical PGN history table.
+     * @param {Array} history - The app's moveHistory array.
+     * @param {number} curIdx - Current index in the history.
+     * @param {Object} engineService - (Optional) Engine service to parse scores for annotations.
+     */
+    renderPGNTable(history, curIdx, engineService = null) {
+        this._ensureDom();
+        if (!this.dom.pgnList) return;
+        
+        const currentScore = history[curIdx]?.score || '';
+        const stateKey = `len:${history.length}-idx:${curIdx}-sc:${currentScore}`;
+        if (this._lastPgnStateKey === stateKey) return;
+        this._lastPgnStateKey = stateKey;
+        
+        const htmlParts = [];
+        for (let i = 1; i < history.length; i += 2) {
+            const w = history[i], b = history[i + 1];
+            const wH = (i === curIdx) ? 'current-move-highlight' : '';
+            const bH = (b && (i+1) === curIdx) ? 'current-move-highlight' : '';
+            
+            htmlParts.push(`<tr><td class="move-number-cell">${Math.floor((i-1)/2)+1}.</td>`);
+            htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${this._annot(history, i, engineService)}</td>`);
+            htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${b ? this._annot(history, i+1, engineService) : ''}</td></tr>`);
+        }
+        
+        this.dom.pgnList.innerHTML = htmlParts.join('');
+        if (this.dom.pgnCont) this.dom.pgnCont.scrollTop = this.dom.pgnCont.scrollHeight;
+    }
+
+    /**
+     * Generates annotation icons based on move quality.
+     * @private
+     */
+    _annot(history, idx, engineService) {
+        if (!this.dom.notateSwitch?.checked || !engineService) return '';
+        const m = history[idx];
+        if (m.isBookMove) return `<span class="move-annotation" title="Book Move"><img src="static/img/icon/book.svg"></span>`;
+        if (m.score === null || m.score === undefined || idx === 0 || !history[idx-1]) return '';
+
+        const cur = engineService.parseScore(m.score);
+        const pre = engineService.parseScore(history[idx-1].score);
+        const diff = (idx % 2 !== 0) ? (cur - pre) : (pre - cur);
+        const isBest = (history[idx-1].bestMove === m.uci);
+
+        const thresholds = window.APP_CONST?.QUALITY_THRESHOLDS || {};
+
+        if (diff > (thresholds.BRILLIANT || 1.5)) return `<span class="move-annotation" title="Brilliant"><img src="static/img/icon/brilliant.svg"></span>`;
+        if (diff > (thresholds.GREAT || 0.8)) return `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
+        if (isBest) return `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
+        if (diff > (thresholds.GOOD || 0.1)) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
+        if (diff > (thresholds.SOLID || -0.3)) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
+        
+        const isMissWin = Math.abs(pre) > (thresholds.MISS_WIN_THRESHOLD || 2.5) && 
+                          Math.abs(cur) < (thresholds.MISS_WIN_RESULT || 0.5);
+        if (isMissWin) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
+        
+        if (diff < (thresholds.BLUNDER || -1.5)) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
+        if (diff < (thresholds.MISTAKE || -0.7)) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
+        if (diff <= (thresholds.INACCURATE || -0.3)) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
+
+        return '';
+    }
+
+    /**
+     * Syncs navigation button states (enabled/disabled).
+     */
+    updateNavButtons(isFirst, isLast) {
+        try {
+            $('[data-action="first"], [data-action="prev"]').prop('disabled', isFirst);
+            $('[data-action="next"], [data-action="last"]').prop('disabled', isLast);
+        } catch (e) {}
+    }
+
+    /**
+     * Synchronizes UI components with the board orientation.
+     */
+    syncOrientation(isFlipped) {
+        const classes = window.APP_CONST?.CLASSES || {};
+        const boardArea = document.querySelector('.chess-board-area');
+        const scoreWrapper = document.querySelector('.score-alignment-wrapper');
+        
+        if (boardArea) boardArea.classList.toggle(classes.ROTATED_BOARD || 'rotated-board', isFlipped);
+        if (scoreWrapper) scoreWrapper.classList.toggle(classes.ROTATED_SCORE || 'rotated-score', isFlipped);
+    }
+
+    /**
+     * Displays GameOver modal and renders stats.
+     */
+    showGameOverModal(title, message, stats = null) {
+        if (window.showGameOverModal) {
+            window.showGameOverModal(title, message);
+            
+            if (stats) {
+                const shuffler = document.getElementById('game-over-stats-shuffler');
+                const statsGrid = document.getElementById('game-over-stats');
+                
+                if (shuffler) shuffler.classList.remove('d-none');
+                if (statsGrid) statsGrid.classList.add('d-none');
+
+                setTimeout(() => {
+                    this._renderPlayerStats(stats);
+                    if (shuffler) shuffler.classList.add('d-none');
+                    if (statsGrid) {
+                        statsGrid.classList.remove('d-none');
+                        statsGrid.style.opacity = '0';
+                        statsGrid.style.transition = 'opacity 0.6s ease';
+                        setTimeout(() => statsGrid.style.opacity = '1', 10);
+                    }
+                }, 2500); 
+            }
+        }
+    }
+
+    /**
+     * Renders stats to the modal.
+     * @private
+     */
+    _renderPlayerStats(counts) {
+        const statsGrid = document.getElementById('game-over-stats');
+        if (!statsGrid) return;
+
+        const all = [
+            { label: 'Thiên tài', val: counts.brilliant, class: 'stat-brilliant', priority: 100 },
+            { label: 'Sai lầm nghiêm trọng', val: counts.blunder, class: 'stat-blunder', priority: 90 },
+            { label: 'Tốt nhất', val: counts.best, class: 'stat-best', priority: 80 },
+            { label: 'Lý thuyết', val: counts.book, class: 'stat-book', priority: 75 },
+            { label: 'Tuyệt vời', val: counts.great, class: 'stat-good', priority: 70 },
+            { label: 'Tốt', val: counts.good, class: 'stat-good', priority: 60 },
+            { label: 'Vững chắc', val: counts.solid, class: 'stat-solid', priority: 50 },
+            { label: 'Sai lầm', val: counts.mistake, class: 'stat-mistake', priority: 40 },
+            { label: 'Không chính xác', val: counts.inacc, class: 'stat-inacc', priority: 30 }
+        ];
+
+        let filtered = all.filter(i => i.val > 0).sort((a, b) => b.priority - a.priority).slice(0, 3);
+        if (filtered.length === 0) {
+            filtered = all.filter(i => ['Tốt nhất', 'Tốt', 'Vững chắc'].includes(i.label)).slice(0, 3);
+        }
+
+        statsGrid.innerHTML = filtered.map(i => `
+            <div class="stat-item">
+                <span class="stat-value ${i.class}">${i.val}</span>
+                <span class="stat-label">${i.label}</span>
+            </div>
+        `).join('');
     }
 }

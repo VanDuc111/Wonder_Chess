@@ -5,11 +5,12 @@
 
 class BotManager {
     constructor() {
+        const botConst = window.APP_CONST?.BOT || {};
         // UI & State Settings
-        this.selectedEngine = 'stockfish';
-        this.selectedLevel = window.APP_CONST?.BOT?.DEFAULT_LEVEL || 10;
-        this.selectedColor = 'r'; // 'w', 'b', or 'r' (random)
-        this.selectedTime = '0'; // minutes
+        this.selectedEngine = botConst.DEFAULT_ENGINE || 'stockfish';
+        this.selectedLevel = botConst.DEFAULT_LEVEL || 10;
+        this.selectedColor = botConst.DEFAULT_COLOR || 'r'; // 'w', 'b', or 'r' (random)
+        this.selectedTime = botConst.DEFAULT_TIME || '0'; // minutes
         this.selectedIncrement = 0; // seconds
         
         // Stockfish WASM state
@@ -62,13 +63,23 @@ class BotManager {
                 const val = parseInt(e.target.value);
                 this.selectedLevel = val;
                 this.updateLevelUI(val);
+
+                const botConst = window.APP_CONST?.BOT || {};
+                const thresholds = botConst.LEVEL_THRESHOLDS || [];
                 
-                if (this.dom.levelSelect) {
-                    if (val <= 4) this.dom.levelSelect.value = "0";
-                    else if (val <= 8) this.dom.levelSelect.value = "5";
-                    else if (val <= 12) this.dom.levelSelect.value = "10";
-                    else if (val <= 16) this.dom.levelSelect.value = "15";
-                    else this.dom.levelSelect.value = "20";
+                if (this.dom.levelSelect && thresholds.length > 0) {
+                    let assignedValue = null;
+                    for (const t of thresholds) {
+                        if (t.max !== undefined && val <= t.max) {
+                            assignedValue = t.value;
+                            break;
+                        }
+                    }
+                    if (assignedValue === null) {
+                        const fb = thresholds.find(t => t.fallback);
+                        assignedValue = fb ? fb.fallback : "20";
+                    }
+                    this.dom.levelSelect.value = assignedValue;
                 }
             });
         }
@@ -195,15 +206,19 @@ class BotManager {
 
             const onMsg = (event) => {
                 const line = event.data;
+                const botConst = window.APP_CONST?.BOT || {};
+                const scoreRegex = botConst.REGEX?.SCORE || /score\s(cp|mate)\s(-?\d+)/;
+                
                 if (typeof line === 'string' && line.includes("score")) {
-                    const scoreMatch = line.match(/score\s(cp|mate)\s(-?\d+)/);
+                    const scoreMatch = line.match(scoreRegex);
                     if (scoreMatch) {
                         const type = scoreMatch[1];
                         const value = parseInt(scoreMatch[2]);
                         let normalizedValue = (sideToMove === 'w') ? value : -value;
 
                         if (type === 'cp') {
-                            lastScore = (normalizedValue / 100).toFixed(2);
+                            const cpToPawn = window.APP_CONST?.ENGINE?.CP_TO_PAWN || 100;
+                            lastScore = (normalizedValue / cpToPawn).toFixed(2);
                             if (normalizedValue > 0) lastScore = "+" + lastScore;
                         } else if (type === 'mate') {
                             lastScore = normalizedValue > 0 ? `+M${Math.abs(normalizedValue)}` : `-M${Math.abs(normalizedValue)}`;
@@ -212,7 +227,8 @@ class BotManager {
                 }
 
                 if (typeof line === 'string' && line.startsWith("bestmove")) {
-                    const match = line.match(/bestmove\s([a-h][1-8][a-h][1-8][qrbn]?)/);
+                    const bestMoveRegex = botConst.REGEX?.BESTMOVE || /bestmove\s([a-h][1-8][a-h][1-8][qrbn]?)/;
+                    const match = line.match(bestMoveRegex);
                     if (match) {
                         this.sfEngine.removeEventListener('message', onMsg);
                         resolve({
@@ -241,7 +257,8 @@ class BotManager {
 
         let finalPlayerColor = this.selectedColor;
         if (this.selectedColor === 'r') {
-            finalPlayerColor = (Math.random() < 0.5) ? 'w' : 'b';
+            const threshold = window.APP_CONST?.UI_CONFIG?.RANDOM_THRESHOLD || 0.5;
+            finalPlayerColor = (Math.random() < threshold) ? 'w' : 'b';
         }
 
         window.playerColor = finalPlayerColor;

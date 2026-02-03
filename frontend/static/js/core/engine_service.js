@@ -55,17 +55,23 @@ class ChessEngine {
      * @returns {number} Parsed numerical value (+100/-100 for mates).
      */
     parseScore(s) {
-        if (s === null || s === undefined) return 0;
+        const engineConst = window.APP_CONST?.ENGINE || {};
+        const normScore = engineConst.NORMALIZED_SCORE || { MATE: 100, DEFAULT: 0 };
+        
+        if (s === null || s === undefined) return normScore.DEFAULT;
         if (this.scoreCache.has(s)) return this.scoreCache.get(s);
 
         const scoreStr = String(s);
-        let val = 0;
+        let val = normScore.DEFAULT;
         
         // Handle Mate notation
-        if (scoreStr.includes('M') || scoreStr.includes('#')) {
-            val = scoreStr.includes('-') ? -100 : 100; // Normalized for bar
+        const mateSymbols = engineConst.MATE_SYMBOLS || ['M', '#'];
+        const isMate = mateSymbols.some(sym => scoreStr.includes(sym));
+
+        if (isMate) {
+            val = scoreStr.includes('-') ? -normScore.MATE : normScore.MATE; 
         } else {
-            val = parseFloat(scoreStr) || 0;
+            val = parseFloat(scoreStr) || normScore.DEFAULT;
         }
 
         this.scoreCache.set(s, val);
