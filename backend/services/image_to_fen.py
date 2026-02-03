@@ -90,7 +90,7 @@ def analyze_image_to_fen(image_path):
 
         print("- Bước 1: Đang tìm bàn cờ...")
         model = get_board_model()
-        board_results = model.predict(img, conf=0.15)
+        board_results = model.predict(img, conf=0.3)
         
         # Nếu đang chạy trên Render (RAM thấp), có thể cân nhắc xóa luôn sau khi dùng
         # model.clear() 
@@ -224,7 +224,7 @@ def analyze_image_to_fen(image_path):
     try:
         print("- Bước 2: Đang nhận diện quân cờ...")
         model = get_piece_model()
-        piece_results = model.predict(img, conf=0.15)
+        piece_results = model.predict(img, conf=0.3)
         
         # Proactive memory clearing
         import gc

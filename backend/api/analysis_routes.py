@@ -9,6 +9,12 @@ from backend.services.gemini_service import stream_gemini_response
 from backend.services.analysis_manager import ChessAnalysisManager
 from backend.engines.minimax import find_best_move
 from backend.engines.stockfish_engine import get_stockfish_move
+from backend.config import (
+    EngineConfig,
+    AIConfig,
+    ErrorMessages,
+    HTTPStatus
+)
 import chess
 
 analysis_bp = Blueprint('analysis', __name__)
@@ -26,19 +32,26 @@ def chat_analysis() -> Response:
     is_first_message = data.get('is_first_message', False)
 
     if not user_question or not fen:
-        return jsonify({'success': False, 'error': 'Thiếu FEN hoặc câu hỏi người dùng.'}), 400
+        return jsonify({
+            'success': False, 
+            'error': ErrorMessages.MISSING_FEN_OR_QUESTION
+        }), HTTPStatus.BAD_REQUEST
 
     # 1. Khởi tạo hướng dẫn chào hỏi
     greeting_instruction = (
-        "Hãy chào ngắn gọn và thân thiện (ví dụ: 'Chào bạn! Alice đây.'). Tuyệt đối KHÔNG dùng những câu văn mẫu như '64 ô huyền diệu'." if is_first_message 
-        else "Hãy đi thẳng vào câu trả lời, không cần chào hỏi."
+        AIConfig.GREETING_FIRST_MESSAGE if is_first_message 
+        else AIConfig.GREETING_SUBSEQUENT
     )
 
     # 2. Thu thập dữ liệu từ Engine
-    engine_results = {'search_score': '0', 'best_move': 'N/A', 'pv': 'N/A'}
+    engine_results = AIConfig.DEFAULT_ENGINE_RESULTS.copy()
     try:
         # Ưu tiên Stockfish cho độ chính xác cao
-        engine_sf = get_stockfish_move(fen, skill_level=20, time_limit=0.5)
+        engine_sf = get_stockfish_move(
+            fen, 
+            skill_level=EngineConfig.MAX_SKILL_LEVEL, 
+            time_limit=EngineConfig.CHAT_ANALYSIS_TIME_LIMIT
+        )
         if engine_sf.get('success'):
             engine_results.update(engine_sf)
         else:
@@ -60,7 +73,7 @@ def chat_analysis() -> Response:
     1. **Nếu câu hỏi về LUẬT CHƠI, KỸ THUẬT (ví dụ: "Nhập thành là gì?", "Quân mã đi thế nào?") hay KIẾN THỨC CHUNG:**
        - Hãy tập trung giải thích kiến thức đó một cách chi tiết và dễ hiểu nhất.
        - **BỎ QUA** phần phân tích bàn cờ hiện tại trừ khi người dùng yêu cầu hoặc kiến thức đó liên quan trực tiếp đến thế trận hiện tại.
-       - Viết trong khoảng 4-5 câu.
+       - Viết trong khoảng {AIConfig.MIN_RESPONSE_SENTENCES}-{AIConfig.MAX_RESPONSE_SENTENCES} câu.
 
     2. **Nếu câu hỏi về KHAI CUỘC (ví dụ: "Đây là khai cuộc gì?", "Khai cuộc này có mục tiêu gì?"):**
        - Xác định: **{ctx['opening_name']}**.
@@ -77,7 +90,7 @@ def chat_analysis() -> Response:
     - Biến hóa (PV): {ctx['engine_pv']}
 
     **QUY TẮC BẮT BUỘC:**
-    - Trả lời trong khoảng 4-5 câu.
+    - Trả lời trong khoảng {AIConfig.MIN_RESPONSE_SENTENCES}-{AIConfig.MAX_RESPONSE_SENTENCES} câu.
     - Luôn **in đậm** mọi nước đi (ví dụ: **e4**, **{ctx['best_move_san']}**).
     - Nếu phân tích nước đi, hãy nêu rõ vì sao nước đó tốt hay xấu dựa trên chênh lệch `{ctx['diff']:+.2f}`.
     """

@@ -1,24 +1,34 @@
-"""Dịch vụ tương tác với Google Gemini API."""
+"""
+Google Gemini API Service
+Handles interaction with Google's Gemini AI for chess analysis and chat.
+Includes retry logic, safety settings, and streaming support.
+"""
+
 import os
 import time
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from backend.config import GeminiConfig
 
-# 1. CẤU HÌNH API KEY
+
+# ==================== API CONFIGURATION ====================
+
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if API_KEY:
     try:
         genai.configure(api_key=API_KEY)
     except Exception as e:
-        print(f"Client initialization error :{e}")
+        print(f"Client initialization error: {e}")
         API_KEY = None
 else:
-    print("Warning: Missing GEMINI_API_KEY environment variable.")
+    print(GeminiConfig.WARNING_MISSING_KEY)
 
-# 2. CẤU HÌNH AN TOÀN
-# Tắt bớt các bộ lọc để Alice nói chuyện tự nhiên hơn
+
+# ==================== SAFETY SETTINGS ====================
+
+# Disable content filters for more natural chess conversation
 SAFETY_SETTINGS = {
     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
     HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -27,50 +37,83 @@ SAFETY_SETTINGS = {
 }
 
 
-def stream_gemini_response(prompt_context):
-    """
-    Gửi prompt đến Gemini, hỗ trợ stream an toàn và tự động thử lại.
-    """
+# ==================== STREAMING FUNCTION ====================
 
+def stream_gemini_response(prompt_context: str):
+    """
+    Send prompt to Gemini with streaming support and automatic retry.
+    
+    Args:
+        prompt_context: Complete prompt with chess analysis context
+        
+    Yields:
+        str: Text chunks from Gemini's response
+        
+    Features:
+        - Automatic retry with exponential backoff
+        - Handles rate limiting and server errors
+        - Streams response for better UX
+        - Safety settings configured for chess discussion
+        
+    Retry Strategy:
+        - Max retries: 3
+        - Initial delay: 2 seconds
+        - Backoff multiplier: 2x (2s → 4s → 8s)
+        
+    Error Handling:
+        - ResourceExhausted: API quota exceeded
+        - ServiceUnavailable: Server temporarily down
+        - DeadlineExceeded: Request timeout
+        - Generic Exception: Unexpected errors
+    """
     if not API_KEY:
-        yield "Gemini API Key missing."
+        yield GeminiConfig.ERROR_API_KEY_MISSING
         return
-    max_retries = 3
-    delay_seconds = 2
+    
+    delay_seconds = GeminiConfig.INITIAL_RETRY_DELAY
 
-    for i in range(max_retries):
+    for attempt in range(GeminiConfig.MAX_RETRIES):
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            # Initialize model for this attempt
+            model = genai.GenerativeModel(GeminiConfig.MODEL_NAME)
 
+            # Generate content with streaming
             response_generator = model.generate_content(
                 prompt_context,
                 stream=True,
                 safety_settings=SAFETY_SETTINGS
             )
 
-            # 3. VÒNG LẶP XỬ LÝ STREAM
+            # Stream response chunks
             for chunk in response_generator:
                 try:
-
                     if chunk.text:
                         yield chunk.text
                 except ValueError:
+                    # Skip chunks without text (safety blocks, etc.)
                     continue
 
+            # Success - exit retry loop
             return
 
-        except (google_exceptions.ResourceExhausted,
-                google_exceptions.ServiceUnavailable,
-                google_exceptions.DeadlineExceeded) as e:
-
-            print(f"Gemini quá tải. Thử lại lần {i + 1}...")
-            if i < max_retries - 1:
+        except (
+            google_exceptions.ResourceExhausted,
+            google_exceptions.ServiceUnavailable,
+            google_exceptions.DeadlineExceeded
+        ) as e:
+            # Retriable errors - server overload or timeout
+            print(f"Gemini overloaded. Retry attempt {attempt + 1}/{GeminiConfig.MAX_RETRIES}...")
+            
+            if attempt < GeminiConfig.MAX_RETRIES - 1:
+                # Wait with exponential backoff
                 time.sleep(delay_seconds)
-                delay_seconds *= 2
+                delay_seconds *= GeminiConfig.RETRY_BACKOFF_MULTIPLIER
             else:
-                yield "Google server is currently busy. Please try again later."
+                # Final attempt failed
+                yield GeminiConfig.ERROR_SERVER_BUSY
 
         except Exception as e:
-            print(f"Lỗi không xác định: {e}")
-            yield f"Alice is experiencing technical difficulties. {str(e)}"
+            # Non-retriable error - fail immediately
+            print(f"Unexpected Gemini error: {e}")
+            yield f"{GeminiConfig.ERROR_TECHNICAL_DIFFICULTY} {str(e)}"
             return

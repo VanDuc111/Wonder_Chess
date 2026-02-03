@@ -8,12 +8,16 @@ from flask import Blueprint, request, jsonify
 import os
 import time
 from backend.services.image_to_fen import analyze_image_to_fen
+from backend.config import (
+    ImageConfig,
+    ErrorMessages,
+    SuccessMessages
+)
 
 image_bp = Blueprint('image_bp', __name__)
 
-UPLOAD_FOLDER = 'uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(ImageConfig.UPLOAD_FOLDER):
+    os.makedirs(ImageConfig.UPLOAD_FOLDER)
 
 
 @image_bp.route('/analyze_image', methods=['POST'])
@@ -24,15 +28,21 @@ def analyze_image() -> jsonify:
     :return:
     """
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'There is no file part in the request.'})
+        return jsonify({
+            'success': False, 
+            'error': ErrorMessages.NO_FILE_PART
+        })
 
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'Empty filename.'})
+        return jsonify({
+            'success': False, 
+            'error': ErrorMessages.EMPTY_FILENAME
+        })
 
     if file:
         filename = f"scan_{int(time.time())}.jpg"
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        filepath = os.path.join(ImageConfig.UPLOAD_FOLDER, filename)
         file.save(filepath)
 
         try:
@@ -44,12 +54,15 @@ def analyze_image() -> jsonify:
                     'fen': detected_fen,
                     'debug_image': debug_image_b64,
                     'warped_image': warped_image_b64,
-                    'message': 'Thành công!'
+                    'message': SuccessMessages.IMAGE_ANALYSIS_SUCCESS
                 })
             else:
                 return jsonify({'success': False, 'error': error})
         except Exception as e:
-            return jsonify({'success': False, 'error': f"Lỗi server: {str(e)}"})
+            return jsonify({
+                'success': False, 
+                'error': f"{ErrorMessages.SERVER_ERROR_PREFIX}{str(e)}"
+            })
         finally:
             # Luôn luôn xóa file tạm dù thành công hay lỗi
             try:

@@ -1,65 +1,119 @@
+"""
+Chess Analysis Manager Service
+Handles chess move analysis, evaluation, and context preparation for AI.
+Separates calculation logic from HTTP layer for better testability.
+"""
+
 import re
 import chess
 from typing import Dict, Any, Tuple
+from backend.config import AnalysisConfig
+
 
 class ChessAnalysisManager:
     """
-    Service chuyên trách việc phân tích dữ liệu cờ vua và chuẩn bị dữ liệu cho AI.
-    Giúp tách biệt logic tính toán khỏi HTTP layer (Route).
+    Service responsible for analyzing chess data and preparing context for AI.
+    Provides move quality evaluation, score parsing, and data formatting.
     """
 
     @staticmethod
     def parse_score(score_str: Any) -> float:
         """
-        Chuyển đổi điểm số từ Engine (dạng chuỗi) sang float để tính toán.
-        Hỗ trợ: +1.50, -0.80, +M2, -M5, 0.00
+        Convert engine score string to float for calculations.
+        
+        Args:
+            score_str: Score from engine (e.g., "+1.50", "-0.80", "+M2", "-M5", "0.00")
+            
+        Returns:
+            float: Parsed score value. Mate positions return ±100.0
+            
+        Examples:
+            >>> parse_score("+1.50")
+            1.5
+            >>> parse_score("-M5")
+            -100.0
+            >>> parse_score("M2")
+            100.0
         """
         s = str(score_str).strip()
         if not s:
             return 0.0
             
-        # 1. Kiểm tra Mate (+M1, -M5, M2...)
+        # Check for mate notation (+M1, -M5, M2...)
         mate_match = re.search(r'([+-])?M\d+', s, re.IGNORECASE)
         if mate_match:
-            # Nếu có dấu trừ thì là thế thua tuyệt đối (-100), ngược lại là thắng (100)
-            return -100.0 if mate_match.group(1) == '-' else 100.0
+            return (-AnalysisConfig.MATE_SCORE_ABSOLUTE 
+                    if mate_match.group(1) == '-' 
+                    else AnalysisConfig.MATE_SCORE_ABSOLUTE)
         
-        # 2. Trích xuất số thực cho các trường hợp điểm số thông thường
+        # Extract numeric value for regular scores
         num_match = re.search(r'[+-]?\d+\.?\d*', s)
         try:
             return float(num_match.group()) if num_match else 0.0
         except (ValueError, AttributeError):
             return 0.0
 
-    def calculate_evaluation_diff(self, current_fen: str, current_score: Any, prev_score: Any) -> Tuple[float, str, str]:
+    def calculate_evaluation_diff(
+        self, 
+        current_fen: str, 
+        current_score: Any, 
+        prev_score: Any
+    ) -> Tuple[float, str, str]:
         """
-        Tính toán chênh lệch đánh giá dựa trên lượt đi.
-        Trả về: (giá trị_diff, tên_người_vừa_đi, tên_người_đến_lượt)
+        Calculate evaluation difference based on whose turn it is.
+        
+        Args:
+            current_fen: Current board position in FEN notation
+            current_score: Current evaluation score
+            prev_score: Previous evaluation score
+            
+        Returns:
+            Tuple of (diff_value, last_player_name, current_turn_name)
+            
+        Notes:
+            - If White just moved: diff = current - previous (positive is good for White)
+            - If Black just moved: diff = previous - current (decrease is good for Black)
         """
         cur_v = self.parse_score(current_score)
         prev_v = self.parse_score(prev_score)
         
         try:
             board = chess.Board(current_fen)
-            # Người vừa đi là người có màu ngược với lượt hiện tại (turn)
+            # Player who just moved has opposite color of current turn
             was_white_move = (board.turn == chess.BLACK)
             
-            # Nếu trắng vừa đi: diff = cur - prev (tăng là tốt cho trắng)
-            # Nếu đen vừa đi: diff = prev - cur (giảm là tốt cho đen -> prev lớn hơn cur)
+            # Calculate diff from perspective of player who just moved
             diff = (cur_v - prev_v) if was_white_move else (prev_v - cur_v)
             
-            last_player = "Trắng" if was_white_move else "Đen"
-            current_turn = "Trắng" if board.turn == chess.WHITE else "Đen"
+            last_player = (AnalysisConfig.PLAYER_WHITE 
+                          if was_white_move 
+                          else AnalysisConfig.PLAYER_BLACK)
+            current_turn = (AnalysisConfig.PLAYER_WHITE 
+                           if board.turn == chess.WHITE 
+                           else AnalysisConfig.PLAYER_BLACK)
             
             return diff, last_player, current_turn
         except Exception:
-            return 0.0, "N/A", "N/A"
+            return 0.0, AnalysisConfig.PLAYER_NA, AnalysisConfig.PLAYER_NA
 
     @staticmethod
     def uci_to_san(fen: str, uci_move: str) -> str:
-        """Chuyển đổi nước đi từ UCI sang SAN."""
-        if not uci_move or uci_move == "N/A":
-            return "N/A"
+        """
+        Convert UCI move notation to SAN (Standard Algebraic Notation).
+        
+        Args:
+            fen: Current board position
+            uci_move: Move in UCI format (e.g., "e2e4")
+            
+        Returns:
+            str: Move in SAN format (e.g., "e4") or "N/A" if invalid
+            
+        Examples:
+            >>> uci_to_san("rnbqkbnr/pppppppp/...", "e2e4")
+            "e4"
+        """
+        if not uci_move or uci_move == AnalysisConfig.PLAYER_NA:
+            return AnalysisConfig.PLAYER_NA
         try:
             board = chess.Board(fen)
             move = board.parse_uci(uci_move)
@@ -68,33 +122,84 @@ class ChessAnalysisManager:
             return uci_move
 
     def get_move_quality_label(self, diff: float) -> str:
-        """Xác định nhãn chất lượng nước đi dựa trên chênh lệch."""
-        if diff > 1.5: return "Thiên tài!!"
-        if diff > 0.8: return "Tuyệt vời!"
-        if diff > 0.1: return "Tốt"
-        if diff > -0.1: return "Tốt nhất/Ổn định"
-        if diff > -0.3: return "Thiếu chính xác"
-        if diff > -0.7: return "Sai lầm?"
-        return "Sai lầm nghiêm trọng??"
-
-    def prepare_analysis_context(self, data: Dict[str, Any], engine_results: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Tổ hợp mọi dữ liệu thô thành ngữ cảnh đã được xử lý (Processed Context).
-        Đây là nơi tập trung toàn bộ logic "Senior" mà không cần API Key.
+        Determine move quality label based on evaluation difference.
+        
+        Args:
+            diff: Evaluation difference in pawns (positive = improvement)
+            
+        Returns:
+            str: Quality label in Vietnamese
+            
+        Quality Ranges:
+            > 1.5:  Brilliant
+            > 0.8:  Great
+            > 0.1:  Good
+            > -0.1: Best/Stable
+            > -0.3: Inaccuracy
+            > -0.7: Mistake
+            ≤ -0.7: Blunder
+        """
+        if diff > AnalysisConfig.BRILLIANT_THRESHOLD:
+            return AnalysisConfig.LABEL_BRILLIANT
+        if diff > AnalysisConfig.GREAT_THRESHOLD:
+            return AnalysisConfig.LABEL_GREAT
+        if diff > AnalysisConfig.GOOD_THRESHOLD:
+            return AnalysisConfig.LABEL_GOOD
+        if diff > AnalysisConfig.BEST_THRESHOLD:
+            return AnalysisConfig.LABEL_BEST
+        if diff > AnalysisConfig.INACCURACY_THRESHOLD:
+            return AnalysisConfig.LABEL_INACCURACY
+        if diff > AnalysisConfig.MISTAKE_THRESHOLD:
+            return AnalysisConfig.LABEL_MISTAKE
+        return AnalysisConfig.LABEL_BLUNDER
+
+    def prepare_analysis_context(
+        self, 
+        data: Dict[str, Any], 
+        engine_results: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Combine raw data into processed context for AI consumption.
+        Central location for all "heavy" analysis logic without API keys.
+        
+        Args:
+            data: Raw game data from frontend (FEN, PGN, scores, etc.)
+            engine_results: Results from chess engine (best move, score, PV)
+            
+        Returns:
+            Dict containing processed analysis context with:
+                - fen: Current position
+                - pgn: Game history
+                - last_move_san: Last move in SAN
+                - best_move_san: Engine's best move in SAN
+                - diff: Evaluation difference
+                - diff_str: Formatted difference string
+                - quality_label: Move quality assessment
+                - last_player: Who just moved
+                - current_turn: Whose turn it is
+                - formatted_score: Current evaluation
+                - opening_name: Opening name if detected
+                - move_count: Number of moves played
+                - engine_pv: Principal variation
         """
         fen = data.get('fen')
         current_score = data.get('current_score') or engine_results.get('search_score', '0')
         prev_score = data.get('prev_score', '0.00')
         
-        diff, last_player, current_turn = self.calculate_evaluation_diff(fen, current_score, prev_score)
+        diff, last_player, current_turn = self.calculate_evaluation_diff(
+            fen, current_score, prev_score
+        )
         
-        # Format diff string thân thiện
-        diff_str = "Cực kỳ lớn" if abs(diff) > 50 else f"{diff:+.2f}"
+        # Format diff string for display
+        diff_str = (AnalysisConfig.LABEL_EXTREME_DIFF 
+                   if abs(diff) > AnalysisConfig.EXTREME_DIFF_THRESHOLD 
+                   else f"{diff:+.2f}")
         
         return {
             "fen": fen,
-            "pgn": data.get('pgn', 'N/A'),
-            "last_move_san": data.get('last_move_san', 'N/A'),
+            "pgn": data.get('pgn', AnalysisConfig.PLAYER_NA),
+            "last_move_san": data.get('last_move_san', AnalysisConfig.PLAYER_NA),
             "best_move_san": self.uci_to_san(fen, engine_results.get('best_move')),
             "diff": diff,
             "diff_str": diff_str,
@@ -102,7 +207,7 @@ class ChessAnalysisManager:
             "last_player": last_player,
             "current_turn": current_turn,
             "formatted_score": str(current_score),
-            "opening_name": data.get('opening_name', 'N/A'),
+            "opening_name": data.get('opening_name', AnalysisConfig.PLAYER_NA),
             "move_count": data.get('move_count', 0),
-            "engine_pv": engine_results.get('pv', 'N/A')
+            "engine_pv": engine_results.get('pv', AnalysisConfig.PLAYER_NA)
         }

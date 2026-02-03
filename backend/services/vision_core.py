@@ -1,159 +1,284 @@
 """
-Module xử lý hình ảnh liên quan đến bàn cờ
-- Tìm góc bàn cờ trong ảnh
-- Tính ma trận biến đổi phối cảnh (Homography)
-- Ánh xạ điểm từ ảnh gốc sang tọa độ ô cờ
+Computer Vision Core Module
+Handles chessboard detection and perspective transformation.
+- Finds board corners in images
+- Calculates homography matrix for perspective correction
+- Maps image points to chess grid coordinates
 """
+
 import cv2
 import numpy as np
+from backend.config import VisionConfig
 
 
-def order_points(pts):
+def order_points(pts: np.ndarray) -> np.ndarray:
     """
-    Sắp xếp 4 điểm góc theo thứ tự: 
-    Trên-Trái, Trên-Phải, Dưới-Phải, Dưới-Trái
+    Sort 4 corner points in clockwise order starting from top-left.
+    
+    Args:
+        pts: Array of 4 points (x, y coordinates)
+        
+    Returns:
+        np.ndarray: Ordered points [TL, TR, BR, BL]
+        
+    Algorithm:
+        - Top-Left: Minimum sum of x+y
+        - Bottom-Right: Maximum sum of x+y
+        - Top-Right: Minimum difference of y-x
+        - Bottom-Left: Maximum difference of y-x
     """
     rect = np.zeros((4, 2), dtype="float32")
     s = pts.sum(axis=1)
-    rect[0] = pts[np.argmin(s)]  # TL
-    rect[2] = pts[np.argmax(s)]  # BR
+    rect[0] = pts[np.argmin(s)]  # Top-Left
+    rect[2] = pts[np.argmax(s)]  # Bottom-Right
     diff = np.diff(pts, axis=1)
-    rect[1] = pts[np.argmin(diff)]  # TR
-    rect[3] = pts[np.argmax(diff)]  # BL
+    rect[1] = pts[np.argmin(diff)]  # Top-Right
+    rect[3] = pts[np.argmax(diff)]  # Bottom-Left
     return rect
 
 
-def find_board_corners(image):
+def find_board_corners(image: np.ndarray) -> np.ndarray:
     """
-    Bước 1: Tìm 4 góc của bàn cờ sử dụng Adaptive Threshold & Contour Approximation.
-    Tối ưu cho việc tìm hình tứ giác (hình thang) của bàn cờ trong ảnh 3D.
+    Detect chessboard corners using adaptive thresholding and contour detection.
+    Optimized for finding quadrilaterals (trapezoids) in 3D perspective images.
+    
+    Args:
+        image: Input BGR image
+        
+    Returns:
+        np.ndarray: 4 corner points if found, None otherwise
+        
+    Algorithm Steps:
+        1. Convert to grayscale
+        2. Apply Gaussian blur to reduce noise
+        3. Adaptive threshold to handle uneven lighting
+        4. Morphological dilation to connect broken edges
+        5. Find and approximate contours
+        6. Select largest quadrilateral that occupies >20% of image
+        
+    Parameters:
+        - Blur kernel: 7x7
+        - Adaptive block size: 21
+        - Dilation iterations: 1
+        - Min board area: 20% of image
     """
-    # 1. Tiền xử lý (Xám -> Mờ -> Nhị phân hóa thích nghi)
+    # Step 1: Preprocessing (Grayscale → Blur → Adaptive Threshold)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # Làm mượt ảnh để giảm nhiễu từ các ô cờ và quân cờ
-    blur = cv2.GaussianBlur(gray, (7, 7), 0)
+    # Smooth image to reduce noise from squares and pieces
+    blur = cv2.GaussianBlur(
+        gray, 
+        VisionConfig.GAUSSIAN_BLUR_KERNEL, 
+        VisionConfig.GAUSSIAN_BLUR_SIGMA
+    )
     
-    # Adaptive Threshold giúp tách biệt bàn cờ khỏi nền ngay cả khi ánh sáng không đều
-    # Ta sử dụng kích thước block lớn (11-21) để bắt được các cạnh lớn của bàn cờ
-    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                   cv2.THRESH_BINARY_INV, 21, 5)
+    # Adaptive threshold handles uneven lighting
+    # Large block size (21) captures board edges rather than individual squares
+    thresh = cv2.adaptiveThreshold(
+        blur, 
+        255, 
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV, 
+        VisionConfig.ADAPTIVE_BLOCK_SIZE, 
+        VisionConfig.ADAPTIVE_C_CONSTANT
+    )
 
-    # Dilation giúp nối liền các đoạn cạnh bị đứt quãng do quân cờ che khuất
-    kernel = np.ones((3,3), np.uint8)
-    thresh = cv2.dilate(thresh, kernel, iterations=1)
+    # Dilation connects broken edges caused by pieces
+    kernel = np.ones(VisionConfig.DILATION_KERNEL_SIZE, np.uint8)
+    thresh = cv2.dilate(
+        thresh, 
+        kernel, 
+        iterations=VisionConfig.DILATION_ITERATIONS
+    )
 
-    # 2. Tìm đường bao (Contours)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Step 2: Find contours
+    contours, _ = cv2.findContours(
+        thresh, 
+        cv2.RETR_EXTERNAL, 
+        cv2.CHAIN_APPROX_SIMPLE
+    )
 
-    # Sắp xếp lấy các contour lớn nhất
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:10]
+    # Sort by area and check top candidates
+    contours = sorted(
+        contours, 
+        key=cv2.contourArea, 
+        reverse=True
+    )[:VisionConfig.MAX_CONTOURS_TO_CHECK]
 
     img_area = image.shape[0] * image.shape[1]
     
+    # Step 3: Find quadrilateral that represents the board
     for c in contours:
-        # Tính chu vi và làm mượt đường bao
+        # Calculate perimeter for polygon approximation
         peri = cv2.arcLength(c, True)
         
-        # Thử nghiệm với các giá trị epsilon khác nhau để tìm ra 4 góc
-        for eps_factor in [0.02, 0.05, 0.1]:
+        # Try multiple epsilon values for approximation
+        for eps_factor in VisionConfig.EPSILON_FACTORS:
             approx = cv2.approxPolyDP(c, eps_factor * peri, True)
 
-            # Nếu đường bao có 4 điểm và diện tích chiếm ít nhất 20% vùng ảnh
-            if len(approx) == 4:
+            # Check if we found a quadrilateral with sufficient area
+            if len(approx) == VisionConfig.REQUIRED_CORNERS:
                 area = cv2.contourArea(approx)
-                if area > img_area * 0.2:
-                    print(f"✅ OpenCV tìm thấy hình tứ giác (Area: {area/img_area:.2f})")
+                area_ratio = area / img_area
+                
+                if area_ratio > VisionConfig.MIN_BOARD_AREA_RATIO:
+                    print(VisionConfig.MSG_BOARD_FOUND.format(ratio=area_ratio))
                     return approx.reshape(4, 2)
 
-    print("⚠️ Không tìm thấy bàn cờ bằng thuật toán Contour.")
+    print(VisionConfig.MSG_BOARD_NOT_FOUND)
     return None
 
 
-def get_board_mapping_matrix(corners, img_w, img_h):
+def get_board_mapping_matrix(
+    corners: np.ndarray, 
+    img_w: int, 
+    img_h: int
+) -> tuple:
     """
-    Bước 2: Tính ma trận biến đổi từ ảnh nghiêng sang ảnh phẳng
+    Calculate perspective transformation matrix from skewed to flat view.
+    
+    Args:
+        corners: 4 corner points of the board in original image
+        img_w: Image width (unused, kept for API compatibility)
+        img_h: Image height (unused, kept for API compatibility)
+        
+    Returns:
+        tuple: (transformation_matrix, board_side_length)
+        
+    Process:
+        1. Order corners (TL, TR, BR, BL)
+        2. Calculate maximum width and height
+        3. Use larger dimension for square output
+        4. Compute homography matrix for perspective transform
+        
+    Note:
+        Output is always square to preserve chess board proportions
     """
     rect = order_points(corners)
 
-    # Kích thước ảnh đích (vuông)
-    # Ta lấy max width/height để ảnh không bị méo
+    # Calculate dimensions of the warped board
     (tl, tr, br, bl) = rect
+    
+    # Width: distance between bottom corners and top corners
     widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
     widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
     maxWidth = max(int(widthA), int(widthB))
 
+    # Height: distance between right corners and left corners
     heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
     heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
     maxHeight = max(int(heightA), int(heightB))
 
-    # Kích thước bàn cờ chuẩn (Vuông)
+    # Use square output (larger dimension)
     side = max(maxWidth, maxHeight)
 
-    # Tọa độ đích (Top-down view)
+    # Destination points for top-down view (square)
     dst = np.array([
         [0, 0],
         [side - 1, 0],
         [side - 1, side - 1],
-        [0, side - 1]], dtype="float32")
+        [0, side - 1]
+    ], dtype="float32")
 
-    # Tính ma trận Homography
+    # Calculate perspective transformation matrix
     M = cv2.getPerspectiveTransform(rect, dst)
     return M, side
 
 
-def map_point_to_grid(x, y, M, side_len):
+def map_point_to_grid(
+    x: float, 
+    y: float, 
+    M: np.ndarray, 
+    side_len: int
+) -> tuple:
     """
-    Bước 3: Ánh xạ 1 điểm (x,y) từ ảnh gốc sang tọa độ ô cờ (row, col)
-    Sử dụng ma trận M đã tính được.
+    Map a point from original image to chess grid coordinates.
+    
+    Args:
+        x: X coordinate in original image
+        y: Y coordinate in original image
+        M: Perspective transformation matrix
+        side_len: Side length of the warped square board
+        
+    Returns:
+        tuple: (row, col) in chess grid (0-7, 0-7)
+        
+    Process:
+        1. Apply perspective transformation to point
+        2. Divide by square size to get grid position
+        3. Clamp to valid range [0, 7]
+        
+    Example:
+        >>> map_point_to_grid(100, 150, M, 800)
+        (1, 2)  # Row 1, Column 2 (b7 in chess notation)
     """
-    # Biến đổi điểm
+    # Transform point using homography matrix
     point_vector = np.array([[[x, y]]], dtype='float32')
     transformed_point = cv2.perspectiveTransform(point_vector, M)[0][0]
 
     tx, ty = transformed_point
 
-    # Chia lưới
-    sq_size = side_len / 8
+    # Calculate grid position
+    sq_size = side_len / VisionConfig.CHESS_GRID_SIZE
 
     col = int(tx // sq_size)
     row = int(ty // sq_size)
 
-    # Giới hạn trong 0-7
-    row = max(0, min(7, row))
-    col = max(0, min(7, col))
+    # Clamp to valid chess grid range
+    row = max(VisionConfig.MIN_GRID_INDEX, min(VisionConfig.MAX_GRID_INDEX, row))
+    col = max(VisionConfig.MIN_GRID_INDEX, min(VisionConfig.MAX_GRID_INDEX, col))
 
     return row, col
 
 
-def is_quad_too_distorted(pts, angle_tolerance=15):
+def is_quad_too_distorted(
+    pts: np.ndarray, 
+    angle_tolerance: int = VisionConfig.ANGLE_TOLERANCE_DEGREES
+) -> bool:
     """
-    Kiểm tra xem hình tứ giác có bị méo quá mức so với hình chữ nhật không.
-    Dành cho ảnh 2D/Screenshot để tránh các đường grid bị vẹo.
+    Check if quadrilateral is too distorted compared to a rectangle.
+    Used for 2D/screenshot images to avoid warped grid lines.
+    
+    Args:
+        pts: 4 corner points
+        angle_tolerance: Maximum deviation from 90° (default: 15°)
+        
+    Returns:
+        bool: True if any corner angle deviates >15° from 90°
+        
+    Algorithm:
+        1. Order points
+        2. Calculate angle at each corner
+        3. Check if all angles are within tolerance of 90°
+        
+    Use Case:
+        Reject detections where board is too skewed for accurate
+        piece recognition in 2D screenshots.
     """
-    if pts is None or len(pts) != 4:
+    if pts is None or len(pts) != VisionConfig.REQUIRED_CORNERS:
         return True
     
     rect = order_points(pts)
     
-    def get_angle(p1, p2, p3):
-        # Tính góc giữa 3 điểm p1, p2, p3 (góc tại p2)
+    def get_angle(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
+        """Calculate angle at p2 formed by p1-p2-p3"""
         v1 = p1 - p2
         v2 = p3 - p2
         cos_theta = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6)
         angle = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
         return angle
 
-    # Kiểm tra 4 góc của tứ giác
+    # Calculate all 4 corner angles
     angles = [
-        get_angle(rect[3], rect[0], rect[1]), # Góc TL
-        get_angle(rect[0], rect[1], rect[2]), # Góc TR
-        get_angle(rect[1], rect[2], rect[3]), # Góc BR
-        get_angle(rect[2], rect[3], rect[0])  # Góc BL
+        get_angle(rect[3], rect[0], rect[1]),  # Top-Left
+        get_angle(rect[0], rect[1], rect[2]),  # Top-Right
+        get_angle(rect[1], rect[2], rect[3]),  # Bottom-Right
+        get_angle(rect[2], rect[3], rect[0])   # Bottom-Left
     ]
     
-    for a in angles:
-        if abs(a - 90) > angle_tolerance:
-            return True # Có ít nhất 1 góc quá nhọn hoặc quá tù
+    # Check if any angle deviates too much from 90°
+    for angle in angles:
+        if abs(angle - VisionConfig.RIGHT_ANGLE_DEGREES) > angle_tolerance:
+            return True  # Too distorted
             
-    return False
+    return False  # All angles are acceptable

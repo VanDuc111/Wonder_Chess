@@ -15,8 +15,15 @@ from backend.engines.minimax import (
     clear_transposition_table
 )
 
+from backend.config import (
+    ChessConfig,
+    EngineConfig,
+    ErrorMessages,
+    SuccessMessages,
+    HTTPStatus
+)
+
 game_bp = Blueprint('game', __name__)
-STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 
 @game_bp.route('/valid_moves', methods=['POST'])
@@ -27,10 +34,10 @@ def get_valid_moves() -> Response:
     """
     data = request.json
     source_square = data.get('square')
-    fen = data.get('fen', STARTING_FEN)
+    fen = data.get('fen', ChessConfig.STARTING_FEN)
 
     if not source_square or not fen:
-        return jsonify({'success': False, 'error': 'Missing square or fen parameter.'}), 400
+        return jsonify({'success': False, 'error': ErrorMessages.MISSING_SQUARE_OR_FEN}), HTTPStatus.BAD_REQUEST
 
     try:
         board = chess.Board(fen)
@@ -44,9 +51,9 @@ def get_valid_moves() -> Response:
         return jsonify({'success': True, 'moves': target_squares})
 
     except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid FEN or Square format.'}), 400
+        return jsonify({'success': False, 'error': ErrorMessages.INVALID_FEN_OR_SQUARE}), HTTPStatus.BAD_REQUEST
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @game_bp.route('/make_move', methods=['POST'])
@@ -58,25 +65,25 @@ def make_move() -> Response:
     """
     data = request.json
     move_uci = data.get('move')
-    fen = data.get('fen', STARTING_FEN)
+    fen = data.get('fen', ChessConfig.STARTING_FEN)
 
     if not move_uci or not fen:
-        return jsonify({'success': False, 'error': 'Missing move or fen parameter.'}), 400
+        return jsonify({'success': False, 'error': ErrorMessages.MISSING_MOVE_OR_FEN}), HTTPStatus.BAD_REQUEST
 
     try:
         board = chess.Board(fen)
         move = board.parse_uci(move_uci)
 
         if move not in board.legal_moves:
-            return jsonify({'success': False, 'error': 'Illegal move.'}), 400
+            return jsonify({'success': False, 'error': ErrorMessages.ILLEGAL_MOVE}), HTTPStatus.BAD_REQUEST
 
         board.push(move)
         return jsonify({'success': True, 'fen': board.fen()})
 
     except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid UCI move or FEN.'}), 400
+        return jsonify({'success': False, 'error': ErrorMessages.INVALID_UCI_OR_FEN}), HTTPStatus.BAD_REQUEST
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @game_bp.route('/bot_move', methods=['POST'])
@@ -88,22 +95,25 @@ def bot_move() -> Response:
     data = request.get_json()
     fen = data.get('fen')
     engine_choice = data.get('engine', 'stockfish')
-    skill_level = data.get('skill_level', 10)
+    skill_level = data.get('skill_level', EngineConfig.DEFAULT_SKILL_LEVEL)
     time_limit_raw = data.get('time_limit', '0')
     
     # Chuyển đổi thời gian từ phút (string) sang giây (float) cho Engine
     try:
         time_limit_min = float(time_limit_raw)
         if time_limit_min <= 0:
-            time_limit_sec = 1.0 # Mặc định 1s nếu là vô hạn để trả lời nhanh
+            time_limit_sec = EngineConfig.DEFAULT_THINK_TIME
         else:
-            # Nếu là game có thời gian, bot suy nghĩ tối đa 2s để cân bằng
-            time_limit_sec = min(2.0, time_limit_min * 60) 
+            # Nếu là game có thời gian, bot suy nghĩ tối đa để cân bằng
+            time_limit_sec = min(
+                EngineConfig.MAX_BOT_THINK_TIME, 
+                time_limit_min * EngineConfig.MINUTES_TO_SECONDS
+            )
     except:
-        time_limit_sec = 1.0
+        time_limit_sec = EngineConfig.DEFAULT_THINK_TIME
 
     if not fen:
-        return jsonify({'success': False, 'error': 'FEN is required'}), 400
+        return jsonify({'success': False, 'error': ErrorMessages.FEN_REQUIRED}), HTTPStatus.BAD_REQUEST
 
     try:
         # Lựa chọn Engine
@@ -124,31 +134,35 @@ def bot_move() -> Response:
                 'success': True,
                 'move_uci': engine_results['best_move'],
                 'fen': new_fen,
-                'evaluation': engine_results.get('search_score', '0.00')
+                'evaluation': engine_results.get('search_score', ChessConfig.DEFAULT_SCORE)
             })
         else:
-            error_msg = engine_results.get('error', 'Bot could not find a move (Game Over?)')
-            return jsonify({'success': False, 'error': error_msg}), 500
+            error_msg = engine_results.get('error', ErrorMessages.BOT_NO_MOVE)
+            return jsonify({'success': False, 'error': error_msg}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @game_bp.route('/evaluate', methods=['POST'])
 def get_engine_score() -> Response:
     """
     Đánh giá nhanh thế cờ hiện tại (dùng cho thanh Bar lợi thế).
-    Sử dụng Time-boxed Search (0.1s) để phản hồi tức thì mà vẫn đảm bảo độ chính xác tương đối.
+    Sử dụng Time-boxed Search để phản hồi tức thì mà vẫn đảm bảo độ chính xác tương đối.
     """
     data = request.get_json()
     fen = data.get('fen')
 
     if not fen:
-        return jsonify({'success': False, 'error': 'FEN is required.'}), 400
+        return jsonify({'success': False, 'error': ErrorMessages.FEN_REQUIRED_DOT}), HTTPStatus.BAD_REQUEST
 
     try:
         # Sử dụng Stockfish để đánh giá
-        results = get_stockfish_move(fen, skill_level=20, time_limit=0.5)
+        results = get_stockfish_move(
+            fen, 
+            skill_level=EngineConfig.MAX_SKILL_LEVEL, 
+            time_limit=EngineConfig.EVALUATION_TIME_LIMIT
+        )
 
         if results.get('success'):
             return jsonify({
@@ -161,7 +175,11 @@ def get_engine_score() -> Response:
             })
         else:
             # Fallback về Minimax nếu Stockfish lỗi
-            results = find_best_move(fen, max_depth=8, time_limit=0.1)
+            results = find_best_move(
+                fen, 
+                max_depth=EngineConfig.FALLBACK_MAX_DEPTH, 
+                time_limit=EngineConfig.FALLBACK_TIME_LIMIT
+            )
             return jsonify({
                 'success': True,
                 'engine_results': {
@@ -176,8 +194,8 @@ def get_engine_score() -> Response:
         return jsonify({
             'success': False,
             'error': str(e),
-            'engine_results': {'search_score': '0.00'}
-        }), 500
+            'engine_results': {'search_score': ChessConfig.DEFAULT_SCORE}
+        }), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @game_bp.route('/clear_cache', methods=['POST'])
@@ -188,6 +206,6 @@ def api_clear_cache() -> Response:
     """
     try:
         clear_transposition_table()
-        return jsonify({'success': True, 'message': 'Engine cache cleared.'})
+        return jsonify({'success': True, 'message': SuccessMessages.CACHE_CLEARED})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
