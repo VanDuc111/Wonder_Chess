@@ -95,8 +95,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/constants.js') }}" defer></script>
-<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/main.js') }}" type="module"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Simple logic to handle step interactions for Learning Page

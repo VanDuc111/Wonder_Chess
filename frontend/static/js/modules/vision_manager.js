@@ -3,15 +3,17 @@
  * Handles webcam scanning, image analysis, and board recognition.
  */
 
-class VisionManager {
+import { APP_CONST } from '../constants.js';
+
+export class VisionManager {
     constructor() {
         /** @type {MediaStream|null} Current webcam stream */
         this.currentWebcamStream = null;
         /** @type {number|null} ID of the active auto-scan timeout */
         this.autoScanInterval = null;
         /** @type {number} Delay between auto-scans in ms */
-        this.autoScanDelay = (window.APP_CONST && window.APP_CONST.AUTO_SCAN && window.APP_CONST.AUTO_SCAN.DELAY_MS) 
-            ? window.APP_CONST.AUTO_SCAN.DELAY_MS : 5000;
+        this.autoScanDelay = (APP_CONST && APP_CONST.AUTO_SCAN && APP_CONST.AUTO_SCAN.DELAY_MS) 
+            ? APP_CONST.AUTO_SCAN.DELAY_MS : 5000;
 
         /** @type {Object<string, HTMLElement|null>} DOM element cache */
         this.dom = {
@@ -43,7 +45,7 @@ class VisionManager {
     _ensureDom() {
         if (this.dom.video) return;
 
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         
         this.dom.video = document.getElementById(ids.WEBCAM_VIDEO || 'webcam-feed');
         this.dom.scanStatus = document.getElementById(ids.SCAN_STATUS || 'scan-status');
@@ -92,7 +94,7 @@ class VisionManager {
             this.dom.debugOverlay.style.display = 'none';
         }
         if (this.dom.scanStatus) {
-            this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.ALICE_IDLE || 'Sẵn sàng...';
+            this.dom.scanStatus.textContent = APP_CONST?.MESSAGES?.ALICE_IDLE || 'Sẵn sàng...';
             this.dom.scanStatus.style.color = '';
         }
         if (this.dom.autoScanToggle) {
@@ -109,7 +111,7 @@ class VisionManager {
         this.dom.filePreview?.classList.add('d-none');
         this.dom.dropZone?.classList.remove('has-file');
         if (this.dom.imageStatus) {
-            this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SUPPORTED_FORMATS || "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
+            this.dom.imageStatus.textContent = APP_CONST?.MESSAGES?.VISION_SUPPORTED_FORMATS || "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
         }
     }
 
@@ -118,7 +120,7 @@ class VisionManager {
      * @private
      */
     _initModalListeners() {
-        const modalId = window.APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
+        const modalId = APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
         const modalEl = document.getElementById(modalId);
         if (!modalEl) return;
 
@@ -157,7 +159,7 @@ class VisionManager {
     _initAutoScanListeners() {
         if (this.dom.autoScanToggle) {
             this.dom.autoScanToggle.addEventListener('change', (e) => {
-                const msg = window.APP_CONST?.MESSAGES || {};
+                const msg = APP_CONST?.MESSAGES || {};
                 if (e.target.checked) {
                     if (this.dom.scanStatus) this.dom.scanStatus.textContent = msg.VISION_HANDS_FREE_ON || '🟢 Chế độ rảnh tay đã bật.';
                     this.performScan();
@@ -233,12 +235,10 @@ class VisionManager {
                 if (this.dom.previewImg) this.dom.previewImg.src = '';
                 this.dom.filePreview?.classList.add('d-none');
                 this.dom.dropZone?.classList.remove('has-file');
-                if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SUPPORTED_FORMATS || "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
+                if (this.dom.imageStatus) this.dom.imageStatus.textContent = APP_CONST?.MESSAGES?.VISION_SUPPORTED_FORMATS || "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.";
             });
         }
     }
-
-
 
     /**
      * Handles image file selection and API upload
@@ -247,7 +247,7 @@ class VisionManager {
      */
     async _handleImageFiles(file) {
         if (!file.type.startsWith('image/')) {
-            alert(window.APP_CONST?.MESSAGES?.INVALID_IMAGE || "Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
+            alert(APP_CONST?.MESSAGES?.INVALID_IMAGE || "Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
             return;
         }
 
@@ -260,7 +260,7 @@ class VisionManager {
             
             this.dom.filePreview?.classList.remove('d-none');
             this.dom.dropZone?.classList.add('has-file');
-            if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_ANALYZING || "Đang tải lên và phân tích...";
+            if (this.dom.imageStatus) this.dom.imageStatus.textContent = APP_CONST?.MESSAGES?.VISION_ANALYZING || "Đang tải lên và phân tích...";
         };
         reader.readAsDataURL(file);
 
@@ -269,28 +269,30 @@ class VisionManager {
             const data = await this.analyzeUpload(file);
             
             if (data.success) {
-                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_ANALYZE_SUCCESS || "✅ Phân tích thành công!";
+                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = APP_CONST?.MESSAGES?.VISION_ANALYZE_SUCCESS || "✅ Phân tích thành công!";
                  
                  // Close Modal & Open Editor
-                const modalId = window.APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
+                const modalId = APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
                 const loadDataModalEl = document.getElementById(modalId);
-                const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
-                if (loadDataModal) {
-                    loadDataModal.hide();
+                if (loadDataModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
+                    if (loadDataModal) {
+                        loadDataModal.hide();
+                    }
                 }
                 
                 setTimeout(() => {
-                    if (window.BOARD_EDITOR) {
+                    if (window.BOARD_EDITOR && typeof window.BOARD_EDITOR.openWithFen === 'function') {
                          window.BOARD_EDITOR.openWithFen(data.fen, data.debug_image);
                     }
-                }, window.APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
+                }, APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
 
             } else {
-                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = (window.APP_CONST?.MESSAGES?.VISION_ANALYZE_ERROR || "❌ Lỗi: ") + data.error;
+                 if (this.dom.imageStatus) this.dom.imageStatus.textContent = (APP_CONST?.MESSAGES?.VISION_ANALYZE_ERROR || "❌ Lỗi: ") + data.error;
             }
         } catch (e) {
             console.error(e);
-            if (this.dom.imageStatus) this.dom.imageStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SERVER_ERROR || "❌ Lỗi kết nối server.";
+            if (this.dom.imageStatus) this.dom.imageStatus.textContent = APP_CONST?.MESSAGES?.VISION_SERVER_ERROR || "❌ Lỗi kết nối server.";
         }
     }
 
@@ -301,7 +303,7 @@ class VisionManager {
      */
     _formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
-        const k = window.APP_CONST?.VISION?.BYTES_K || 1024, dm = decimals < 0 ? 0 : decimals;
+        const k = APP_CONST?.VISION?.BYTES_K || 1024, dm = decimals < 0 ? 0 : decimals;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
@@ -315,14 +317,14 @@ class VisionManager {
         if (this.currentWebcamStream) this.stopWebcam();
 
         try {
-            const constraints = (window.APP_CONST && window.APP_CONST.VIDEO_CONSTRAINTS) 
-                ? window.APP_CONST.VIDEO_CONSTRAINTS : {video: {facingMode: 'environment'}};
+            const constraints = (APP_CONST && APP_CONST.VIDEO_CONSTRAINTS) 
+                ? APP_CONST.VIDEO_CONSTRAINTS : {video: {facingMode: 'environment'}};
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             if (this.dom.video) this.dom.video.srcObject = stream;
             this.currentWebcamStream = stream;
         } catch (err) {
             console.error("Lỗi bật webcam:", err);
-            if (this.dom.scanStatus) this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_CAMERA_ERROR || 'Lỗi: Không thể truy cập camera.';
+            if (this.dom.scanStatus) this.dom.scanStatus.textContent = APP_CONST?.MESSAGES?.VISION_CAMERA_ERROR || 'Lỗi: Không thể truy cập camera.';
         }
     }
 
@@ -343,12 +345,12 @@ class VisionManager {
     async performScan() {
         this._ensureDom();
         if (!this.currentWebcamStream) {
-            if (this.dom.scanStatus) this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_CAMERA_NOT_ON || '⚠️ Camera chưa bật!';
+            if (this.dom.scanStatus) this.dom.scanStatus.textContent = APP_CONST?.MESSAGES?.VISION_CAMERA_NOT_ON || '⚠️ Camera chưa bật!';
             if (this.dom.autoScanToggle) this.dom.autoScanToggle.checked = false;
             return;
         }
 
-        if (this.dom.scanStatus) this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SCANNING || '🔄 Đang quét...';
+        if (this.dom.scanStatus) this.dom.scanStatus.textContent = APP_CONST?.MESSAGES?.VISION_SCANNING || '🔄 Đang quét...';
 
         try {
             const canvas = document.createElement('canvas');
@@ -357,17 +359,17 @@ class VisionManager {
             const context = canvas.getContext('2d');
             context.drawImage(this.dom.video, 0, 0, canvas.width, canvas.height);
 
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', window.APP_CONST?.VISION?.JPEG_QUALITY || 0.8));
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', APP_CONST?.VISION?.JPEG_QUALITY || 0.8));
             const formData = new FormData();
             formData.append('file', blob, 'capture.jpg');
 
-            const apiUri = window.APP_CONST?.API?.IMAGE_ANALYZE || '/api/image/analyze_image';
+            const apiUri = APP_CONST?.API?.IMAGE_ANALYZE || '/api/image/analyze_image';
             const response = await fetch(apiUri, { method: 'POST', body: formData });
             const data = await response.json();
 
             if (data.success) {
                 if (this.dom.scanStatus) {
-                    this.dom.scanStatus.textContent = window.APP_CONST?.MESSAGES?.VISION_SCAN_SUCCESS || '✅ Đã cập nhật thế cờ!';
+                    this.dom.scanStatus.textContent = APP_CONST?.MESSAGES?.VISION_SCAN_SUCCESS || '✅ Đã cập nhật thế cờ!';
                     this.dom.scanStatus.style.color = 'green';
                 }
                 
@@ -381,14 +383,14 @@ class VisionManager {
                     this.dom.debugOverlay.style.display = 'block';
                     setTimeout(() => { 
                         if (this.dom.debugOverlay) this.dom.debugOverlay.style.display = 'none'; 
-                    }, window.APP_CONST?.VISION?.DEBUG_SHOW_DURATION_MS || 1500);
+                    }, APP_CONST?.VISION?.DEBUG_SHOW_DURATION_MS || 1500);
                 }
 
                 // --- NEW FLOW: Open Editor instead of direct apply ---
                 const newFen = data.fen;
                 
                 // Close the Load Data Modal first to avoid stacking modals
-                const modalId = window.APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
+                const modalId = APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
                 const loadDataModalEl = document.getElementById(modalId);
                 const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
                 if (loadDataModal) {
@@ -402,9 +404,9 @@ class VisionManager {
                     } else {
                         console.error('Board Editor not initialized!');
                         // Fallback
-                        if (window.initChessboard) window.initChessboard('white', newFen);
+                        if (window.LOGIC_GAME && window.LOGIC_GAME.initBoard) window.LOGIC_GAME.initBoard('white', newFen);
                     }
-                }, window.APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
+                }, APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
             } else {
                 this.showFriendlyError(this.dom.scanStatus, data.error);
             }
@@ -427,7 +429,7 @@ class VisionManager {
         const formData = new FormData();
         formData.append('file', file);
 
-        const apiUri = window.APP_CONST?.API?.IMAGE_ANALYZE || '/api/image/analyze_image';
+        const apiUri = APP_CONST?.API?.IMAGE_ANALYZE || '/api/image/analyze_image';
         const response = await fetch(apiUri, { method: 'POST', body: formData });
         return await response.json();
     }
@@ -465,7 +467,7 @@ class VisionManager {
      */
     showFriendlyError(statusEl, rawError) {
         if (!statusEl) return;
-        const msg = window.APP_CONST?.MESSAGES;
+        const msg = APP_CONST?.MESSAGES;
         let title = msg?.VISION_ERROR_LOST || "Ôi không! Alice bị lạc rồi...";
         let message = msg?.VISION_ERROR_LOST_DESC || "Kết nối tới máy chủ AI gặp chút trục trặc. Bạn hãy thử lại sau giây lát nhé.";
         
@@ -476,7 +478,7 @@ class VisionManager {
 
         statusEl.innerHTML = `
             <div class=\"error-rabbit-container\">
-                <img src=\"${window.APP_CONST?.ASSETS?.ALICE_ERROR_IMG || 'static/img/alice-error.webp'}\" class=\"error-rabbit-img\" alt=\"Sad Alice\">
+                <img src=\"${APP_CONST?.ASSETS?.ALICE_ERROR_IMG || 'static/img/alice-error.webp'}\" class=\"error-rabbit-img\" alt=\"Sad Alice\">
                 <div class=\"friendly-error-msg\">
                     <strong>${title}</strong><br>${message}
                 </div>
@@ -503,12 +505,12 @@ class VisionManager {
                 </div>
             `;
             // Append to the modal body or near the scan status
-            const scannerId = window.APP_CONST?.IDS?.LIVE_SCAN_PANE || 'live-scan-pane';
+            const scannerId = APP_CONST?.IDS?.LIVE_SCAN_PANE || 'live-scan-pane';
             const scannerPane = document.getElementById(scannerId);
             if (scannerPane) scannerPane.appendChild(confirmEl);
         }
 
-        const warpedIds = window.APP_CONST?.IDS || {};
+        const warpedIds = APP_CONST?.IDS || {};
         const img = confirmEl.querySelector('#' + (warpedIds.WARPED_PREVIEW_IMG || 'warped-preview-img'));
         if (img) {
             img.src = 'data:image/jpeg;base64,' + base64;
@@ -518,18 +520,7 @@ class VisionManager {
             if (this._warpedTimeout) clearTimeout(this._warpedTimeout);
             this._warpedTimeout = setTimeout(() => {
                 confirmEl.style.display = 'none';
-            }, window.APP_CONST?.VISION?.WARPED_PREVIEW_DURATION_MS || 3000);
+            }, APP_CONST?.VISION?.WARPED_PREVIEW_DURATION_MS || 3000);
         }
     }
-
 }
-
-// Global initialization
-window.VISION_MANAGER = new VisionManager();
-document.addEventListener('DOMContentLoaded', () => window.VISION_MANAGER.init());
-
-// Compatibility wrappers for main.js if needed
-window.startWebcam = () => window.VISION_MANAGER.startWebcam();
-window.stopWebcam = () => window.VISION_MANAGER.stopWebcam();
-window.isValidFen = (f) => window.VISION_MANAGER.isValidFen(f);
-window.showFriendlyError = (el, err) => window.VISION_MANAGER.showFriendlyError(el, err);

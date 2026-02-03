@@ -3,9 +3,11 @@
  * Handles UI settings, game initialization, and engine communication.
  */
 
-class BotManager {
+import { APP_CONST } from '../constants.js';
+
+export class BotManager {
     constructor() {
-        const botConst = window.APP_CONST?.BOT || {};
+        const botConst = APP_CONST?.BOT || {};
         // UI & State Settings
         this.selectedEngine = botConst.DEFAULT_ENGINE || 'stockfish';
         this.selectedLevel = botConst.DEFAULT_LEVEL || 10;
@@ -16,7 +18,7 @@ class BotManager {
         // Stockfish WASM state
         this.sfEngine = null;
         this.sfIsReady = false;
-        this.STOCKFISH_URL = window.APP_CONST?.BOT?.STOCKFISH_WASM_URL || "https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.min.js";
+        this.STOCKFISH_URL = APP_CONST?.BOT?.STOCKFISH_WASM_URL || "https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.min.js";
 
         this.dom = {
             modal: null,
@@ -35,7 +37,7 @@ class BotManager {
      * Initialize UI listeners and pre-load Stockfish
      */
     init() {
-        const ids = window.APP_CONST?.IDS;
+        const ids = APP_CONST?.IDS;
         this.dom.modal = document.getElementById(ids?.BOT_SETTINGS_MODAL || 'bot-settings-modal');
         if (!this.dom.modal) return;
 
@@ -52,7 +54,7 @@ class BotManager {
         this.syncInitialState();
         
         // Auto-initialize Stockfish in background after a short delay
-        const delay = window.APP_CONST?.BOT?.INIT_DELAY_MS || 2000;
+        const delay = APP_CONST?.BOT?.INIT_DELAY_MS || 2000;
         setTimeout(() => this.initStockfish(), delay);
     }
 
@@ -62,9 +64,10 @@ class BotManager {
             this.dom.levelSlider.addEventListener('input', (e) => {
                 const val = parseInt(e.target.value);
                 this.selectedLevel = val;
+                window.selectedBotLevel = val;
                 this.updateLevelUI(val);
 
-                const botConst = window.APP_CONST?.BOT || {};
+                const botConst = APP_CONST?.BOT || {};
                 const thresholds = botConst.LEVEL_THRESHOLDS || [];
                 
                 if (this.dom.levelSelect && thresholds.length > 0) {
@@ -99,10 +102,12 @@ class BotManager {
 
         this.setupButtonSelection('.setting-group button[data-color]', (val) => {
             this.selectedColor = val;
+            window.playerColor = val === 'white' ? 'w' : (val === 'black' ? 'b' : 'r');
         });
 
         this.setupButtonSelection('.setting-group button[data-time]', (val) => {
             this.selectedTime = val;
+            window.selectedBotTime = val;
         });
     }
 
@@ -121,8 +126,8 @@ class BotManager {
 
     updateLevelUI(val) {
         if (this.dom.levelDisplay) {
-            const baseElo = window.APP_CONST?.BOT?.BASE_ELO || 850;
-            const eloStep = window.APP_CONST?.BOT?.ELO_STEP || 50;
+            const baseElo = APP_CONST?.BOT?.BASE_ELO || 850;
+            const eloStep = APP_CONST?.BOT?.ELO_STEP || 50;
             const elo = baseElo + (val * eloStep);
             this.dom.levelDisplay.textContent = elo;
         }
@@ -143,13 +148,13 @@ class BotManager {
         const engineType = window.selectedBotEngine || this.selectedEngine;
         
         if (engineType === 'stockfish') {
-            const defaultTime = window.APP_CONST?.BOT?.DEFAULT_WASM_MOVETIME || 500;
+            const defaultTime = APP_CONST?.BOT?.DEFAULT_WASM_MOVETIME || 500;
             return await this.getStockfishMove(fen, level, defaultTime); 
         } else {
             // Wonder Engine (Custom Minimax) or others via API
             try {
-                const url = (window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.BOT_MOVE) 
-                    ? window.APP_CONST.API.BOT_MOVE : '/api/game/bot_move';
+                const url = (APP_CONST && APP_CONST.API && APP_CONST.API.BOT_MOVE) 
+                    ? APP_CONST.API.BOT_MOVE : '/api/game/bot_move';
                 
                 const resp = await fetch(url, {
                     method: 'POST',
@@ -206,7 +211,7 @@ class BotManager {
 
             const onMsg = (event) => {
                 const line = event.data;
-                const botConst = window.APP_CONST?.BOT || {};
+                const botConst = APP_CONST?.BOT || {};
                 const scoreRegex = botConst.REGEX?.SCORE || /score\s(cp|mate)\s(-?\d+)/;
                 
                 if (typeof line === 'string' && line.includes("score")) {
@@ -217,7 +222,7 @@ class BotManager {
                         let normalizedValue = (sideToMove === 'w') ? value : -value;
 
                         if (type === 'cp') {
-                            const cpToPawn = window.APP_CONST?.ENGINE?.CP_TO_PAWN || 100;
+                            const cpToPawn = APP_CONST?.ENGINE?.CP_TO_PAWN || 100;
                             lastScore = (normalizedValue / cpToPawn).toFixed(2);
                             if (normalizedValue > 0) lastScore = "+" + lastScore;
                         } else if (type === 'mate') {
@@ -257,7 +262,7 @@ class BotManager {
 
         let finalPlayerColor = this.selectedColor;
         if (this.selectedColor === 'r') {
-            const threshold = window.APP_CONST?.UI_CONFIG?.RANDOM_THRESHOLD || 0.5;
+            const threshold = APP_CONST?.UI_CONFIG?.RANDOM_THRESHOLD || 0.5;
             finalPlayerColor = (Math.random() < threshold) ? 'w' : 'b';
         }
 
@@ -269,30 +274,24 @@ class BotManager {
         
         let boardOrientation = (finalPlayerColor === 'b') ? 'black' : 'white';
 
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const flipSwitch = document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch');
         if (flipSwitch) flipSwitch.checked = (boardOrientation === 'black');
 
         const timeLimitMinutes = parseInt(this.selectedTime);
         if (timeLimitMinutes > 0) {
-            if (window.initTimers) window.initTimers(timeLimitMinutes);
+            if (window.TIMER_MANAGER) window.TIMER_MANAGER.init(timeLimitMinutes);
         } else {
-            if (window.resetTimers) window.resetTimers();
+            if (window.TIMER_MANAGER) window.TIMER_MANAGER.reset();
         }
 
-        const clearCacheUrl = (window.APP_CONST && window.APP_CONST.API && window.APP_CONST.API.CLEAR_CACHE) 
-            ? window.APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache';
+        const clearCacheUrl = (APP_CONST && APP_CONST.API && APP_CONST.API.CLEAR_CACHE) 
+            ? APP_CONST.API.CLEAR_CACHE : '/api/game/clear_cache';
         
         fetch(clearCacheUrl, {method: 'POST'});
 
-        if (window.initChessboard) {
-            window.initChessboard(boardOrientation);
+        if (window.LOGIC_GAME && window.LOGIC_GAME.initBoard) {
+            window.LOGIC_GAME.initBoard(boardOrientation);
         }
     }
 }
-
-// Global instance
-window.BOT_MANAGER = new BotManager();
-document.addEventListener('DOMContentLoaded', () => {
-    window.BOT_MANAGER.init();
-});

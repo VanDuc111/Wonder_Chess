@@ -3,7 +3,10 @@
  * Uses a pre-processed dictionary for high-performance matching against move history.
  */
 
-class ChessOpening {
+import { APP_CONST } from '../constants.js';
+import { OPENINGS_DATA } from '../data/opening_data.js';
+
+export class ChessOpening {
     /**
      * Create a ChessOpening instance.
      */
@@ -20,13 +23,7 @@ class ChessOpening {
     _prepareDictionary() {
         if (this.preparedData) return this.preparedData;
         
-        // OPENINGS_DATA is expected to be loaded globally via opening_data.js
-        let raw = null;
-        try {
-            if (typeof OPENINGS_DATA !== 'undefined') raw = OPENINGS_DATA;
-        } catch(e) {}
-
-        if (!raw) return [];
+        let raw = OPENINGS_DATA || [];
         
         this.preparedData = raw.map(op => ({
             ...op,
@@ -43,7 +40,7 @@ class ChessOpening {
      * @returns {Object} Result containing opening name and book status.
      */
     detectAndUpdate(history, curIdx) {
-        const strings = window.APP_CONST?.STRINGS || {};
+        const strings = APP_CONST?.STRINGS || {};
         if (!history || !history[curIdx]) return { name: strings.OPENING_NOT_STARTED || "Chưa bắt đầu", isBookMove: false };
 
         const dictionary = this._prepareDictionary();
@@ -76,7 +73,7 @@ class ChessOpening {
         }
 
         const isKnownBook = (best && maxLen === currentMoves.length);
-        const threshold = window.APP_CONST?.OPENINGS?.BOOK_THRESHOLD || 2;
+        const threshold = APP_CONST?.OPENINGS?.BOOK_THRESHOLD || 2;
         const name = best ? best.name : (currentMoves.length <= threshold ? (strings.OPENING_DEVELOPING || "Đang khai triển...") : (strings.OPENING_UNKNOWN || "Khai cuộc không xác định"));
 
         // Attach metadata to the history item for later reference (PGN icons, etc.)

@@ -3,7 +3,9 @@
  * Tracks and displays captured pieces with material advantage calculation
  */
 
-class CapturedPiecesManager {
+import { APP_CONST } from '../constants.js';
+
+export class CapturedPiecesManager {
     constructor() {
         this.dom = {
             capturedByWhite: null,
@@ -16,7 +18,7 @@ class CapturedPiecesManager {
      * Initialize DOM references
      */
     init() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         this.dom.capturedByWhite = document.getElementById(ids.CAPTURED_WHITE || 'captured-by-white');
         this.dom.capturedByBlack = document.getElementById(ids.CAPTURED_BLACK || 'captured-by-black');
     }
@@ -29,8 +31,8 @@ class CapturedPiecesManager {
     calculateCaptured(game) {
         if (!game) return { white: [], black: [], advantage: 0 };
         
-        const startingPieces = window.APP_CONST?.CHESS_RULES?.STARTING_PIECES || {};
-        const pieceValues = window.APP_CONST?.PIECE_VALUES || {};
+        const startingPieces = APP_CONST?.CHESS_RULES?.STARTING_PIECES || {};
+        const pieceValues = APP_CONST?.PIECE_VALUES || {};
         
         const currentPieces = {};
         Object.keys(startingPieces).forEach(p => currentPieces[p] = 0);
@@ -114,8 +116,8 @@ class CapturedPiecesManager {
         container.innerHTML = '';
         
         // Add piece images
-        const pieceImages = window.APP_CONST?.PATHS?.PIECE_IMAGES || {};
-        const staticPath = window.APP_CONST?.PATHS?.STATIC || '/static/';
+        const pieceImages = APP_CONST?.PATHS?.PIECE_IMAGES || {};
+        const staticPath = APP_CONST?.PATHS?.STATIC || '/static/';
 
         pieces.forEach(piece => {
             const img = document.createElement('div');
@@ -142,7 +144,7 @@ class CapturedPiecesManager {
      * @returns {string} Piece name
      */
     getPieceName(piece) {
-        return window.APP_CONST?.PIECE_NAMES_VN?.[piece] || '';
+        return APP_CONST?.PIECE_NAMES_VN?.[piece] || '';
     }
     
     /**
@@ -153,31 +155,3 @@ class CapturedPiecesManager {
         if (this.dom.capturedByBlack) this.dom.capturedByBlack.innerHTML = '';
     }
 }
-
-// Initialize global instance
-window.CAPTURED_PIECES = new CapturedPiecesManager();
-
-/**
- * Integration helpers (Moved from captured_pieces_integration.js)
- */
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.CAPTURED_PIECES) {
-        window.CAPTURED_PIECES.init();
-    }
-});
-
-window.updateCapturedPieces = function(game) {
-    if (window.CAPTURED_PIECES && game) {
-        try {
-            window.CAPTURED_PIECES.update(game);
-        } catch (error) {
-            console.error('Error updating captured pieces:', error);
-        }
-    }
-};
-
-window.clearCapturedPieces = function() {
-    if (window.CAPTURED_PIECES) {
-        window.CAPTURED_PIECES.clear();
-    }
-};

@@ -1,5 +1,5 @@
 // Automatically generated chess openings data
-const OPENINGS_DATA = [
+export const OPENINGS_DATA = [
   {
     "name": "Amar Opening",
     "eco": "A00",
@@ -29017,3 +29017,5 @@ const OPENINGS_DATA = [
     "description": ""
   }
 ];
+
+if (typeof window !== 'undefined') { window.OPENINGS_DATA = OPENINGS_DATA; }

@@ -3,7 +3,9 @@
  * Handles piece placement, FEN parsing, and synchronization with the main game board.
  */
 
-class BoardEditor {
+import { APP_CONST } from '../constants.js';
+
+export class BoardEditor {
     constructor() {
         /** @type {Object|null} Chessboard.js instance */
         this.editorBoard = null;
@@ -13,27 +15,30 @@ class BoardEditor {
         this.selectedTool = null;
         /** @type {Object} Position mapping (square -> pieceCode) */
         this.currentPosition = {};
-        /** @type {string} Current turn ('w'' or 'b') */
+        /** @type {string} Current turn ('w' or 'b') */
         this.currentTurn = 'w';
         /** @type {string} Castling rights string */
-        this.currentCastling = window.APP_CONST?.EDITOR?.DEFAULT_CASTLING || 'KQkq';
+        this.currentCastling = APP_CONST?.EDITOR?.DEFAULT_CASTLING || 'KQkq';
         /** @type {HTMLElement|null} Modal container */
         this.modal = null;
         /** @type {boolean} Flag for AI reference image presence */
         this.hasDebugImage = false; 
         /** @type {boolean} Internal flag for AI-initiated opening */
         this._isOpeningWithAI = false;
-        
-        this.init();
+        /** @type {boolean} Flag for overall initialization */
+        this._initialized = false;
     }
     
     /**
      * Initializes the module by caching DOM and setting up listeners.
      */
     init() {
-        const ids = window.APP_CONST?.IDS || {};
+        if (this._initialized) return;
+        const ids = APP_CONST?.IDS || {};
         this.modal = document.getElementById(ids.EDITOR_MODAL || 'boardEditorModal');
         if (!this.modal) return;
+        
+        this._initialized = true;
         
         this.modal.addEventListener('shown.bs.modal', () => this.onModalShown());
         
@@ -60,7 +65,7 @@ class BoardEditor {
         try {
             this._loadFenToState(fen);
         } catch (e) {
-            this._loadFenToState(window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            this._loadFenToState(APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
         }
 
         const bsModal = new bootstrap.Modal(this.modal);
@@ -69,7 +74,7 @@ class BoardEditor {
         this._toggleAIPreview(debugImage);
         
         // Ensure UI is ready after modal transition
-        setTimeout(() => this.recreateBoard(), window.APP_CONST?.EDITOR?.RECREATE_DELAY || 200);
+        setTimeout(() => this.recreateBoard(), APP_CONST?.EDITOR?.RECREATE_DELAY || 200);
     }
     
     /**
@@ -77,7 +82,7 @@ class BoardEditor {
      * @private
      */
     _toggleAIPreview(debugImage) {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const splitContainer = this.modal.querySelector('.board-editor-split');
         const rightPane = this.modal.querySelector('.editor-right-pane');
         const imgEl = document.getElementById(ids.EDITOR_REF_IMAGE || 'editor-reference-image');
@@ -114,7 +119,7 @@ class BoardEditor {
      */
     onModalShown() {
         if (!this._isOpeningWithAI) {
-            const mainGame = window.LOGIC_GAME?.getGame();
+            const mainGame = window.LOGIC_GAME?.game;
             if (mainGame) this._loadFenToState(mainGame.fen());
             this._toggleAIPreview(null); // Ensure AI pane is hidden for manual edit
         }
@@ -123,7 +128,7 @@ class BoardEditor {
         this.selectedTool = null;
         
         // Use a short delay even in onModalShown to guarantee container dims
-        setTimeout(() => this.recreateBoard(), window.APP_CONST?.EDITOR?.ON_SHOWN_DELAY || 50);
+        setTimeout(() => this.recreateBoard(), APP_CONST?.EDITOR?.ON_SHOWN_DELAY || 50);
     }
     
     /**
@@ -141,7 +146,7 @@ class BoardEditor {
      * Setup listeners for side-to-move and castling rights.
      */
     setupSettingsListeners() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         
         document.querySelectorAll('input[name="editor-turn"]').forEach(radio => {
             radio.addEventListener('change', () => {
@@ -173,7 +178,7 @@ class BoardEditor {
      * @private
      */
     _updateCastlingStateFromUI() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         let c = '';
         if (document.getElementById(ids.EDITOR_CASTLE_WK || 'castling-wk')?.checked) c += 'K';
         if (document.getElementById(ids.EDITOR_CASTLE_WQ || 'castling-wq')?.checked) c += 'Q';
@@ -186,7 +191,7 @@ class BoardEditor {
      * Re-creates the ChessboardJS instance with current draggability settings.
      */
     recreateBoard() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         if (this.editorBoard) this.editorBoard.destroy();
         
         const isMoveMode = this.selectedTool === 'move';
@@ -196,14 +201,14 @@ class BoardEditor {
             onDragStart: () => isMoveMode,
             onDrop: isMoveMode ? this.onPieceMove.bind(this) : undefined,
             dropOffBoard: isMoveMode ? 'trash' : 'snapback',
-            pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
         });
 
         this.updateSettingsUI();
         this.updateFENInput();
         
         // Multi-stage resize to handle CSS transitions
-        const stages = window.APP_CONST?.EDITOR?.RESIZE_STAGES || [150, 400, 800];
+        const stages = APP_CONST?.EDITOR?.RESIZE_STAGES || [150, 400, 800];
         stages.forEach(d => setTimeout(() => this.editorBoard?.resize(), d));
     }
 
@@ -211,7 +216,7 @@ class BoardEditor {
      * Updates the settings sidebar UI to match internal state.
      */
     updateSettingsUI() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const turnRadio = document.querySelector(`input[name="editor-turn"][value="${this.currentTurn}"]`);
         if (turnRadio) turnRadio.checked = true;
 
@@ -232,7 +237,7 @@ class BoardEditor {
     _setupResize() {
         if (this._resizeInitialized) return;
         window.addEventListener('resize', () => {
-            const delay = window.APP_CONST?.UI_CONFIG?.RESIZE_DEBOUNCE_MS || 150;
+            const delay = APP_CONST?.UI_CONFIG?.RESIZE_DEBOUNCE_MS || 150;
             setTimeout(() => this.editorBoard?.resize(), delay);
         });
 
@@ -257,19 +262,19 @@ class BoardEditor {
         
         this.updateFENInput();
         this.validatePosition();
-        setTimeout(() => this.updateBoardUI(), window.APP_CONST?.EDITOR?.SYNC_DELAY || 50);
+        setTimeout(() => this.updateBoardUI(), APP_CONST?.EDITOR?.SYNC_DELAY || 50);
     }
     
     /**
      * Attaches click and drag-drop listeners to the board container.
      */
     addBoardClickHandler() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const boardEl = document.getElementById(ids.EDITOR_BOARD || 'editorBoard');
         if (!boardEl || this._boardInteractionsInitialized) return;
         
         boardEl.addEventListener('click', (e) => {
-            const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
+            const sqSelector = APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
             const sq = e.target.closest(sqSelector)?.getAttribute('data-square');
             if (sq) this.handleSquareClick(sq);
         });
@@ -284,7 +289,7 @@ class BoardEditor {
         boardEl.addEventListener('drop', (e) => {
             e.preventDefault();
             const p = e.dataTransfer.getData('piece');
-            const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
+            const sqSelector = APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
             const sq = e.target.closest(sqSelector)?.getAttribute('data-square');
             if (p && sq) {
                 this.currentPosition[sq] = p;
@@ -371,10 +376,10 @@ class BoardEditor {
             const touch = e.touches[0];
             touchPiece = document.createElement('img');
             touchPiece.src = imgEl.src;
-            const size = window.APP_CONST?.EDITOR?.TOUCH_PIECE_SIZE || 45;
-            const offset = window.APP_CONST?.EDITOR?.TOUCH_PIECE_OFFSET || 22;
-            const zIndex = window.APP_CONST?.EDITOR?.TOUCH_PIECE_Z_INDEX || 10000;
-            const opacity = window.APP_CONST?.EDITOR?.TOUCH_PIECE_OPACITY || 0.8;
+            const size = APP_CONST?.EDITOR?.TOUCH_PIECE_SIZE || 45;
+            const offset = APP_CONST?.EDITOR?.TOUCH_PIECE_OFFSET || 22;
+            const zIndex = APP_CONST?.EDITOR?.TOUCH_PIECE_Z_INDEX || 10000;
+            const opacity = APP_CONST?.EDITOR?.TOUCH_PIECE_OPACITY || 0.8;
 
             Object.assign(touchPiece.style, {
                 position: 'fixed', 
@@ -393,7 +398,7 @@ class BoardEditor {
         const move = (e) => {
             if (!touchPiece) return;
             const t = e.touches[0];
-            const offset = window.APP_CONST?.EDITOR?.TOUCH_PIECE_OFFSET || 22;
+            const offset = APP_CONST?.EDITOR?.TOUCH_PIECE_OFFSET || 22;
             touchPiece.style.left = (t.clientX - offset) + 'px';
             touchPiece.style.top = (t.clientY - offset) + 'px';
             if (e.cancelable) e.preventDefault();
@@ -403,7 +408,7 @@ class BoardEditor {
         imgEl.addEventListener('touchend', (e) => {
             if (!touchPiece) return;
             const t = e.changedTouches[0];
-            const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
+            const sqSelector = APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
             const sq = document.elementFromPoint(t.clientX, t.clientY)?.closest(sqSelector)?.getAttribute('data-square');
             if (sq) {
                 this.currentPosition[sq] = pieceCode;
@@ -418,7 +423,7 @@ class BoardEditor {
      * Setup move (hand) and delete (trash) tools.
      */
     setupToolButtons() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const delBtn = document.getElementById(ids.EDITOR_DELETE_TOOL || 'editor-delete-piece');
         const handBtn = document.getElementById(ids.EDITOR_HAND_TOOL || 'editor-hand-tool');
         
@@ -447,8 +452,8 @@ class BoardEditor {
      * Setup Board Control Buttons (Clear, Flip, Reset).
      */
     setupControlButtons() {
-        const ids = window.APP_CONST?.IDS || {};
-        const startFen = window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        const ids = APP_CONST?.IDS || {};
+        const startFen = APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
         const btn = (id, fn) => document.getElementById(id)?.addEventListener('click', fn);
 
@@ -474,7 +479,7 @@ class BoardEditor {
                      this._loadFenToState(input.value.trim());
                     this.recreateBoard();
                 } catch (e) {
-                    this.showValidationError(window.APP_CONST?.MESSAGES?.ERROR_INVALID_FEN || 'FEN không hợp lệ');
+                    this.showValidationError(APP_CONST?.MESSAGES?.ERROR_INVALID_FEN || 'FEN không hợp lệ');
                 }
             }
         });
@@ -484,7 +489,7 @@ class BoardEditor {
      * Setup main confirmation/done button.
      */
     setupDoneButton() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         document.getElementById(ids.EDITOR_DONE_BTN || 'editor-done-btn')?.addEventListener('click', () => {
             if (this.validatePosition()) {
                 this.applyPositionToMainBoard();
@@ -500,7 +505,7 @@ class BoardEditor {
     validatePosition() {
         const p = Object.values(this.currentPosition);
         if (p.filter(x => x === 'wK').length !== 1 || p.filter(x => x === 'bK').length !== 1) {
-            this.showValidationError(window.APP_CONST?.MESSAGES?.INVALID_FEN_KING || 'Mỗi bên phải có đúng 1 vua!');
+            this.showValidationError(APP_CONST?.MESSAGES?.INVALID_FEN_KING || 'Mỗi bên phải có đúng 1 vua!');
             return false;
         }
         this.hideValidationError();
@@ -511,7 +516,7 @@ class BoardEditor {
      * Shows a validation alert in the editor modal.
      */
     showValidationError(msg) {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const errEl = document.getElementById(ids.EDITOR_VALIDATION_ERROR || 'editor-validation-error');
         const msgEl = document.getElementById(ids.EDITOR_ERROR_MSG || 'editor-error-message');
         if (errEl && msgEl) {
@@ -524,7 +529,7 @@ class BoardEditor {
      * Hides the validation alert.
      */
     hideValidationError() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         document.getElementById(ids.EDITOR_VALIDATION_ERROR || 'editor-validation-error')?.classList.add('d-none');
     }
     
@@ -532,7 +537,7 @@ class BoardEditor {
      * Updates the FEN text input with the current editor state.
      */
     updateFENInput() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const el = document.getElementById(ids.EDITOR_FEN_INPUT || 'editor-fen-input');
         if (el) el.value = this.positionToFen(this.currentPosition);
     }
@@ -543,7 +548,7 @@ class BoardEditor {
     fenToPosition(fen) {
         const rows = fen.split(' ')[0].split('/');
         const pos = {};
-        const files = window.APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const files = APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         rows.forEach((row, i) => {
             const rank = 8 - i;
             let fileIdx = 0;
@@ -562,7 +567,7 @@ class BoardEditor {
      * Utility: Converts position object to complete FEN string.
      */
     positionToFen(pos) {
-        const files = window.APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const files = APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         const rows = [];
         for (let r = 8; r >= 1; r--) {
             let row = '', empty = 0;
@@ -576,7 +581,7 @@ class BoardEditor {
             if (empty > 0) row += empty;
             rows.push(row);
         }
-        const startFen = window.APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        const startFen = APP_CONST?.STARTING_FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
         const suffix = startFen.split(' ').slice(3).join(' ');
         return `${rows.join('/')} ${this.currentTurn} ${this.currentCastling} ${suffix}`;
     }
@@ -586,12 +591,12 @@ class BoardEditor {
      */
     applyPositionToMainBoard() {
         const fen = this.positionToFen(this.currentPosition);
-        if (!window.LOGIC_GAME) return alert(window.APP_CONST?.MESSAGES?.SYSTEM_NOT_READY || 'Lỗi: Hệ thống chưa sẵn sàng.');
+        if (!window.LOGIC_GAME) return alert(APP_CONST?.MESSAGES?.SYSTEM_NOT_READY || 'Lỗi: Hệ thống chưa sẵn sàng.');
         
         try {
-            const ids = window.APP_CONST?.IDS || {};
+            const ids = APP_CONST?.IDS || {};
             const orientation = document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch')?.checked ? 'black' : 'white';
-            window.LOGIC_GAME.initChessboard(orientation, fen);
+            window.LOGIC_GAME.initBoard(orientation, fen);
         } catch (e) {
             console.error('Apply Position Error:', e);
         }
@@ -601,7 +606,7 @@ class BoardEditor {
      * Setup Lightbox for full-screen analysis image preview.
      */
     setupLightbox() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const thumb = document.getElementById(ids.EDITOR_REF_IMAGE || 'editor-reference-image');
         const lb = document.getElementById(ids.EDITOR_LIGHTBOX || 'editor-image-lightbox');
         const lbImg = document.getElementById(ids.EDITOR_LIGHTBOX_IMG || 'lightbox-img');
@@ -618,11 +623,4 @@ class BoardEditor {
         lb.addEventListener('click', (e) => { if (e.target === lb || e.target.closest('.lightbox-close-btn')) close(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
     }
-}
-
-// Global initialization
-if (typeof window.BOARD_EDITOR === 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.BOARD_EDITOR = new BoardEditor();
-    });
 }

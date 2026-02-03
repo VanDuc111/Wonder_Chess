@@ -1,9 +1,15 @@
-// Dữ liệu OPENINGS_DATA hiện tại được lấy từ file opening_data.js
+/**
+ * @fileoverview Openings Library Module
+ * Handles searching, filtering, and displaying the chess opening museum.
+ */
+
+import { APP_CONST } from '../constants.js';
+import { OPENINGS_DATA } from '../data/opening_data.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-    const ids = window.APP_CONST?.IDS || {};
-    const config = window.APP_CONST?.OPENINGS || {};
-    const msgs = window.APP_CONST?.MESSAGES || {};
+    const ids = APP_CONST?.IDS || {};
+    const config = APP_CONST?.OPENINGS || {};
+    const msgs = APP_CONST?.MESSAGES || {};
 
     const gridEl = document.getElementById(ids.OPENING_GRID || 'opening-grid');
     const searchInput = document.getElementById(ids.OPENING_SEARCH || 'opening-search');
@@ -15,9 +21,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let displayedCount = itemsPerLoad;
     let filteredData = [];
 
-    // Filter data based on current state
+    /**
+     * Filter data based on current UI state (category + search query)
+     */
     function filterData() {
-        filteredData = OPENINGS_DATA.filter(op => {
+        filteredData = (OPENINGS_DATA || []).filter(op => {
             const matchesFilter = currentFilter === 'all' || op.category === currentFilter;
             const matchesSearch = op.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                   op.eco.toLowerCase().includes(searchQuery.toLowerCase());
@@ -26,7 +34,10 @@ document.addEventListener('DOMContentLoaded', function () {
         displayedCount = itemsPerLoad;
     }
 
-    // Render a slice of the filtered data
+    /**
+     * Render a slice of the filtered data into the grid
+     * @param {boolean} [append=false] - Whether to append to existing cards or replace them
+     */
     function renderOpenings(append = false) {
         if (!append) {
             gridEl.innerHTML = '';
@@ -60,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
             fragment.appendChild(cardCol);
 
-            // Initialize board in next tick
+            // Initialize board in next tick to ensure DOM is ready
             setTimeout(() => {
                 const boardDiv = document.getElementById(boardId);
                 if (boardDiv) {
@@ -68,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         position: op.fen,
                         showNotation: false,
                         draggable: false,
-                        pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
+                        pieceTheme: APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png'
                     });
                 }
             }, config.BOARD_INIT_DELAY_MS || 50);
@@ -76,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         gridEl.appendChild(fragment);
 
-        // Update "No results" message
+        // Update "No results" message display
         const noResultsId = ids.OPENING_NO_RESULTS || 'no-results-msg';
         if (filteredData.length === 0) {
             if (!document.getElementById(noResultsId)) {
@@ -89,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (msg) msg.remove();
         }
 
-        // Add "Load More" button if needed
+        // Add "Load More" button if more items remain
         const loadMoreId = ids.OPENING_LOAD_MORE || 'load-more-btn';
         const existingLoadMore = document.getElementById(loadMoreId);
         if (existingLoadMore) existingLoadMore.remove();
@@ -107,25 +118,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Event Listeners
-    searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        filterData();
-        renderOpenings();
-    });
+    // --- Interactive Listeners ---
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            filterData();
+            renderOpenings();
+        });
+    }
 
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             filterBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            currentFilter = btn.getAttribute('data-filter');
+            currentFilter = btn.getAttribute('data-filter') || 'all';
             filterData();
             renderOpenings();
         });
     });
 
-    // Delegate click event for opening cards
+    /**
+     * Delegate click event for opening cards (Redirect to home with ?op=slug)
+     */
     gridEl.addEventListener('click', function(e) {
         const card = e.target.closest('.js-opening-card');
         if (card) {
@@ -138,6 +154,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    /**
+     * Visual effect before navigation
+     */
     function triggerRabbitHole(slug, cardElement) {
         const overlayId = ids.RABBIT_HOLE_OVERLAY || 'rabbit-hole-overlay';
         const overlay = document.getElementById(overlayId);
@@ -170,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }, transitionTime); 
     }
 
-    // Initial load
+    // Initial Render
     filterData();
     renderOpenings();
 });

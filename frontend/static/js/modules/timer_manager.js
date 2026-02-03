@@ -3,9 +3,10 @@
  * Handles countdown logic, increment, and UI updates for player clocks.
  */
 
-class ChessTimer {
+import { APP_CONST } from '../constants.js';
+
+export class ChessTimer {
     constructor() {
-        const timersConst = window.APP_CONST?.TIMERS || {};
         /** @type {number} White's remaining time in seconds */
         this.whiteTime = 0;
         /** @type {number} Black's remaining time in seconds */
@@ -30,10 +31,10 @@ class ChessTimer {
      */
     _ensureDom() {
         if (!this.dom.timerWhite) {
-            this.dom.timerWhite = document.getElementById(window.APP_CONST?.IDS?.TIMER_WHITE || 'timer-white');
+            this.dom.timerWhite = document.getElementById(APP_CONST?.IDS?.TIMER_WHITE || 'timer-white');
         }
         if (!this.dom.timerBlack) {
-            this.dom.timerBlack = document.getElementById(window.APP_CONST?.IDS?.TIMER_BLACK || 'timer-black');
+            this.dom.timerBlack = document.getElementById(APP_CONST?.IDS?.TIMER_BLACK || 'timer-black');
         }
     }
 
@@ -43,8 +44,8 @@ class ChessTimer {
      * @returns {string}
      */
     formatTime(seconds) {
-        const min = Math.floor(seconds / (window.APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60));
-        const sec = seconds % (window.APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60);
+        const min = Math.floor(seconds / (APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60));
+        const sec = seconds % (APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60);
         return `${min}:${sec < 10 ? '0' : ''}${sec}`;
     }
 
@@ -75,7 +76,7 @@ class ChessTimer {
             if (el) {
                 el.style.display = 'none';
                 el.classList.remove('active');
-                el.textContent = window.APP_CONST?.TIMERS?.DEFAULT_DISPLAY || '0:00';
+                el.textContent = APP_CONST?.TIMERS?.DEFAULT_DISPLAY || '0:00';
             }
         };
         resetEl(this.dom.timerWhite);
@@ -88,7 +89,7 @@ class ChessTimer {
      */
     init(minutes) {
         this.reset();
-        const secondsPerMinute = window.APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60;
+        const secondsPerMinute = APP_CONST?.TIME?.SECONDS_PER_MINUTE || 60;
         const initialTimeSeconds = minutes * secondsPerMinute;
         this.whiteTime = initialTimeSeconds;
         this.blackTime = initialTimeSeconds;
@@ -157,7 +158,7 @@ class ChessTimer {
                 if (this.blackTime <= 0) this._handleTimeUp('b');
             }
             this.updateDisplay();
-        }, window.APP_CONST?.TIMERS?.TICK_MS || 1000);
+        }, APP_CONST?.TIMERS?.TICK_MS || 1000);
     }
 
     /**
@@ -170,46 +171,21 @@ class ChessTimer {
         this._ensureDom();
         this.isTimedGame = false;
         
-        const whiteVN = window.APP_CONST?.STRINGS?.COLOR_WHITE_VN || 'Trắng';
-        const blackVN = window.APP_CONST?.STRINGS?.COLOR_BLACK_VN || 'Đen';
+        const whiteVN = APP_CONST?.STRINGS?.COLOR_WHITE_VN || 'Trắng';
+        const blackVN = APP_CONST?.STRINGS?.COLOR_BLACK_VN || 'Đen';
         const winner = (color === 'w') ? blackVN : whiteVN;
         
-        const title = window.APP_CONST?.MESSAGES?.GAME_OVER_TIME_TITLE || "Hết giờ";
-        const body = window.APP_CONST?.MESSAGES?.GAME_OVER_TIME_DESC ? 
-            window.APP_CONST.MESSAGES.GAME_OVER_TIME_DESC(winner) : 
+        const title = APP_CONST?.MESSAGES?.GAME_OVER_TIME_TITLE || "Hết giờ";
+        const body = APP_CONST?.MESSAGES?.GAME_OVER_TIME_DESC ? 
+            APP_CONST.MESSAGES.GAME_OVER_TIME_DESC(winner) : 
             `Hết giờ! ${winner} thắng cuộc.`;
 
-        if (window.LOGIC_GAME && window.LOGIC_GAME.showGameOver) {
-            window.LOGIC_GAME.showGameOver(title, body);
-        } else if (window.showGameOverModal) {
-            window.showGameOverModal(title, body);
+        if (window.LOGIC_GAME && window.LOGIC_GAME._showGameOver) {
+            window.LOGIC_GAME._showGameOver(title, body);
+        } else if (window.LOGIC_GAME?.ui) {
+            window.LOGIC_GAME.ui.showGameOverModal(title, body, null);
+        } else if (window.MODAL_MANAGER) {
+            window.MODAL_MANAGER.showGameOverModal(title, body);
         }
     }
 }
-
-/**
- * Global instance initialization with JSDoc for IDE support.
- * @type {ChessTimer}
- */
-const timerManagerInstance = new ChessTimer();
-window.TIMER_MANAGER = timerManagerInstance;
-
-// Compatibility wrappers for existing code
-window.startTimer = (color) => {
-    const inc = (typeof selectedBotIncrement !== 'undefined') ? selectedBotIncrement : 0;
-    timerManagerInstance.start(color, inc);
-};
-
-window.resetTimers = () => timerManagerInstance.reset();
-window.initTimers = (m) => timerManagerInstance.init(m);
-
-// Sync global legacy flags with the instance
-Object.defineProperty(window, 'isTimedGame', {
-    get: () => timerManagerInstance.isTimedGame,
-    set: (v) => { timerManagerInstance.isTimedGame = v; }
-});
-
-Object.defineProperty(window, 'timerInterval', {
-    get: () => timerManagerInstance.timerInterval,
-    set: (v) => { timerManagerInstance.timerInterval = v; }
-});

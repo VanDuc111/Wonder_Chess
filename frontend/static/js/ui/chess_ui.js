@@ -3,7 +3,9 @@
  * Responsible for rendering evaluation bars, move quality arrows, and square highlights.
  */
 
-class ChessUI {
+import { APP_CONST } from '../constants.js';
+
+export class ChessUI {
     /**
      * Create a ChessUI instance and initialize internal DOM cache.
      */
@@ -19,8 +21,14 @@ class ChessUI {
             openingName: null,
             pgnList: null,
             pgnCont: null,
-            notateSwitch: null
+            notateSwitch: null,
+            boardArea: null,
+            barCont: null,
+            wrapper: null
         };
+        this._lastPgnStateKey = null;
+        this._lastEvalHeight = 0;
+        this._cachedOffsets = null;
     }
 
     /**
@@ -28,18 +36,21 @@ class ChessUI {
      * @private
      */
     _ensureDom() {
-        const ids = window.APP_CONST?.IDS || {};
-        // Only re-cache if essential elements are missing
-        if (this.dom.evalBar && document.contains(this.dom.evalBar)) return;
-
-        this.dom.evalBar = document.getElementById(ids.EVAL_BAR || 'eval-white-advantage');
-        this.dom.evalScore = document.getElementById(ids.EVAL_SCORE || 'evaluation-score');
-        this.dom.boardCont = document.getElementById(ids.BOARD_ELEMENT || 'myBoard');
-        this.dom.openingName = document.getElementById(ids.OPENING_NAME_DISPLAY || 'opening-name');
-        this.dom.arrowCont = document.getElementById(ids.ARROW_CONTAINER || 'arrow-container');
-        this.dom.pgnList = document.getElementById(ids.PGN_VERTICAL_LIST || 'pgn-history-list-vertical');
-        this.dom.pgnCont = document.getElementById(ids.PGN_VERTICAL_CONT || 'pgn-history-vertical');
-        this.dom.notateSwitch = document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch');
+        const ids = APP_CONST?.IDS || {};
+        
+        if (!this.dom.evalBar) this.dom.evalBar = document.getElementById(ids.EVAL_BAR || 'eval-white-advantage');
+        if (!this.dom.evalScore) this.dom.evalScore = document.getElementById(ids.EVAL_SCORE || 'evaluation-score');
+        if (!this.dom.boardCont) this.dom.boardCont = document.getElementById(ids.BOARD_ELEMENT || 'myBoard');
+        if (!this.dom.openingName) this.dom.openingName = document.getElementById(ids.OPENING_NAME_DISPLAY || 'opening-name');
+        if (!this.dom.arrowCont) this.dom.arrowCont = document.getElementById(ids.ARROW_CONTAINER || 'arrow-container');
+        if (!this.dom.pgnList) this.dom.pgnList = document.getElementById(ids.PGN_VERTICAL_LIST || 'pgn-history-list-vertical');
+        if (!this.dom.pgnCont) this.dom.pgnCont = document.getElementById(ids.PGN_VERTICAL_CONT || 'pgn-history-vertical');
+        if (!this.dom.notateSwitch) this.dom.notateSwitch = document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch');
+        
+        // Items for height sync
+        if (!this.dom.boardArea) this.dom.boardArea = document.querySelector('.chess-board-area');
+        if (!this.dom.barCont) this.dom.barCont = document.querySelector('.score-bar-container');
+        if (!this.dom.wrapper) this.dom.wrapper = document.querySelector('.score-alignment-wrapper');
     }
 
     /**
@@ -53,7 +64,7 @@ class ChessUI {
             this._ensureDom();
             if (!this.dom.evalBar && !this.dom.evalScore) return;
 
-            const strings = window.APP_CONST?.STRINGS || {};
+            const strings = APP_CONST?.STRINGS || {};
             let formattedScore = strings.EVAL_DEFAULT || "0.00";
             let percentAdvantage = 50;
 
@@ -77,8 +88,8 @@ class ChessUI {
             } else {
                 const numScore = parseFloat(scoreStr);
                 if (!isNaN(numScore)) {
-                    const mateBase = window.APP_CONST?.ENGINE?.MATE_SCORE_BASE || 1000000;
-                    const mateAdjust = window.APP_CONST?.ENGINE?.MATE_DEPTH_ADJUSTMENT || 500;
+                    const mateBase = APP_CONST?.ENGINE?.MATE_SCORE_BASE || 1000000;
+                    const mateAdjust = APP_CONST?.ENGINE?.MATE_DEPTH_ADJUSTMENT || 500;
                     const MATE_VAL = mateBase - mateAdjust;
 
                     if (Math.abs(numScore) > MATE_VAL) {
@@ -86,7 +97,7 @@ class ChessUI {
                         formattedScore = (numScore > 0) ? `M+${moves}` : `M-${moves}`;
                         percentAdvantage = (numScore > 0) ? 100 : 0;
                     } else {
-                        const MAX_PAWNS = window.APP_CONST?.UI_CONFIG?.EVAL_MAX_PAWNS || 10.0;
+                        const MAX_PAWNS = APP_CONST?.UI_CONFIG?.EVAL_MAX_PAWNS || 10.0;
                         let capped = Math.max(-MAX_PAWNS, Math.min(MAX_PAWNS, numScore));
                         percentAdvantage = 50 + (capped / (MAX_PAWNS * 2)) * 100;
                         formattedScore = numScore > 0 ? `+${numScore.toFixed(2)}` : numScore.toFixed(2);
@@ -105,7 +116,7 @@ class ChessUI {
      */
     updateEvaluationGameOver(winner) {
         this._ensureDom();
-        const strings = window.APP_CONST?.STRINGS || {};
+        const strings = APP_CONST?.STRINGS || {};
         if (winner === 'w') this._applyEvalUI(100, strings.SCORE_WHITE_WIN || "1-0");
         else if (winner === 'b') this._applyEvalUI(0, strings.SCORE_BLACK_WIN || "0-1");
         else this._applyEvalUI(50, strings.SCORE_DRAW || "1/2-1/2");
@@ -131,32 +142,41 @@ class ChessUI {
         
         this._syncTimeout = setTimeout(() => {
             this._ensureDom();
-            const config = window.APP_CONST?.UI_CONFIG || {};
+            const config = APP_CONST?.UI_CONFIG || {};
             const offsets = config.EVAL_OFFSETS || {};
             
-            const boardArea = document.querySelector('.chess-board-area');
-            const barCont = document.querySelector('.score-bar-container');
-            const wrapper = document.querySelector('.score-alignment-wrapper');
-            
-            if (!boardArea || !barCont || !wrapper) return;
+            if (!this.dom.boardArea || !this.dom.barCont || !this.dom.wrapper) return;
 
-            const h = boardArea.clientHeight;
+            const h = this.dom.boardArea.clientHeight;
             if (h <= 0) return;
 
-            const screenWidth = window.innerWidth;
-            const rootStyles = getComputedStyle(document.documentElement);
+            // Only update if height changed significantly to break ResizeObserver loops
+            if (Math.abs(this._lastEvalHeight - h) < 2) return;
+            this._lastEvalHeight = h;
+
+            if (!this._cachedOffsets) {
+                const rootStyles = getComputedStyle(document.documentElement);
+                this._cachedOffsets = {
+                    desktop: parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || (offsets.DESKTOP || 45),
+                    tablet: parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || (offsets.TABLET || 55),
+                    mobile: parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || (offsets.MOBILE || 48)
+                };
+            }
             
+            const screenWidth = window.innerWidth;
             let offset;
-            if (screenWidth >= (offsets.BREAKPOINT_LG || 992)) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || (offsets.DESKTOP || 45);
-            else if (screenWidth >= (offsets.BREAKPOINT_MD || 577)) offset = parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || (offsets.TABLET || 55);
-            else offset = parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || (offsets.MOBILE || 48);
+            if (screenWidth >= (offsets.BREAKPOINT_LG || 992)) offset = this._cachedOffsets.desktop;
+            else if (screenWidth >= (offsets.BREAKPOINT_MD || 577)) offset = this._cachedOffsets.tablet;
+            else offset = this._cachedOffsets.mobile;
             
             const wrapperHeight = h - (offset * 2);
-            wrapper.style.height = `${wrapperHeight}px`;
+            this.dom.wrapper.style.height = `${wrapperHeight}px`;
             
-            const scoreH = this.dom.evalScore ? this.dom.evalScore.offsetHeight : 0;
-            barCont.style.height = `${wrapperHeight - scoreH - 10}px`;
-        }, window.APP_CONST?.UI_CONFIG?.UI_SYNC_DELAY_MS || 50);
+            if (this._scoreH === undefined) {
+                this._scoreH = this.dom.evalScore ? this.dom.evalScore.offsetHeight : 0;
+            }
+            this.dom.barCont.style.height = `${wrapperHeight - this._scoreH - 10}px`;
+        }, APP_CONST?.UI_CONFIG?.UI_SYNC_DELAY_MS || 50);
     }
 
     /**
@@ -167,7 +187,7 @@ class ChessUI {
         this._ensureDom();
         if (!this.dom.boardCont) return;
         
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const enabled = document.getElementById(ids.BEST_MOVE_SWITCH || 'best-move-switch')?.checked;
         
         // If disabled or no move, just clear and exit
@@ -178,11 +198,11 @@ class ChessUI {
         }
 
         // --- NEW: Check if arrowCont exists and is still attached to the current board ---
-        const isAttached = this.dom.arrowCont && this.dom.boardCont.contains(this.dom.arrowCont);
+        const isAttached = this.dom.arrowCont && this.dom.boardCont && this.dom.boardCont.contains(this.dom.arrowCont);
 
-        if (!this.dom.arrowCont || !isAttached) {
-            const arrowIds = window.APP_CONST?.IDS || {};
-            const arrowStyles = window.APP_CONST?.UI_CONFIG?.ARROW || {};
+        if (!this.dom.boardCont || !this.dom.arrowCont || !isAttached) {
+            const arrowIds = APP_CONST?.IDS || {};
+            const arrowStyles = APP_CONST?.UI_CONFIG?.ARROW || {};
 
             if (!this.dom.arrowCont) {
                 this.dom.arrowCont = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -193,6 +213,7 @@ class ChessUI {
                 });
             }
             // (Re)attach to current board container
+            if (!this.dom.boardCont) return; // Safety check
             this.dom.boardCont.appendChild(this.dom.arrowCont);
         } else {
             // Optimization: If the same move arrow is already there, don't redraw
@@ -225,7 +246,7 @@ class ChessUI {
         const dx = end.x - start.x, dy = end.y - start.y, len = Math.sqrt(dx * dx + dy * dy);
         const ratio = (len - 10) / len;
 
-        const arrowStyles = window.APP_CONST?.UI_CONFIG?.ARROW || {};
+        const arrowStyles = APP_CONST?.UI_CONFIG?.ARROW || {};
 
         const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
         const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
@@ -257,12 +278,16 @@ class ChessUI {
         this._ensureDom();
         if (!this.dom.boardCont) return;
         
-        const classes = window.APP_CONST?.CLASSES || {};
-        const sqSelector = window.APP_CONST?.EDITOR?.SQUARE_SELECTOR || '.square-55d63';
+        const classes = APP_CONST?.CLASSES || {};
+        const highlightClasses = [
+            classes.SQUARE_SELECTED || 'square-selected',
+            classes.HIGHLIGHT_MOVE || 'highlight-move',
+            classes.HIGHLIGHT_CHECK || 'highlight-check'
+        ];
 
-        this.dom.boardCont.querySelectorAll(sqSelector).forEach(sq => {
-            sq.classList.remove(classes.SQUARE_SELECTED || 'square-selected', classes.HIGHLIGHT_MOVE || 'highlight-move', classes.HIGHLIGHT_CHECK || 'highlight-check');
-        });
+        // Optimized: only query squares that actually have highlights
+        const highlightedSquares = this.dom.boardCont.querySelectorAll(highlightClasses.map(c => '.' + c).join(', '));
+        highlightedSquares.forEach(sq => sq.classList.remove(...highlightClasses));
 
         if (gameInstance.in_check()) {
             const king = this._findKing(gameInstance.turn(), gameInstance);
@@ -271,7 +296,7 @@ class ChessUI {
 
         const moveEntry = history[curIdx];
         if (moveEntry && moveEntry.uci) {
-            const classes = window.APP_CONST?.CLASSES || {};
+            const classes = APP_CONST?.CLASSES || {};
             const from = moveEntry.uci.substring(0, 2);
             const to = moveEntry.uci.substring(2, 4);
             this.dom.boardCont.querySelector(`.square-${from}`)?.classList.add(classes.SQUARE_SELECTED || 'square-selected');
@@ -287,7 +312,7 @@ class ChessUI {
      * @private
      */
     _findKing(color, game) {
-        const files = window.APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const files = APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
         
         for (const f of files) {
@@ -314,18 +339,30 @@ class ChessUI {
         this._lastPgnStateKey = stateKey;
         
         const htmlParts = [];
+        const thresholds = APP_CONST?.QUALITY_THRESHOLDS || {};
+        
         for (let i = 1; i < history.length; i += 2) {
             const w = history[i], b = history[i + 1];
             const wH = (i === curIdx) ? 'current-move-highlight' : '';
             const bH = (b && (i+1) === curIdx) ? 'current-move-highlight' : '';
             
+            // Only generate annotations if needed
+            const wAnnot = w.annotHtml || (this._annot ? this._annot(history, i, engineService) : '');
+            const bAnnot = (b) ? (b.annotHtml || (this._annot ? this._annot(history, i+1, engineService) : '')) : '';
+            
             htmlParts.push(`<tr><td class="move-number-cell">${Math.floor((i-1)/2)+1}.</td>`);
-            htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${this._annot(history, i, engineService)}</td>`);
-            htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${b ? this._annot(history, i+1, engineService) : ''}</td></tr>`);
+            htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${wAnnot}</td>`);
+            htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${bAnnot}</td></tr>`);
         }
         
         this.dom.pgnList.innerHTML = htmlParts.join('');
-        if (this.dom.pgnCont) this.dom.pgnCont.scrollTop = this.dom.pgnCont.scrollHeight;
+        
+        // Use requestAnimationFrame for scrolling to avoid blocking the main thread
+        if (this.dom.pgnCont) {
+            requestAnimationFrame(() => {
+                this.dom.pgnCont.scrollTop = this.dom.pgnCont.scrollHeight;
+            });
+        }
     }
 
     /**
@@ -335,7 +372,16 @@ class ChessUI {
     _annot(history, idx, engineService) {
         if (!this.dom.notateSwitch?.checked || !engineService) return '';
         const m = history[idx];
-        if (m.isBookMove) return `<span class="move-annotation" title="Book Move"><img src="static/img/icon/book.svg"></span>`;
+        if (!m) return '';
+        
+        // Return cached annotation if already calculated
+        if (m.annotHtml !== undefined && (m.score !== null || m.isBookMove)) return m.annotHtml;
+
+        if (m.isBookMove) {
+            m.annotHtml = `<span class="move-annotation" title="Book Move"><img src="static/img/icon/book.svg"></span>`;
+            return m.annotHtml;
+        }
+
         if (m.score === null || m.score === undefined || idx === 0 || !history[idx-1]) return '';
 
         const cur = engineService.parseScore(m.score);
@@ -343,23 +389,25 @@ class ChessUI {
         const diff = (idx % 2 !== 0) ? (cur - pre) : (pre - cur);
         const isBest = (history[idx-1].bestMove === m.uci);
 
-        const thresholds = window.APP_CONST?.QUALITY_THRESHOLDS || {};
+        const thresholds = APP_CONST?.QUALITY_THRESHOLDS || {};
+        let annot = '';
 
-        if (diff > (thresholds.BRILLIANT || 1.5)) return `<span class="move-annotation" title="Brilliant"><img src="static/img/icon/brilliant.svg"></span>`;
-        if (diff > (thresholds.GREAT || 0.8)) return `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
-        if (isBest) return `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
-        if (diff > (thresholds.GOOD || 0.1)) return `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
-        if (diff > (thresholds.SOLID || -0.3)) return `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
-        
-        const isMissWin = Math.abs(pre) > (thresholds.MISS_WIN_THRESHOLD || 2.5) && 
-                          Math.abs(cur) < (thresholds.MISS_WIN_RESULT || 0.5);
-        if (isMissWin) return `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
-        
-        if (diff < (thresholds.BLUNDER || -1.5)) return `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
-        if (diff < (thresholds.MISTAKE || -0.7)) return `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
-        if (diff <= (thresholds.INACCURATE || -0.3)) return `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
+        if (diff > (thresholds.BRILLIANT || 1.5)) annot = `<span class="move-annotation" title="Brilliant"><img src="static/img/icon/brilliant.svg"></span>`;
+        else if (diff > (thresholds.GREAT || 0.8)) annot = `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
+        else if (isBest) annot = `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
+        else if (diff > (thresholds.GOOD || 0.1)) annot = `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
+        else if (diff > (thresholds.SOLID || -0.3)) annot = `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
+        else {
+            const isMissWin = Math.abs(pre) > (thresholds.MISS_WIN_THRESHOLD || 2.5) && 
+                              Math.abs(cur) < (thresholds.MISS_WIN_RESULT || 0.5);
+            if (isMissWin) annot = `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
+            else if (diff < (thresholds.BLUNDER || -1.5)) annot = `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
+            else if (diff < (thresholds.MISTAKE || -0.7)) annot = `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
+            else if (diff <= (thresholds.INACCURATE || -0.3)) annot = `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
+        }
 
-        return '';
+        m.annotHtml = annot;
+        return annot;
     }
 
     /**
@@ -376,7 +424,7 @@ class ChessUI {
      * Synchronizes UI components with the board orientation.
      */
     syncOrientation(isFlipped) {
-        const classes = window.APP_CONST?.CLASSES || {};
+        const classes = APP_CONST?.CLASSES || {};
         const boardArea = document.querySelector('.chess-board-area');
         const scoreWrapper = document.querySelector('.score-alignment-wrapper');
         
@@ -388,13 +436,13 @@ class ChessUI {
      * Displays GameOver modal and renders stats.
      */
     showGameOverModal(title, message, stats = null) {
-        if (window.showGameOverModal) {
-            window.showGameOverModal(title, message);
+        if (window.MODAL_MANAGER) {
+            window.MODAL_MANAGER.showGameOverModal(title, message);
+            
+            const shuffler = document.getElementById('game-over-stats-shuffler');
+            const statsGrid = document.getElementById('game-over-stats');
             
             if (stats) {
-                const shuffler = document.getElementById('game-over-stats-shuffler');
-                const statsGrid = document.getElementById('game-over-stats');
-                
                 if (shuffler) shuffler.classList.remove('d-none');
                 if (statsGrid) statsGrid.classList.add('d-none');
 
@@ -408,6 +456,10 @@ class ChessUI {
                         setTimeout(() => statsGrid.style.opacity = '1', 10);
                     }
                 }, 2500); 
+            } else {
+                // No stats available (e.g., time-up), hide both spinner and stats
+                if (shuffler) shuffler.classList.add('d-none');
+                if (statsGrid) statsGrid.classList.add('d-none');
             }
         }
     }

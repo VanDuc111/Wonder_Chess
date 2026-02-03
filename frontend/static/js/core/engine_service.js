@@ -3,7 +3,9 @@
  * Handles best move requests, deep evaluations, and score parsing.
  */
 
-class ChessEngine {
+import { APP_CONST } from '../constants.js';
+
+export class ChessEngine {
     /**
      * Create a ChessEngine instance.
      */
@@ -35,7 +37,7 @@ class ChessEngine {
      * @async
      */
     async getDeepEval(fen) {
-        const apiUrl = window.APP_CONST?.API?.EVALUATE || '/api/game/evaluate';
+        const apiUrl = APP_CONST?.API?.EVALUATE || '/api/game/evaluate';
         try {
             const resp = await fetch(apiUrl, {
                 method: 'POST', 
@@ -55,7 +57,7 @@ class ChessEngine {
      * @returns {number} Parsed numerical value (+100/-100 for mates).
      */
     parseScore(s) {
-        const engineConst = window.APP_CONST?.ENGINE || {};
+        const engineConst = APP_CONST?.ENGINE || {};
         const normScore = engineConst.NORMALIZED_SCORE || { MATE: 100, DEFAULT: 0 };
         
         if (s === null || s === undefined) return normScore.DEFAULT;

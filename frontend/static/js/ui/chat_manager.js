@@ -3,7 +3,9 @@
  * Handles message rendering, streaming API calls, and markdown conversion.
  */
 
-class AliceChat {
+import { APP_CONST } from '../constants.js';
+
+export class AliceChat {
     constructor() {
         /** @type {Object<string, HTMLElement|null>} DOM element cache */
         this.dom = {
@@ -14,7 +16,7 @@ class AliceChat {
             openingName: null
         };
         /** @type {Array<{sender: string, text: string, isHtml: boolean}>} Chat history */
-        const historyKey = window.APP_CONST?.STORAGE?.CHAT_HISTORY || 'alice_chat_history';
+        const historyKey = APP_CONST?.STORAGE?.CHAT_HISTORY || 'alice_chat_history';
         this.history = JSON.parse(localStorage.getItem(historyKey)) || [];
     }
 
@@ -23,7 +25,7 @@ class AliceChat {
      * @private
      */
     _ensureDom() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         if (!this.dom.messages) this.dom.messages = document.getElementById(ids.CHATBOT_MESSAGES || 'chatbot-messages');
         if (!this.dom.input) this.dom.input = document.getElementById(ids.CHAT_INPUT || 'chatbot-input');
         if (!this.dom.form) this.dom.form = document.getElementById(ids.CHAT_FORM || 'chatbot-form');
@@ -67,8 +69,8 @@ class AliceChat {
      */
     clearChat() {
         this._ensureDom();
-        const blurClass = window.APP_CONST?.CLASSES?.BLUR_FILTER || 'blur-filter';
-        const hiddenClass = window.APP_CONST?.CLASSES?.HIDDEN || 'd-none';
+        const blurClass = APP_CONST?.CLASSES?.BLUR_FILTER || 'blur-filter';
+        const hiddenClass = APP_CONST?.CLASSES?.HIDDEN || 'd-none';
 
         // Áp dụng hiệu ứng làm mờ cho tin nhắn và form nhập
         this.dom.messages?.classList.add(blurClass);
@@ -90,9 +92,9 @@ class AliceChat {
         this._hideResetUI();
 
         // Get nickname from UI if available
-        const ids = window.APP_CONST?.IDS || {};
-        const chatConst = window.APP_CONST?.CHAT || {};
-        const msgs = window.APP_CONST?.MESSAGES || {};
+        const ids = APP_CONST?.IDS || {};
+        const chatConst = APP_CONST?.CHAT || {};
+        const msgs = APP_CONST?.MESSAGES || {};
 
         const userDisplay = document.getElementById(ids.USER_DISPLAY || 'user-display');
         let nickname = chatConst.DEFAULT_NICKNAME || 'bạn';
@@ -122,7 +124,7 @@ class AliceChat {
      * @private
      */
     _hideResetUI() {
-        const classes = window.APP_CONST?.CLASSES || {};
+        const classes = APP_CONST?.CLASSES || {};
         const blurClass = classes.BLUR_FILTER || 'blur-filter';
         const hiddenClass = classes.HIDDEN || 'd-none';
 
@@ -138,7 +140,7 @@ class AliceChat {
     _loadHistory() {
         if (!this.dom.messages) return;
         this.dom.messages.innerHTML = '';
-        const chatConst = window.APP_CONST?.CHAT || {};
+        const chatConst = APP_CONST?.CHAT || {};
         const aliceSender = chatConst.SENDER_ALICE || 'Alice';
 
         this.history.forEach(msg => {
@@ -156,7 +158,7 @@ class AliceChat {
      * @private
      */
     _saveHistory() {
-        const historyKey = window.APP_CONST?.STORAGE?.CHAT_HISTORY || 'alice_chat_history';
+        const historyKey = APP_CONST?.STORAGE?.CHAT_HISTORY || 'alice_chat_history';
         localStorage.setItem(historyKey, JSON.stringify(this.history));
     }
 
@@ -178,7 +180,7 @@ class AliceChat {
         this.dom.messages.scrollTop = this.dom.messages.scrollHeight;
 
         if (shouldSave) {
-            const sender = isBot ? (window.APP_CONST?.CHAT?.SENDER_ALICE || 'Alice') : (window.APP_CONST?.CHAT?.SENDER_USER || 'user');
+            const sender = isBot ? (APP_CONST?.CHAT?.SENDER_ALICE || 'Alice') : (APP_CONST?.CHAT?.SENDER_USER || 'user');
             this.history.push({sender: sender, text: text, isHtml: true});
             this._saveHistory();
         }
@@ -194,7 +196,7 @@ class AliceChat {
     _appendMessage(sender, text, shouldSave = true) {
         this._ensureDom();
         const msgEl = document.createElement('div');
-        const userSenderName = window.APP_CONST?.CHAT?.SENDER_USER || 'user';
+        const userSenderName = APP_CONST?.CHAT?.SENDER_USER || 'user';
         msgEl.classList.add(sender === userSenderName ? 'user-message' : 'alice-message');
         msgEl.textContent = text;
         
@@ -216,15 +218,15 @@ class AliceChat {
     _createMessageElement(sender) {
         this._ensureDom();
         const msgEl = document.createElement('div');
-        const userSenderName = window.APP_CONST?.CHAT?.SENDER_USER || 'user';
-        const aliceSenderName = window.APP_CONST?.CHAT?.SENDER_ALICE || 'Alice';
+        const userSenderName = APP_CONST?.CHAT?.SENDER_USER || 'user';
+        const aliceSenderName = APP_CONST?.CHAT?.SENDER_ALICE || 'Alice';
         
         msgEl.classList.add(sender === userSenderName ? 'user-message' : 'alice-message');
 
         if (sender === aliceSenderName) {
             msgEl.innerHTML = `
                 <div class="typing-indicator">
-                    <img src="${window.APP_CONST?.ASSETS?.ALICE_LOADING_SVG || 'static/img/alice-loading.svg'}" alt="Alice is thinking..." class="alice-loading-svg">
+                    <img src="${APP_CONST?.ASSETS?.ALICE_LOADING_SVG || 'static/img/alice-loading.svg'}" alt="Alice is thinking..." class="alice-loading-svg">
                 </div>
             `;
         } else {
@@ -252,7 +254,7 @@ class AliceChat {
         this._setLoading(true);
 
         const isFirst = (this.dom.messages?.children.length === 1);
-        const chatConst = window.APP_CONST?.CHAT || {};
+        const chatConst = APP_CONST?.CHAT || {};
         const userSenderName = chatConst.SENDER_USER || 'user';
         const aliceSenderName = chatConst.SENDER_ALICE || 'Alice';
 
@@ -264,12 +266,12 @@ class AliceChat {
         // Context data từ LOGIC_GAME đã đóng gói
         const curIdx = window.LOGIC_GAME?.getIndex() || 0;
         const historyArr = window.LOGIC_GAME?.getHistory() || [];
-        const currentFen = historyArr[curIdx]?.fen || window.APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        const currentFen = historyArr[curIdx]?.fen || APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         const lastMoveSan = historyArr[curIdx]?.san || 'N/A';
         const pgn = this._reconstructPgn(historyArr, curIdx);
 
         try {
-            const apiUri = window.APP_CONST?.API?.CHAT_ANALYSIS || '/api/analysis/chat_analysis';
+            const apiUri = APP_CONST?.API?.CHAT_ANALYSIS || '/api/analysis/chat_analysis';
             const response = await fetch(apiUri, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -314,7 +316,6 @@ class AliceChat {
             aliceEl.innerHTML = this.mdToHtml(fullText);
             
             // Lưu câu trả lời hoàn chỉnh của Alice vào history
-            const aliceSenderName = window.APP_CONST?.CHAT?.SENDER_ALICE || 'Alice';
             this.history.push({sender: aliceSenderName, text: aliceEl.innerHTML, isHtml: true});
             this._saveHistory();
 
@@ -354,13 +355,13 @@ class AliceChat {
         
         // 1. Trigger: Khai cuộc ở cột mốc quy định
         const openingName = this.dom.openingName?.textContent || "N/A";
-        const strings = window.APP_CONST?.STRINGS || {};
-        const chatConst = window.APP_CONST?.CHAT || {};
+        const strings = APP_CONST?.STRINGS || {};
+        const chatConst = APP_CONST?.CHAT || {};
         const coachTriggerHalfMove = chatConst.COACH_TRIGGER_HALF_MOVE || 10;
         const defaultOpening = strings.OPENING_DEFAULT || "Khởi đầu";
 
         if (curIdx === coachTriggerHalfMove && openingName !== "N/A" && openingName !== defaultOpening) {
-            this._handleCoachComment(window.APP_CONST?.MESSAGES?.COACH_COMMENT_OPENING || "phân tích khai cuộc này một cách chuyên sâu");
+            this._handleCoachComment(APP_CONST?.MESSAGES?.COACH_COMMENT_OPENING || "phân tích khai cuộc này một cách chuyên sâu");
             return;
         }
 
@@ -371,8 +372,8 @@ class AliceChat {
             const diff = (curIdx % 2 !== 0) ? (curVal - prevVal) : (prevVal - curVal);
 
             let triggerReason = "";
-            const msgs = window.APP_CONST?.MESSAGES || {};
-            const threshold = window.APP_CONST?.QUALITY_THRESHOLDS || {};
+            const msgs = APP_CONST?.MESSAGES || {};
+            const threshold = APP_CONST?.QUALITY_THRESHOLDS || {};
             
             if (diff > (threshold.BRILLIANT || 1.5)) triggerReason = msgs.COACH_COMMENT_BRILLIANT || "khen ngợi nước đi thiên tài này";
             else if (diff > (threshold.GREAT || 0.8)) triggerReason = msgs.COACH_COMMENT_GREAT || "nhận xét đây là một nước đi rất tốt";
@@ -394,7 +395,7 @@ class AliceChat {
         if (this.dom.input?.disabled) return; // Tránh gọi chồng chéo khi đang phân tích
 
         this._setLoading(true);
-        const chatConst = window.APP_CONST?.CHAT || {};
+        const chatConst = APP_CONST?.CHAT || {};
         const aliceSenderName = chatConst.SENDER_ALICE || 'Alice';
         const aliceEl = this._createMessageElement(aliceSenderName);
 
@@ -407,7 +408,7 @@ class AliceChat {
         const coachQuestion = `Dưới vai trò huấn luyện viên, hãy ${specificInstruction} cho nước đi **${lastMoveSan}** vừa thực hiện.`;
 
         try {
-            const apiUri = window.APP_CONST?.API?.CHAT_ANALYSIS || '/api/analysis/chat_analysis';
+            const apiUri = APP_CONST?.API?.CHAT_ANALYSIS || '/api/analysis/chat_analysis';
             const response = await fetch(apiUri, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -448,7 +449,6 @@ class AliceChat {
                 aliceEl.remove();
             } else {
                 aliceEl.innerHTML = this.mdToHtml(fullText);
-                const aliceSenderName = chatConst.SENDER_ALICE || 'Alice';
                 this.history.push({sender: aliceSenderName, text: aliceEl.innerHTML, isHtml: true});
                 this._saveHistory();
             }
@@ -465,13 +465,12 @@ class AliceChat {
      * Helper to parse score string (e.g., "+0.50", "M2").
      */
     parseScore(s) {
-        // Ưu tiên sử dụng logic tập trung từ ENGINE_SERVICE nếu có
-        if (window.CHESS_ENGINE && typeof window.CHESS_ENGINE.parseScore === 'function') {
-            return window.CHESS_ENGINE.parseScore(s);
+        if (window.LOGIC_GAME && window.LOGIC_GAME.engine && typeof window.LOGIC_GAME.engine.parseScore === 'function') {
+            return window.LOGIC_GAME.engine.parseScore(s);
         }
         
-        // Fallback nội bộ nếu EngineService chưa sẵn sàng
-        const engineConst = window.APP_CONST?.ENGINE || {};
+        // Fallback nội bộ nếu LogicGame chưa sẵn sàng
+        const engineConst = APP_CONST?.ENGINE || {};
         const normScore = engineConst.NORMALIZED_SCORE || { MATE: 100, DEFAULT: 0 };
         
         if (!s) return normScore.DEFAULT;
@@ -506,8 +505,9 @@ class AliceChat {
      * @returns {string}
      */
     mdToHtml(text) {
-        const mdStyle = window.APP_CONST?.CHAT?.MD_STYLE || { LI_MARGIN: '20px' };
+        const mdStyle = APP_CONST?.CHAT?.MD_STYLE || { LI_MARGIN: '20px' };
         let html = text;
+        html = html.replace(/\*\?(.*?)\*\*/g, '<strong>$1</strong>'); // Fixed regex partially
         html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/^(\s*)\* (.*?)$/gm, `<li style="margin-left: ${mdStyle.LI_MARGIN};">$2</li>`);
         html = html.replace(/\n/g, '<br>');
@@ -515,9 +515,3 @@ class AliceChat {
         return html;
     }
 }
-
-// Global initialization
-window.ALICE_CHAT = new AliceChat();
-
-// Compatibility wrappers for main.js
-window.displayChatbotMessage = (text, isBot) => window.ALICE_CHAT.displayMessage(text, isBot);

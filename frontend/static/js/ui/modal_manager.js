@@ -1,14 +1,17 @@
 /**
  * Modal Manager - Handles all popups including Load Data (FEN/PGN/AI) and Game Over
  */
-class ModalManager {
+
+import { APP_CONST } from '../constants.js';
+
+export class ModalManager {
     constructor() {
         this.loadDataModalInstance = null;
         this.gameOverModalInstance = null;
     }
 
     init() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const loadDataModalEl = document.getElementById(ids.LOAD_DATA_MODAL || "loadDataModal");
         if (loadDataModalEl) {
             this.loadDataModalInstance = new bootstrap.Modal(loadDataModalEl);
@@ -30,14 +33,14 @@ class ModalManager {
     showLoadDataModal() {
         if (this.loadDataModalInstance) this.loadDataModalInstance.show();
         else {
-            const ids = window.APP_CONST?.IDS || {};
+            const ids = APP_CONST?.IDS || {};
             const el = document.getElementById(ids.LOAD_DATA_MODAL || "loadDataModal");
             if (el) el.style.display = "block";
         }
     }
 
     showGameOverModal(title, body) {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const titleEl = document.getElementById(ids.GAME_OVER_MODAL_TITLE || "gameOverModalTitle");
         const bodyEl = document.getElementById(ids.GAME_OVER_MODAL_BODY || "gameOverModalBody");
 
@@ -50,8 +53,8 @@ class ModalManager {
     }
 
     setupLoadDataLogic() {
-        const ids = window.APP_CONST?.IDS || {};
-        const msgs = window.APP_CONST?.MESSAGES || {};
+        const ids = APP_CONST?.IDS || {};
+        const msgs = APP_CONST?.MESSAGES || {};
         const confirmLoadBtn = document.getElementById(ids.CONFIRM_LOAD_BTN || "confirm-load-btn");
         if (!confirmLoadBtn) return;
 
@@ -92,30 +95,35 @@ class ModalManager {
                         return;
                     }
 
-                    const data = await window.VISION_MANAGER.analyzeUpload(imageInput.files[0]);
-                    if (data.success) {
-                        success = true;
-                        fenToLoad = data.fen;
-                    } else {
-                        if (loader) loader.classList.add("d-none");
-                        window.VISION_MANAGER.showFriendlyError(statusEl, data.error);
-                        return;
+                    if (window.LOGIC_GAME && window.LOGIC_GAME.vision) {
+                        const data = await window.LOGIC_GAME.vision.analyzeUpload(imageInput.files[0]);
+                        if (data.success) {
+                            success = true;
+                            fenToLoad = data.fen;
+                        } else {
+                            if (loader) loader.classList.add("d-none");
+                            window.LOGIC_GAME.vision.showFriendlyError(statusEl, data.error);
+                            return;
+                        }
                     }
                 } else if (activeTabId === "live-scan-pane") {
-                    await window.VISION_MANAGER.performScan();
-                    if (loader) loader.classList.add("d-none");
+                    if (window.LOGIC_GAME && window.LOGIC_GAME.vision) {
+                        await window.LOGIC_GAME.vision.performScan();
+                    }
+                    if (this.loadDataModalInstance) this.loadDataModalInstance.hide();
                     return;
                 }
 
                 if (success && fenToLoad) {
-                    if (!window.VISION_MANAGER.isValidFen(fenToLoad)) {
+                    if (window.LOGIC_GAME && window.LOGIC_GAME.vision && !window.LOGIC_GAME.vision.isValidFen(fenToLoad)) {
                         if (loader) loader.classList.add("d-none");
                         const statusEl = document.getElementById(ids.SCAN_STATUS || "scan-status") || document.getElementById(ids.IMAGE_UPLOAD_STATUS || "image-upload-status");
                         if (statusEl) statusEl.textContent = msgs.ERROR_INVALID_FEN_KING || "⚠️ FEN không hợp lệ hoặc thiếu quân Vua.";
                     } else {
-                        window.clearBoard(); 
-                        window.initChessboard(window.board?.orientation() || "white", fenToLoad);
-                        window.updateUI();
+                        if (window.LOGIC_GAME) {
+                            const currentOrientation = window.board ? window.board.orientation() : "white";
+                            window.LOGIC_GAME.initBoard(currentOrientation, fenToLoad);
+                        }
                         if (loader) loader.classList.add("d-none");
                         if (this.loadDataModalInstance) this.loadDataModalInstance.hide();
                     }
@@ -131,38 +139,41 @@ class ModalManager {
     }
 
     setupGameOverLogic() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const btnNewGameModal = document.getElementById(ids.MODAL_NEW_GAME_BTN || "modalNewGameBtn");
         if (btnNewGameModal) {
             btnNewGameModal.addEventListener("click", () => {
                 if (this.gameOverModalInstance) this.gameOverModalInstance.hide();
 
-                window.clearBoard();
-                const gameInst = window.LOGIC_GAME?.getGame();
-                if (gameInst) window.updateUI();
+                if (window.LOGIC_GAME) {
+                    window.LOGIC_GAME.clearBoard();
 
-                const timeLimitMinutes = parseInt(window.selectedBotTime);
-                if (window.playerColor !== null && !isNaN(timeLimitMinutes) && timeLimitMinutes > 0 && gameInst) {
-                    if (window.initTimers) window.initTimers(timeLimitMinutes);
-                    if (window.startTimer) window.startTimer(gameInst.turn());
-                } else {
-                    if (window.resetTimers) window.resetTimers();
-                }
+                    const timeLimitMinutes = window.BOT_MANAGER ? parseInt(window.BOT_MANAGER.selectedTime) : 0;
+                    const gameInst = window.LOGIC_GAME.game;
+                    
+                    if (window.playerColor !== null && !isNaN(timeLimitMinutes) && timeLimitMinutes > 0 && gameInst) {
+                        window.TIMER_MANAGER?.init(timeLimitMinutes);
+                        window.TIMER_MANAGER?.start(gameInst.turn());
+                    } else {
+                        window.TIMER_MANAGER?.reset();
+                    }
 
-                if (window.playerColor === "b" && window.handleBotTurn) {
-                    window.handleBotTurn();
+                    if (window.playerColor === "b") {
+                        window.LOGIC_GAME.botGo();
+                    }
                 }
             });
         }
     }
 
     setupBotSettingsModal() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         this._setupCustomModalBehavior(ids.BOT_SETTINGS_MODAL || "bot-settings-modal", ids.NAV_PLAY_BOT || "#nav-play-bot");
     }
 
     /**
      * Helper for non-bootstrap custom modals
+     * @private
      */
     _setupCustomModalBehavior(modalId, triggerSelector) {
         const modalElement = document.getElementById(modalId);
@@ -186,6 +197,3 @@ class ModalManager {
         });
     }
 }
-
-window.MODAL_MANAGER = new ModalManager();
-document.addEventListener("DOMContentLoaded", () => window.MODAL_MANAGER.init());

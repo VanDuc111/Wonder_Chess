@@ -4,25 +4,34 @@
  * Built with an Object-Oriented approach for maintainability and performance.
  */
 
-
-
-
+import { APP_CONST } from '../constants.js';
+import { ChessUI } from '../ui/chess_ui.js';
+import { ChessEngine } from './engine_service.js';
+import { ChessOpening } from '../modules/opening_manager.js';
+import { OPENINGS_DATA } from '../data/opening_data.js';
 
 /**
  * Main Orchestrator Class for WonderChess.
  * Connects UI, Opening, and Engine components.
  */
-class ChessCore {
+export class ChessCore {
     /**
      * Initialize ChessCore and attach to global game state.
      */
     constructor() {
+        // Initialize global state for compatibility
+        window.playerColor = window.playerColor || null;
+        window.isPlayerTurn = (window.isPlayerTurn !== undefined) ? window.isPlayerTurn : true;
+        window.selectedBotEngine = window.selectedBotEngine || 'stockfish';
+        window.selectedBotLevel = window.selectedBotLevel || 10;
+
         this.ui = new ChessUI();
         this.engine = new ChessEngine();
         this.opening = new ChessOpening();
         this.sourceSquare = null;
         
         /** @type {Object} The chess.js instance */
+        // Note: Chess (chess.js) is currently loaded as a global.
         this.game = new Chess();
         /** @type {Array<Object>} Move history with metadata (FEN, score, etc.) */
         this.history = [{ fen: this.game.fen(), score: "0.00" }];
@@ -34,11 +43,12 @@ class ChessCore {
         /** @type {number} Monotonic counter to track board 'version' for async safety */
         this.boardVersion = 0;
 
+        // UI Update Throttling
+        this._pendingUIUpdate = false;
+
         this._initGlobalListeners();
         this._setupResize();
     }
-
-
 
     /**
      * Initializes a new chessboard or resets current one.
@@ -46,22 +56,27 @@ class ChessCore {
      * @param {string|null} [fen=null] - Optional FEN to start from.
      */
     initBoard(orientation = 'white', fen = null) {
-        const ids = window.APP_CONST?.IDS || {};
-        if (typeof board !== 'undefined' && board) try { board.destroy(); } catch(e){}
+        const ids = APP_CONST?.IDS || {};
+        const chessboardFunc = window.Chessboard || window.ChessBoard;
+        
+        if (!chessboardFunc) {
+            console.error("Chessboard library not loaded!");
+            return;
+        }
+
+        if (typeof window.board !== 'undefined' && window.board) try { window.board.destroy(); } catch(e){}
 
         // Check for 'op' param (opening slug)
-        // Standardized on "slugs" for clean, unique URLs (e.g. /?op=sicilian-defense)
         const urlParams = new URLSearchParams(window.location.search);
         const opSlug = urlParams.get('op');
         
-        // Legacy/Fallback check for ECO if users type it manually
+        // Legacy/Fallback check for ECO
         const opEco = urlParams.get('eco');
         
         let foundOp = null;
         
         if (typeof OPENINGS_DATA !== 'undefined') {
             if (opSlug) {
-                // Helper to slugify name matching the frontend/openings.js logic
                 const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
                 foundOp = OPENINGS_DATA.find(o => slugify(o.name) === opSlug);
             } else if (opEco) {
@@ -69,14 +84,11 @@ class ChessCore {
             }
         }
 
-        // Only load opening from URL if no specific FEN was requested as an argument
         if (!fen && foundOp) {
-            // Setup game from Opening Data
             this.game = new Chess();
             this.history = [{ fen: this.game.fen(), score: "0.00" }];
             this.index = 0;
 
-            // Clean moves string: "1. e4 e5 2. Nf3" -> ["e4", "e5", "Nf3"]
             const cleanMoves = foundOp.moves.replace(/\d+\./g, '').replace(/\.\.\./g, '').split(/\s+/).filter(m => m.length > 0);
             
             for (const m of cleanMoves) {
@@ -93,24 +105,22 @@ class ChessCore {
                 }
             }
             this.index = this.history.length - 1;
-            
-            // Allow board to init with this final FEN
             fen = this.game.fen();
         } else {
-            // Fallback to FEN param or default
             const urlFen = urlParams.get('fen');
             if (!fen && urlFen) fen = decodeURIComponent(urlFen);
             
-            const startFen = fen || window.APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            const startFen = fen || APP_CONST?.STARTING_FEN || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
             this.game = new Chess(startFen);
             this.history = [{ fen: this.game.fen(), score: "0.00" }];
             this.index = 0;
         }
         
-        board = Chessboard(ids.BOARD_ELEMENT || 'myBoard', {
+        // Initialize the board
+        window.board = chessboardFunc(ids.BOARD_ELEMENT || 'myBoard', {
             draggable: true, 
             position: this.game.fen(), 
-            pieceTheme: window.APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png',
+            pieceTheme: APP_CONST?.PATHS?.PIECE_THEME || 'static/img/chesspieces/wikipedia/{piece}.png',
             orientation, 
             moveSpeed: 150, 
             snapSpeed: 25,
@@ -120,13 +130,11 @@ class ChessCore {
         });
         
         const flipSwitch = document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch');
-        if (flipSwitch?.checked) board.orientation('black');
-        this.ui.syncOrientation(board.orientation() === 'black');
+        if (flipSwitch?.checked) window.board.orientation('black');
+        this.ui.syncOrientation(window.board.orientation() === 'black');
         
-        // Trigger turn end to ensure state is consistent and handle bot moves if necessary
         this.onTurnEnd(); 
         
-        // Explicitly set opening name in UI if loaded from Opening Data
         if (foundOp) {
              if (this.ui.dom.openingName) this.ui.dom.openingName.textContent = foundOp.name;
         }
@@ -144,10 +152,10 @@ class ChessCore {
      * @param {string} square - Square clicked (e.g., "e2").
      */
     handleSquareClick(square) {
-        if (!isPlayerTurn) return;
+        if (!window.isPlayerTurn) return;
 
         const piece = this.game.get(square);
-        const isMyPiece = piece && piece.color === this.game.turn() && (playerColor === null || piece.color === playerColor);
+        const isMyPiece = piece && piece.color === this.game.turn() && (window.playerColor === null || piece.color === window.playerColor);
 
         if (isMyPiece) {
             if (this.sourceSquare === square) return;
@@ -173,7 +181,7 @@ class ChessCore {
 
             if (move) {
                 if (isPromotion) uci += 'q';
-                board.position(this.game.fen());
+                window.board.position(this.game.fen());
                 this.handleLocalMove(uci);
                 this.sourceSquare = null;
             } else {
@@ -190,13 +198,22 @@ class ChessCore {
      * @returns {string|undefined} 'snapback' if move is invalid.
      * @async
      */
-    async onDrop(source, target) {
-        if (playerColor !== null && this.game.turn() !== playerColor) return 'snapback';
+    onDrop(source, target) {
+        if (window.playerColor !== null && this.game.turn() !== window.playerColor) return 'snapback';
+        
         let uci = source + target;
         const p = this.game.get(source);
         if (p?.type === 'p' && (target[1] === '8' || target[1] === '1')) uci += 'q';
-        if (this.game.move({ from: source, to: target, promotion: uci.endsWith('q') ? 'q' : undefined }) === null) return 'snapback';
-        await this.handleLocalMove(uci);
+        
+        const move = this.game.move({ 
+            from: source, 
+            to: target, 
+            promotion: uci.endsWith('q') ? 'q' : undefined 
+        });
+
+        if (move === null) return 'snapback';
+        
+        this.handleLocalMove(uci);
     }
 
     /**
@@ -213,13 +230,12 @@ class ChessCore {
         this.index = this.history.length - 1;
         this.opening.detectAndUpdate(this.history, this.index);
         this.ui.renderBestMoveArrow(null);
-        this.updateUI();
         
-        // Update captured pieces display
         if (window.updateCapturedPieces) {
             window.updateCapturedPieces(this.game);
         }
         
+        this.boardVersion++;
         await this.onTurnEnd();
     }
 
@@ -229,16 +245,15 @@ class ChessCore {
      */
     async onTurnEnd() {
         this.updateUI();
-        const isTimed = (typeof TIMER_MANAGER !== 'undefined' && TIMER_MANAGER.isTimedGame);
-        if (isTimed) TIMER_MANAGER.stop();
+        const isTimed = (window.TIMER_MANAGER && window.TIMER_MANAGER.isTimedGame);
+        if (isTimed) window.TIMER_MANAGER.stop();
         
         if (this.game.game_over()) {
             this._showGameOver();
-            isPlayerTurn = true; 
+            window.isPlayerTurn = true; 
             return;
         }
 
-        // --- EXPERT: Cancel previous stale evaluations ---
         if (this.evalAbortController) this.evalAbortController.abort();
         this.evalAbortController = new AbortController();
         const { signal } = this.evalAbortController;
@@ -246,12 +261,11 @@ class ChessCore {
         const savedIdx = this.index;
         const currentFen = this.game.fen();
 
-        // Perform evaluation with cancellation support
-        fetch(window.APP_CONST?.API?.EVALUATE || '/api/game/evaluate', {
+        fetch(APP_CONST?.API?.EVALUATE || '/api/game/evaluate', {
             method: 'POST', 
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ fen: currentFen }),
-            signal // Link to abort controller
+            signal
         })
         .then(res => res.json())
         .then(d => {
@@ -269,17 +283,16 @@ class ChessCore {
             }
         })
         .catch(err => {
-            if (err.name === 'AbortError') return; // Expected cancellation
+            if (err.name === 'AbortError') return;
             console.warn('Evaluation failed:', err);
         });
 
-        // Handle Bot or Human turn
-        if (playerColor !== null && this.game.turn() !== playerColor) {
-            if (isTimed) TIMER_MANAGER.start(this.game.turn(), selectedBotIncrement);
+        if (window.playerColor !== null && this.game.turn() !== window.playerColor) {
+            if (isTimed) window.TIMER_MANAGER.start(this.game.turn(), window.selectedBotIncrement);
             await this.botGo();
         } else {
-            if (isTimed) TIMER_MANAGER.start(this.game.turn(), selectedBotIncrement);
-            isPlayerTurn = true;
+            if (isTimed) window.TIMER_MANAGER.start(this.game.turn(), window.selectedBotIncrement);
+            window.isPlayerTurn = true;
         }
     }
 
@@ -288,17 +301,16 @@ class ChessCore {
      * @async
      */
     async botGo() {
-        isPlayerTurn = false;
+        window.isPlayerTurn = false;
         this.ui.renderBestMoveArrow(null);
         
-        const currentVersion = ++this.boardVersion; // Increment version per bot session
+        const currentVersion = ++this.boardVersion;
         const startTime = Date.now();
-        const MIN_THINKING_TIME = window.APP_CONST?.UI_CONFIG?.MIN_BOT_THINKING_TIME_MS || 1200;
+        const MIN_THINKING_TIME = APP_CONST?.UI_CONFIG?.MIN_BOT_THINKING_TIME_MS || 1200;
         
         try {
-            const r = await this.engine.getBestMove(this.game.fen(), selectedBotLevel || 10, selectedBotTime);
+            const r = await this.engine.getBestMove(this.game.fen(), window.selectedBotLevel || 10, window.selectedBotTime);
             
-            // --- EXPERT: Validate that game state has not changed (Undo/Restart) while thinking ---
             if (currentVersion !== this.boardVersion) {
                 console.log("⚠️ Ignoring Bot move: board state changed during calculation.");
                 return;
@@ -309,7 +321,6 @@ class ChessCore {
                 const remainingWait = Math.max(0, MIN_THINKING_TIME - elapsed);
                 if (remainingWait > 0) await new Promise(res => setTimeout(res, remainingWait));
                 
-                // Final sanity check before applying
                 if (currentVersion !== this.boardVersion) return;
 
                 this.game.move(r.move, { sloppy: true });
@@ -320,14 +331,16 @@ class ChessCore {
                 this.index = this.history.length - 1;
                 
                 this.opening.detectAndUpdate(this.history, this.index);
-                this.updateUI();
                 if (window.updateCapturedPieces) window.updateCapturedPieces(this.game);
                 
+                // Consolidation: onTurnEnd will call updateUI()
                 await this.onTurnEnd();
+            } else {
+                window.isPlayerTurn = true;
             }
         } catch (e) {
             console.error("Engine failure:", e);
-            if (currentVersion === this.boardVersion) isPlayerTurn = true;
+            if (currentVersion === this.boardVersion) window.isPlayerTurn = true;
         }
     }
 
@@ -335,58 +348,67 @@ class ChessCore {
      * Synchronizes all UI components with the current game state.
      */
     updateUI() {
-        const currentState = this.history[this.index];
-        if (!currentState) return;
+        if (this._pendingUIUpdate) return;
+        this._pendingUIUpdate = true;
 
-        if (typeof board !== 'undefined' && board) board.position(currentState.fen);
-        this.ui.updateAllHighlights(this.game, this.history, this.index);
-        this.ui.renderBestMoveArrow(currentState.bestMove || null);
+        window.requestAnimationFrame(() => {
+            const currentState = this.history[this.index];
+            if (!currentState) {
+                this._pendingUIUpdate = false;
+                return;
+            }
 
-        const op = this.opening.detectAndUpdate(this.history, this.index);
-        if (this.ui.dom.openingName) this.ui.dom.openingName.textContent = op.name;
+            // Sync Board Position
+            if (typeof window.board !== 'undefined' && window.board) {
+                const boardPos = window.board.fen();
+                const statePos = currentState.fen.split(' ')[0];
+                if (boardPos !== statePos) {
+                    window.board.position(currentState.fen);
+                }
+            }
 
-        this.ui.renderPGNTable(this.history, this.index, this.engine);
-        this.ui.updateNavButtons(this.index <= 0, this.index >= this.history.length - 1);
+            // Sync Highlights & Arrows
+            this.ui.updateAllHighlights(this.game, this.history, this.index);
+            this.ui.renderBestMoveArrow(currentState.bestMove || null);
 
-        if (currentState.score !== undefined && currentState.score !== null) {
-            this.ui.updateEvaluationBar(currentState.score, currentState.fen, this.game);
-        }
+            // Sync Opening Name
+            const op = this.opening.detectAndUpdate(this.history, this.index);
+            if (this.ui.dom.openingName) this.ui.dom.openingName.textContent = op.name;
+
+            // Sync History Table & Sidebar
+            this.ui.renderPGNTable(this.history, this.index, this.engine);
+            this.ui.updateNavButtons(this.index <= 0, this.index >= this.history.length - 1);
+
+            // Sync Eval Bar
+            if (currentState.score !== undefined && currentState.score !== null) {
+                this.ui.updateEvaluationBar(currentState.score, currentState.fen, this.game);
+            }
+
+            this._pendingUIUpdate = false;
+        });
     }
-
-
 
     /**
      * Initializes global event listeners (UI switches, keys).
      * @private
      */
     _initGlobalListeners() {
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch')?.addEventListener('change', () => { 
-                board?.flip(); 
-                this.ui.syncOrientation(board?.orientation() === 'black');
-                this.updateUI(); 
-            });
-            document.getElementById(ids.BEST_MOVE_SWITCH || 'best-move-switch')?.addEventListener('change', () => this.ui.renderBestMoveArrow(this.history[this.index]?.bestMove));
-            document.getElementById(ids.EVAL_BAR_SWITCH || 'eval-bar-switch')?.addEventListener('change', (e) => {
-                const w = document.querySelector('.score-alignment-wrapper');
-                if (w) { 
-                    w.style.display = e.target.checked ? 'flex' : 'none'; 
-                    if(e.target.checked) this.ui.syncBoardAndEvalHeight(); 
-                }
-            });
-            document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch')?.addEventListener('change', () => this.ui.renderPGNTable(this.history, this.index, this.engine));
+        document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch')?.addEventListener('change', () => { 
+            window.board?.flip(); 
+            this.ui.syncOrientation(window.board?.orientation() === 'black');
+            this.updateUI(); 
         });
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            if (e.key.toLowerCase() === 'f') document.getElementById(ids.FLIP_BOARD_SWITCH || 'flip-board-switch')?.click();
-            if (e.key === 'ArrowLeft') {
-                this.loadFen(this.index - 1);
-            } else if (e.key === 'ArrowRight') {
-                this.loadFen(this.index + 1);
+        document.getElementById(ids.BEST_MOVE_SWITCH || 'best-move-switch')?.addEventListener('change', () => this.ui.renderBestMoveArrow(this.history[this.index]?.bestMove));
+        document.getElementById(ids.EVAL_BAR_SWITCH || 'eval-bar-switch')?.addEventListener('change', (e) => {
+            const w = document.querySelector('.score-alignment-wrapper');
+            if (w) { 
+                w.style.display = e.target.checked ? 'flex' : 'none'; 
+                if(e.target.checked) this.ui.syncBoardAndEvalHeight(); 
             }
         });
+        document.getElementById(ids.MOVE_NOTATE_SWITCH || 'move-notate-switch')?.addEventListener('change', () => this.ui.renderPGNTable(this.history, this.index, this.engine));
     }
 
     /**
@@ -397,30 +419,29 @@ class ChessCore {
         if (window._boardResizeInitialized) return;
 
         const handleResize = () => {
-            if (typeof board !== 'undefined' && board) {
-                board.resize();
-                if (this.ui) this.ui.syncBoardAndEvalHeight();
+            if (typeof window.board !== 'undefined' && window.board) {
+                window.board.resize();
+            }
+            if (this.ui) {
+                this.ui.syncBoardAndEvalHeight();
             }
         };
 
-        window.addEventListener('resize', () => {
-            if (this._resizeTimer) clearTimeout(this._resizeTimer);
-            this._resizeTimer = setTimeout(handleResize, window.APP_CONST?.UI_CONFIG?.RESIZE_DEBOUNCE_MS || 150);
-        });
-
-        const ids = window.APP_CONST?.IDS || {};
+        const ids = APP_CONST?.IDS || {};
         const container = document.getElementById(ids.BOARD_CONTAINER || 'chessboard-main-container');
         if (container && window.ResizeObserver) {
-            const ro = new ResizeObserver((entries) => {
-                // Use requestAnimationFrame to sync with browser paint
-                window.requestAnimationFrame(() => handleResize());
+            let roTimeout = null;
+            const ro = new ResizeObserver(() => {
+                if (roTimeout) return;
+                roTimeout = setTimeout(() => {
+                    handleResize();
+                    roTimeout = null;
+                }, 100);
             });
             ro.observe(container);
         }
         window._boardResizeInitialized = true;
     }
-
-
 
     /**
      * Displays a Modal when game is over.
@@ -441,7 +462,7 @@ class ChessCore {
      * @private
      */
     _calculatePlayerStats() {
-        const isWhite = (playerColor === 'w' || playerColor === null);
+        const isWhite = (window.playerColor === 'w' || window.playerColor === null);
         const counts = {
             brilliant: 0, best: 0, good: 0, solid: 0, 
             blunder: 0, mistake: 0, inacc: 0, great: 0,
@@ -461,7 +482,7 @@ class ChessCore {
                 
                 if (m.score === null) continue;
 
-                const thresholds = window.APP_CONST?.QUALITY_THRESHOLDS || {};
+                const thresholds = APP_CONST?.QUALITY_THRESHOLDS || {};
                 const cur = this.engine.parseScore(m.score);
                 const pre = this.engine.parseScore(this.history[i-1].score);
                 const diff = isWhiteTurn ? (cur - pre) : (pre - cur);
@@ -480,8 +501,6 @@ class ChessCore {
         return counts;
     }
 
-
-
     /**
      * Chessboard event for move start.
      * @param {string} source - Square clicked.
@@ -489,9 +508,8 @@ class ChessCore {
      * @returns {boolean} True if drag is allowed.
      */
     onDragStart(source, piece) {
-        if (!isPlayerTurn || this.game.turn() !== piece[0]) return false;
+        if (!window.isPlayerTurn || this.game.turn() !== piece[0]) return false;
 
-        // Lưu ô bắt đầu dragging làm sourceSquare cho click-to-move
         this.sourceSquare = source;
 
         this.ui.updateAllHighlights(this.game, this.history, this.index);
@@ -507,9 +525,7 @@ class ChessCore {
     /**
      * Board sync after snap animation.
      */
-    onSnapEnd() { if (board && board.fen() !== this.game.fen()) board.position(this.game.fen(), false); }
-
-
+    onSnapEnd() { if (window.board && window.board.fen() !== this.game.fen()) window.board.position(this.game.fen(), false); }
 
     /**
      * Loads a specific FEN from the move history.
@@ -519,10 +535,9 @@ class ChessCore {
         if (i >= 0 && i < this.history.length) {
             this.index = i;
             this.game.load(this.history[i].fen);
-            board.position(this.history[i].fen);
+            window.board.position(this.history[i].fen);
             this.updateUI();
             
-            // Update captured pieces when navigating history
             if (window.updateCapturedPieces) {
                 window.updateCapturedPieces(this.game);
             }
@@ -532,14 +547,14 @@ class ChessCore {
      * Resets the game state and clears backend cache.
      */
     async clearBoard() {
-        const clearUrl = window.APP_CONST?.API?.CLEAR_CACHE || '/api/game/clear_cache';
+        const clearUrl = APP_CONST?.API?.CLEAR_CACHE || '/api/game/clear_cache';
         try {
             await fetch(clearUrl, { method: 'POST' });
         } catch (e) {
             console.warn("Failed to clear backend cache", e);
         }
 
-        const currentOrientation = (typeof board !== 'undefined' && board) ? board.orientation() : 'white';
+        const currentOrientation = (typeof window.board !== 'undefined' && window.board) ? window.board.orientation() : 'white';
         this.initBoard(currentOrientation);
         this.ui.renderBestMoveArrow(null);
         
@@ -550,43 +565,33 @@ class ChessCore {
      * Flips the board orientation and syncs UI helpers.
      */
     flipBoard() {
-        if (typeof board !== 'undefined' && board) {
-            board.flip();
-            this._syncOrientationUI();
+        if (typeof window.board !== 'undefined' && window.board) {
+            window.board.flip();
             this.updateUI();
         }
     }
+
+    /**
+     * Returns the current history index.
+     * @returns {number}
+     */
+    getIndex() {
+        return this.index;
+    }
+
+    /**
+     * Returns the full move history.
+     * @returns {Array<Object>}
+     */
+    getHistory() {
+        return this.history;
+    }
+
+    /**
+     * Returns the current chess.js instance.
+     * @returns {Object}
+     */
+    getGame() {
+        return this.game;
+    }
 }
-
-// Global Core Initialization
-const core = new ChessCore();
-
-/**
- * Public interface for main.js communication.
- */
-window.LOGIC_GAME = {
-    initChessboard: (o, f) => core.initBoard(o, f),
-    updateEvaluationBar: (s, f) => core.ui.updateEvaluationBar(s, f, core.game),
-    syncBoardAndEvalHeight: () => core.ui.syncBoardAndEvalHeight(),
-    makeMove: (m) => core.handleLocalMove(m),
-    onDrop: (s, t) => core.onDrop(s, t),
-    handleTurnEnd: (f) => core.onTurnEnd(f),
-    handleBotTurn: () => core.botGo(),
-    updateUI: () => core.updateUI(),
-    loadFen: (i) => core.loadFen(i),
-    clearBoard: () => core.clearBoard(),
-    updateAllHighlights: () => core.ui.updateAllHighlights(core.game, core.history, core.index),
-    updatePgnHistory: () => core.ui.renderPGNTable(core.history, core.index, core.engine),
-    fetchDeepEvaluation: (f) => core.engine.getDeepEval(f),
-    renderBestMoveArrow: (m) => core.ui.renderBestMoveArrow(m),
-    handleScoreUpdate: (s, f) => core.ui.updateEvaluationBar(s, f, core.game),
-    findKingSquare: (c) => core.ui._findKing(c, core.game),
-    showGameOver: (t, m) => core._showGameOver(t, m),
-    onDragStart: (s, p, po, o) => core.onDragStart(s, p, po, o),
-    onSnapEnd: () => core.onSnapEnd(),
-    flipBoard: () => core.flipBoard(),
-    // Expose core properties for debugging or main.js compatibility
-    getGame: () => core.game,
-    getHistory: () => core.history,
-    getIndex: () => core.index
-};
