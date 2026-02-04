@@ -121,37 +121,56 @@ class ChessAnalysisManager:
         except Exception:
             return uci_move
 
-    def get_move_quality_label(self, diff: float) -> str:
+    def get_move_quality_label(self, diff: float, is_best: bool = False, prev_v: float = 0.0, cur_v: float = 0.0) -> str:
         """
-        Determine move quality label based on evaluation difference.
+        Determine move quality label based on evaluation difference and position context.
+        Matches the 10 standard categories.
         
         Args:
             diff: Evaluation difference in pawns (positive = improvement)
+            is_best: Whether the move was the engine's top recommendation
+            prev_v: Previous score (used for Missed Win detection)
+            cur_v: Current score (used for Missed Win detection)
             
         Returns:
             str: Quality label in Vietnamese
-            
-        Quality Ranges:
-            > 1.5:  Brilliant
-            > 0.8:  Great
-            > 0.1:  Good
-            > -0.1: Best/Stable
-            > -0.3: Inaccuracy
-            > -0.7: Mistake
-            ≤ -0.7: Blunder
         """
-        if diff > AnalysisConfig.BRILLIANT_THRESHOLD:
+        # 1. Missed Win: Big advantage drops to draw/loss
+        was_winning = abs(prev_v) >= AnalysisConfig.MISS_WIN_FROM_THRESHOLD
+        lost_advantage = abs(cur_v) <= AnalysisConfig.MISS_WIN_TO_THRESHOLD
+        # Must be same side losing advantage (prev/cur have same sign or cross to negative for winner)
+        if was_winning and lost_advantage and diff < -1.0:
+            return AnalysisConfig.LABEL_MISS
+
+        # 2. Brilliant: Huge depth discovery, NOT the obvious best move
+        if diff >= AnalysisConfig.BRILLIANT_THRESHOLD and not is_best:
             return AnalysisConfig.LABEL_BRILLIANT
-        if diff > AnalysisConfig.GREAT_THRESHOLD:
+            
+        # 3. Great: Significant positional improvement
+        if diff >= AnalysisConfig.GREAT_THRESHOLD:
             return AnalysisConfig.LABEL_GREAT
-        if diff > AnalysisConfig.GOOD_THRESHOLD:
-            return AnalysisConfig.LABEL_GOOD
-        if diff > AnalysisConfig.BEST_THRESHOLD:
+            
+        # 4. Best: Engine's top choice within stable range
+        if is_best or diff >= AnalysisConfig.BEST_THRESHOLD:
             return AnalysisConfig.LABEL_BEST
-        if diff > AnalysisConfig.INACCURACY_THRESHOLD:
+            
+        # 5. Good: Small but positive improvement
+        if diff >= AnalysisConfig.GOOD_THRESHOLD:
+            return AnalysisConfig.LABEL_GOOD
+            
+        # 6. Solid: Acceptable move, minimal loss
+        if diff >= AnalysisConfig.SOLID_THRESHOLD:
+            return AnalysisConfig.LABEL_SOLID
+            
+        # 7. Inaccuracy: Clear mistake but not fatal
+        if diff >= AnalysisConfig.INACCURACY_THRESHOLD:
             return AnalysisConfig.LABEL_INACCURACY
-        if diff > AnalysisConfig.MISTAKE_THRESHOLD:
+            
+        # 8. Mistake: Serious positional or tactical error
+        if diff >= AnalysisConfig.MISTAKE_THRESHOLD:
             return AnalysisConfig.LABEL_MISTAKE
+            
+        # 9. Blunder: Fatal error
         return AnalysisConfig.LABEL_BLUNDER
 
     def prepare_analysis_context(
@@ -187,6 +206,9 @@ class ChessAnalysisManager:
         current_score = data.get('current_score') or engine_results.get('search_score', '0')
         prev_score = data.get('prev_score', '0.00')
         
+        prev_v = self.parse_score(prev_score)
+        cur_v = self.parse_score(current_score)
+        
         diff, last_player, current_turn = self.calculate_evaluation_diff(
             fen, current_score, prev_score
         )
@@ -196,14 +218,21 @@ class ChessAnalysisManager:
                    if abs(diff) > AnalysisConfig.EXTREME_DIFF_THRESHOLD 
                    else f"{diff:+.2f}")
         
+        # Check if last move was the engine's best move recommendation
+        best_move_uci = engine_results.get('best_move')
+        last_move_san = data.get('last_move_san')
+        last_move_uci = data.get('last_move_uci')
+        
+        is_best = (last_move_uci == best_move_uci) if last_move_uci and best_move_uci else False
+
         return {
             "fen": fen,
             "pgn": data.get('pgn', AnalysisConfig.PLAYER_NA),
-            "last_move_san": data.get('last_move_san', AnalysisConfig.PLAYER_NA),
-            "best_move_san": self.uci_to_san(fen, engine_results.get('best_move')),
+            "last_move_san": last_move_san or AnalysisConfig.PLAYER_NA,
+            "best_move_san": self.uci_to_san(fen, best_move_uci),
             "diff": diff,
             "diff_str": diff_str,
-            "quality_label": self.get_move_quality_label(diff),
+            "quality_label": self.get_move_quality_label(diff, is_best, prev_v, cur_v),
             "last_player": last_player,
             "current_turn": current_turn,
             "formatted_score": str(current_score),

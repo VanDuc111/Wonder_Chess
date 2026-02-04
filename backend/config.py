@@ -25,12 +25,12 @@ class EngineConfig:
     # Time Limits (in seconds)
     DEFAULT_THINK_TIME = 1.0  # For unlimited time games
     MAX_BOT_THINK_TIME = 2.0  # Maximum time bot can think in timed games
-    EVALUATION_TIME_LIMIT = 0.5  # Quick evaluation for UI bar
-    CHAT_ANALYSIS_TIME_LIMIT = 0.5  # Alice chat analysis
+    EVALUATION_TIME_LIMIT = 0.7  # Increased from 0.5 for stability
+    CHAT_ANALYSIS_TIME_LIMIT = 1.0  # Alice chat analysis needs more depth
     
     # Fallback Minimax Settings
-    FALLBACK_MAX_DEPTH = 8
-    FALLBACK_TIME_LIMIT = 0.1
+    FALLBACK_MAX_DEPTH = 10 # Increased from 8
+    FALLBACK_TIME_LIMIT = 0.3 # Increased from 0.1
     
     # Time Conversion
     MINUTES_TO_SECONDS = 60
@@ -66,26 +66,41 @@ class AnalysisConfig:
     """Chess move analysis and evaluation thresholds"""
     
     # Move Quality Thresholds (in pawns)
-    BRILLIANT_THRESHOLD = 1.5      # > 1.5 pawns improvement
-    GREAT_THRESHOLD = 0.8          # > 0.8 pawns improvement
-    GOOD_THRESHOLD = 0.1           # > 0.1 pawns improvement
-    BEST_THRESHOLD = -0.1          # Between -0.1 and 0.1 (best/stable)
-    INACCURACY_THRESHOLD = -0.3    # Between -0.3 and -0.1
-    MISTAKE_THRESHOLD = -0.7       # Between -0.7 and -0.3
-    # Below -0.7 is blunder
+    # Improvements
+    BRILLIANT_THRESHOLD = 1.6      # Very rare, huge improvement
+    GREAT_THRESHOLD = 0.9          # Significant improvement or forced best move
+    GOOD_THRESHOLD = 0.2           # Noticeable improvement
+    
+    # Neutral/Stable
+    BEST_THRESHOLD = -0.1          # Top engine choice (stable)
+    SOLID_THRESHOLD = -0.4         # Acceptable but not best
+    
+    # Errors
+    INACCURACY_THRESHOLD = -0.8    # Slight error
+    MISTAKE_THRESHOLD = -1.6       # Significant error
+    # Below MISTAKE_THRESHOLD is BLUNDER
+    
+    # Special: Missed Win
+    # Drop from a large winning advantage to a drawish/lost state
+    MISS_WIN_FROM_THRESHOLD = 2.5
+    MISS_WIN_TO_THRESHOLD = 0.6
     
     # Score Parsing
-    MATE_SCORE_ABSOLUTE = 100.0    # Absolute value for mate positions
+    MATE_SCORE_ABSOLUTE = 1000000.0    # Absolute value for mate positions
     EXTREME_DIFF_THRESHOLD = 50    # Threshold for "extremely large" difference
     
     # Move Quality Labels (Vietnamese)
     LABEL_BRILLIANT = "Thiên tài!!"
     LABEL_GREAT = "Tuyệt vời!"
-    LABEL_GOOD = "Tốt"
-    LABEL_BEST = "Tốt nhất/Ổn định"
-    LABEL_INACCURACY = "Thiếu chính xác"
+    LABEL_BEST = "Tốt nhất"
+    LABEL_BOOK = "Lý thuyết"
+    LABEL_GOOD = "Nước đi tốt"
+    LABEL_SOLID = "Vững chắc"
+    LABEL_INACCURACY = "Thiếu chính xác?!"
     LABEL_MISTAKE = "Sai lầm?"
     LABEL_BLUNDER = "Sai lầm nghiêm trọng??"
+    LABEL_MISS = "Bỏ lỡ cơ hội thắng"
+    
     LABEL_EXTREME_DIFF = "Cực kỳ lớn"
     
     # Player Names (Vietnamese)

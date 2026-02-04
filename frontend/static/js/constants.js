@@ -323,15 +323,28 @@ const UI_CONFIG = {
 };
 
 const QUALITY_THRESHOLDS = {
-    BRILLIANT: 1.5,
-    GREAT: 0.8,
-    GOOD: 0.1,
-    SOLID: -0.3,
-    MISTAKE: -0.7,
-    BLUNDER: -1.5,
-    INACCURATE: -0.3,
-    MISS_WIN_THRESHOLD: 2.5,
-    MISS_WIN_RESULT: 0.5
+    BRILLIANT: 1.6,
+    GREAT: 0.9,
+    BEST: -0.1,
+    GOOD: 0.2,
+    SOLID: -0.4,
+    INACCURATE: -0.8,
+    MISTAKE: -1.6,
+    MISS_WIN_FROM: 2.5,
+    MISS_WIN_TO: 0.6
+};
+
+const MOVE_QUALITY = {
+    BRILLIANT: { label: 'Thiên tài!!', icon: 'brilliant.svg', class: 'stat-brilliant' },
+    GREAT: { label: 'Tuyệt vời!', icon: 'great.svg', class: 'stat-good' },
+    BEST: { label: 'Tốt nhất', icon: 'best.svg', class: 'stat-best' },
+    BOOK: { label: 'Lý thuyết', icon: 'book.svg', class: 'stat-book' },
+    GOOD: { label: 'Nước đi tốt', icon: 'good.svg', class: 'stat-good' },
+    SOLID: { label: 'Vững chắc', icon: 'solid.svg', class: 'stat-solid' },
+    INACCURATE: { label: 'Thiếu chính xác?!', icon: 'inacc.svg', class: 'stat-inacc' },
+    MISTAKE: { label: 'Sai lầm?', icon: 'mistake.svg', class: 'stat-mistake' },
+    BLUNDER: { label: 'Sai lầm nghiêm trọng??', icon: 'blunder.svg', class: 'stat-blunder' },
+    MISS: { label: 'Bỏ lỡ cơ hội thắng', icon: 'miss.svg', class: 'stat-miss' }
 };
 
 const EDITOR = {
@@ -396,6 +409,7 @@ export const APP_CONST = {
     STRINGS,
     UI_CONFIG,
     QUALITY_THRESHOLDS,
+    MOVE_QUALITY,
     EDITOR,
     CHAT,
     STORAGE,

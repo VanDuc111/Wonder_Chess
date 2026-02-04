@@ -32,11 +32,21 @@ export class NavigationManager {
                 const path = window.location.pathname;
                 const isHomePage = path === "/" || path === "" || path.endsWith("/index.html") || path.endsWith("/");
                 const isToHome = href === "/" || href === "./" || href.endsWith("index.html");
+                const selectedMode = event.currentTarget.getAttribute("data-mode");
+
+                // Update active navigation state if it's a mode link
+                if (selectedMode) {
+                    this.modeLinks.forEach((item) => item.classList.remove(classes.NAV_ACTIVE || "active"));
+                    event.currentTarget.classList.add(classes.NAV_ACTIVE || "active");
+                }
 
                 if (isToHome) {
                     event.preventDefault();
                     this.collapseNavbar();
-                    if (window.LOGIC_GAME) {
+
+                    if (selectedMode === (modes.PLAY || "play")) return;
+
+                    if (window.LOGIC_GAME && selectedMode === (modes.ANALYZE || "analyze")) {
                         window.TIMER_MANAGER?.reset();
                         window.playerColor = null;
                         window.isPlayerTurn = true;
@@ -50,6 +60,9 @@ export class NavigationManager {
                         if (boardContainer) boardContainer.classList.remove(classes.ROTATED_BOARD || "rotated-board");
 
                         window.LOGIC_GAME.updateUI();
+                        if (typeof window.LOGIC_GAME.handleScoreUpdate === 'function') {
+                            window.LOGIC_GAME.handleScoreUpdate(APP_CONST?.STRINGS?.EVAL_DEFAULT || "0.00");
+                        }
                     }
                     return;
                 }
@@ -60,10 +73,6 @@ export class NavigationManager {
                 }
                 
                 event.preventDefault();
-                this.modeLinks.forEach((item) => item.classList.remove(classes.NAV_ACTIVE || "active"));
-                event.currentTarget.classList.add(classes.NAV_ACTIVE || "active");
-
-                const selectedMode = event.currentTarget.getAttribute("data-mode");
                 if (selectedMode === (modes.ANALYZE || "analyze")) {
                     this.setAnalyzeMode();
                 } else if (selectedMode === (modes.PLAY || "play")) {
@@ -141,7 +150,9 @@ export class NavigationManager {
             if (boardContainer) boardContainer.classList.remove(classes.ROTATED_BOARD || "rotated-board");
 
             window.LOGIC_GAME.updateUI();
-            window.LOGIC_GAME.handleScoreUpdate(APP_CONST?.STRINGS?.EVAL_DEFAULT || "0.00");
+            if (typeof window.LOGIC_GAME.handleScoreUpdate === 'function') {
+                window.LOGIC_GAME.handleScoreUpdate(APP_CONST?.STRINGS?.EVAL_DEFAULT || "0.00");
+            }
         }
 
         this.collapseNavbar();

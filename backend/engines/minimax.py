@@ -13,8 +13,8 @@ import time
 
 # --- CẤU HÌNH ENGINE ---
 ENGINE_DEPTH = 6
-MATE_SCORE = 100000
-TRANS_TABLE = {}  # Key: Zobrist Hash (Int), Value: (Depth, Score, Flag, BestMove)
+MATE_SCORE = 1000000
+TRANS_TABLE = {}
 
 # Hằng số Flag
 HASH_EXACT = 0
@@ -452,7 +452,7 @@ def find_best_move(fen, max_depth=ENGINE_DEPTH, time_limit=3.0, skill_level=10):
         mate_in_moves = (real_mate_in_plies + 1) // 2
         score_str = f"+M{mate_in_moves}" if final_score_visual > 0 else f"-M{mate_in_moves}"
     else:
-        score_str = f"{final_score_visual / 100:.2f}"
+        score_str = f"{final_score_visual / 100:+.2f}"
 
     return {
         'best_move': final_move.uci() if final_move else legal_moves[0].uci(),

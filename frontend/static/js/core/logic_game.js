@@ -271,13 +271,23 @@ export class ChessCore {
         .then(d => {
             if (d.success && d.engine_results && this.history[savedIdx]) {
                 const sc = d.engine_results.search_score;
-                this.ui.updateEvaluationBar(sc, currentFen, this.game);
+                const oldScore = this.history[savedIdx].score;
+                
+                // Debug log for score jumping
+                if (oldScore !== null && Math.abs(parseFloat(sc) - parseFloat(oldScore)) > 2.0) {
+                    console.warn(`[EvalJump] Move ${savedIdx} changed: ${oldScore} -> ${sc}`);
+                }
+
                 this.history[savedIdx].score = sc;
                 this.history[savedIdx].bestMove = d.engine_results.best_move;
                 
+                // Update table regardless of if it's the current move (to fill missing labels)
+                this.ui.renderPGNTable(this.history, this.index, this.engine);
+
+                // These UI elements only update if we are still on this position
                 if (savedIdx === this.index) {
+                    this.ui.updateEvaluationBar(sc, currentFen, this.game);
                     this.ui.renderBestMoveArrow(d.engine_results.best_move);
-                    this.ui.renderPGNTable(this.history, this.index, this.engine);
                     if (window.ALICE_CHAT) window.ALICE_CHAT.checkCoachComment();
                 }
             }
@@ -327,7 +337,9 @@ export class ChessCore {
                 const history = this.game.history();
                 const san = history[history.length - 1];
                 
-                this.history.push({ fen: this.game.fen(), score: r.score, san, uci: r.move });
+                // Push Bot move to history with null score to avoid "jumping"
+                // The authoritative evaluation will be filled by onTurnEnd()
+                this.history.push({ fen: this.game.fen(), score: null, san, uci: r.move });
                 this.index = this.history.length - 1;
                 
                 this.opening.detectAndUpdate(this.history, this.index);
@@ -363,7 +375,7 @@ export class ChessCore {
                 const boardPos = window.board.fen();
                 const statePos = currentState.fen.split(' ')[0];
                 if (boardPos !== statePos) {
-                    window.board.position(currentState.fen);
+                    window.board.position(currentState.fen, false);
                 }
             }
 
@@ -525,7 +537,12 @@ export class ChessCore {
     /**
      * Board sync after snap animation.
      */
-    onSnapEnd() { if (window.board && window.board.fen() !== this.game.fen()) window.board.position(this.game.fen(), false); }
+    onSnapEnd() { 
+        if (window.board && window.board.fen() !== this.game.fen()) {
+            window.board.position(this.game.fen(), false); 
+        }
+        this.updateUI(); 
+    }
 
     /**
      * Loads a specific FEN from the move history.

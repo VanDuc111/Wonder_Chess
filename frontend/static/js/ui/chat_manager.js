@@ -284,6 +284,7 @@ export class AliceChat {
                     move_count: historyArr.length > 0 ? historyArr.length - 1 : 0,
                     pgn: pgn,
                     last_move_san: lastMoveSan,
+                    last_move_uci: historyArr[curIdx]?.uci || 'N/A',
                     is_first_message: isFirst
                 })
             });
@@ -421,6 +422,7 @@ export class AliceChat {
                     move_count: curIdx,
                     pgn: pgn,
                     last_move_san: lastMoveSan,
+                    last_move_uci: historyArr[curIdx]?.uci || 'N/A',
                     is_first_message: false
                 })
             });

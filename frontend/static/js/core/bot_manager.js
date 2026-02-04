@@ -260,6 +260,14 @@ export class BotManager {
 
         if (this.dom.modal) this.dom.modal.style.display = 'none';
 
+        // Update active navigation state
+        const classes = APP_CONST?.CLASSES || {};
+        document.querySelectorAll(classes.NAV_MODE_LINK || ".nav-mode-link").forEach(link => {
+            link.classList.remove(classes.NAV_ACTIVE || "active");
+        });
+        const playBotLink = document.querySelector(APP_CONST?.IDS?.NAV_PLAY_BOT || "#nav-play-bot");
+        if (playBotLink) playBotLink.classList.add(classes.NAV_ACTIVE || "active");
+
         let finalPlayerColor = this.selectedColor;
         if (this.selectedColor === 'r') {
             const threshold = APP_CONST?.UI_CONFIG?.RANDOM_THRESHOLD || 0.5;

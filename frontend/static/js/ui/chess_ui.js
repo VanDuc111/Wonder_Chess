@@ -374,17 +374,33 @@ export class ChessUI {
         const m = history[idx];
         if (!m) return '';
         
-        // Return cached annotation if already calculated
+        // Return cached annotation if already calculated and final
         if (m.annotHtml !== undefined && (m.score !== null || m.isBookMove)) return m.annotHtml;
 
+        const qualities = APP_CONST?.MOVE_QUALITY || {};
+        const getIconHtml = (qKey) => {
+            const q = qualities[qKey];
+            if (!q) return '';
+            return `<span class="move-annotation" title="${q.label}"><img src="static/img/icon/${q.icon}"></span>`;
+        };
+
         if (m.isBookMove) {
-            m.annotHtml = `<span class="move-annotation" title="Book Move"><img src="static/img/icon/book.svg"></span>`;
+            m.annotHtml = getIconHtml('BOOK');
             return m.annotHtml;
         }
 
-        if (m.score === null || m.score === undefined || idx === 0 || !history[idx-1]) return '';
+        if (m.score === null || m.score === undefined || idx === 0) return '';
 
         const cur = engineService.parseScore(m.score);
+        
+        // Wait for previous score for full quality analysis
+        if (!history[idx-1] || history[idx-1].score === null || history[idx-1].score === undefined) {
+            if (history[idx-1] && history[idx-1].bestMove === m.uci) {
+                return getIconHtml('BEST');
+            }
+            return ''; 
+        }
+
         const pre = engineService.parseScore(history[idx-1].score);
         const diff = (idx % 2 !== 0) ? (cur - pre) : (pre - cur);
         const isBest = (history[idx-1].bestMove === m.uci);
@@ -392,18 +408,43 @@ export class ChessUI {
         const thresholds = APP_CONST?.QUALITY_THRESHOLDS || {};
         let annot = '';
 
-        if (diff > (thresholds.BRILLIANT || 1.5)) annot = `<span class="move-annotation" title="Brilliant"><img src="static/img/icon/brilliant.svg"></span>`;
-        else if (diff > (thresholds.GREAT || 0.8)) annot = `<span class="move-annotation" title="Great Move"><img src="static/img/icon/great.svg"></span>`;
-        else if (isBest) annot = `<span class="move-annotation" title="Best Move"><img src="static/img/icon/best.svg"></span>`;
-        else if (diff > (thresholds.GOOD || 0.1)) annot = `<span class="move-annotation" title="Good Move"><img src="static/img/icon/good.svg"></span>`;
-        else if (diff > (thresholds.SOLID || -0.3)) annot = `<span class="move-annotation" title="Solid Move"><img src="static/img/icon/solid.svg"></span>`;
+        // 1. Missed Win: Advantage drop
+        const wasWinning = Math.abs(pre) >= (thresholds.MISS_WIN_FROM || 2.5);
+        const lostAdvantage = Math.abs(cur) <= (thresholds.MISS_WIN_TO || 0.6);
+        if (wasWinning && lostAdvantage && diff < -1.0) {
+            annot = getIconHtml('MISS');
+        } 
+        // 2. Brilliant: Rare depth discovery
+        else if (diff >= (thresholds.BRILLIANT || 1.6) && !isBest) {
+            annot = getIconHtml('BRILLIANT');
+        }
+        // 3. Great: Forced or significant positional move
+        else if (diff >= (thresholds.GREAT || 0.9)) {
+            annot = getIconHtml('GREAT');
+        }
+        // 4. Best: Engine top choice
+        else if (isBest || diff >= (thresholds.BEST || -0.1)) {
+            annot = getIconHtml('BEST');
+        }
+        // 5. Good: Positive improvement
+        else if (diff >= (thresholds.GOOD || 0.2)) {
+            annot = getIconHtml('GOOD');
+        }
+        // 6. Solid: Stable, minimal loss
+        else if (diff >= (thresholds.SOLID || -0.4)) {
+            annot = getIconHtml('SOLID');
+        }
+        // 7. Inaccuracy
+        else if (diff >= (thresholds.INACCURATE || -0.8)) {
+            annot = getIconHtml('INACCURATE');
+        }
+        // 8. Mistake
+        else if (diff >= (thresholds.MISTAKE || -1.6)) {
+            annot = getIconHtml('MISTAKE');
+        }
+        // 9. Blunder
         else {
-            const isMissWin = Math.abs(pre) > (thresholds.MISS_WIN_THRESHOLD || 2.5) && 
-                              Math.abs(cur) < (thresholds.MISS_WIN_RESULT || 0.5);
-            if (isMissWin) annot = `<span class="move-annotation" title="Missed Win"><img src="static/img/icon/miss.svg"></span>`;
-            else if (diff < (thresholds.BLUNDER || -1.5)) annot = `<span class="move-annotation" title="Blunder"><img src="static/img/icon/blunder.svg"></span>`;
-            else if (diff < (thresholds.MISTAKE || -0.7)) annot = `<span class="move-annotation" title="Mistake"><img src="static/img/icon/mistake.svg"></span>`;
-            else if (diff <= (thresholds.INACCURATE || -0.3)) annot = `<span class="move-annotation" title="Inaccurate"><img src="static/img/icon/inacc.svg"></span>`;
+            annot = getIconHtml('BLUNDER');
         }
 
         m.annotHtml = annot;

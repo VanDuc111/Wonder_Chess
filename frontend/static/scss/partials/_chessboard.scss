@@ -193,6 +193,7 @@
   left: 0;
   background-color: var(--color-chess-white);
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #evaluation-score {
@@ -239,7 +240,7 @@
 }
 
 .highlight-check {
-  box-shadow: inset 0 0 0 2000px var(--color-highlight-check);
+  box-shadow: inset 0 0 0 2000px var(--color-highlight-check) !important;
 }
 
 .move-annotation {

@@ -1,68 +1,64 @@
 """
-Module: analysis_routes.py
-Mô tả: API điều phối phân tích bàn cờ. Kết nối dữ liệu từ Engine và AnalysisManager 
-để tạo ngữ cảnh cho AI API, giúp Alice đưa ra nhận xét chuyên sâu và chính xác.
+Analysis API Routes
+Coordinates chessboard analysis and Alice (Gemini AI) chat responses.
+Skinny route design that connects Engine results with AnalysisManager context.
 """
 
 from flask import Blueprint, jsonify, request, Response, stream_with_context
 from backend.services.gemini_service import stream_gemini_response
 from backend.services.analysis_manager import ChessAnalysisManager
-from backend.engines.minimax import find_best_move
-from backend.engines.stockfish_engine import get_stockfish_move
+from backend.services.engine_service import engine_service
 from backend.config import (
     EngineConfig,
     AIConfig,
     ErrorMessages,
     HTTPStatus
 )
-import chess
 
 analysis_bp = Blueprint('analysis', __name__)
 analysis_manager = ChessAnalysisManager()
 
+
 @analysis_bp.route('/chat_analysis', methods=['POST'])
 def chat_analysis() -> Response:
     """
-    API phân tích bàn cờ và trò chuyện với Alice (Gemini).
-    Skinny Route: Chỉ chịu trách nhiệm kết nối Dữ liệu, Engine và AI.
+    API for board analysis and chatting with Alice (Gemini AI).
+    Combines engine evaluations with AI reasoning for expert feedback.
     """
     data = request.get_json()
     user_question = data.get('user_question')
     fen = data.get('fen')
     is_first_message = data.get('is_first_message', False)
 
+    # Basic Validation
     if not user_question or not fen:
         return jsonify({
             'success': False, 
             'error': ErrorMessages.MISSING_FEN_OR_QUESTION
         }), HTTPStatus.BAD_REQUEST
 
-    # 1. Khởi tạo hướng dẫn chào hỏi
+    # 1. Determine conversation context (greeting or response)
     greeting_instruction = (
         AIConfig.GREETING_FIRST_MESSAGE if is_first_message 
         else AIConfig.GREETING_SUBSEQUENT
     )
 
-    # 2. Thu thập dữ liệu từ Engine
-    engine_results = AIConfig.DEFAULT_ENGINE_RESULTS.copy()
+    # 2. Gather engine data using abstracted service layer (guaranteed format)
     try:
-        # Ưu tiên Stockfish cho độ chính xác cao
-        engine_sf = get_stockfish_move(
-            fen, 
-            skill_level=EngineConfig.MAX_SKILL_LEVEL, 
+        engine_results = engine_service.get_best_move(
+            fen=fen,
+            engine_choice='stockfish',
             time_limit=EngineConfig.CHAT_ANALYSIS_TIME_LIMIT
         )
-        if engine_sf.get('success'):
-            engine_results.update(engine_sf)
-        else:
-            engine_results.update(find_best_move(fen))
     except Exception as e:
-        print(f"Engine Warning: {e}")
+        print(f"Engine Service Warning during chat_analysis: {e}")
+        engine_results = AIConfig.DEFAULT_ENGINE_RESULTS.copy()
+        engine_results['success'] = False
 
-    # 3. Sử dụng AnalysisManager để xử lý logic "nặng" (Calculations & Formatting)
+    # 3. Process context via AnalysisManager (heavy lifting calculations)
     ctx = analysis_manager.prepare_analysis_context(data, engine_results)
 
-    # 4. Xây dựng Prompt
+    # 4. Construct instruction prompt for Alice
     prompt_context = f"""
     Bạn là **Alice**, một **Trợ lý Cờ vua Đại kiện tướng (GM)** sắc sảo, thân thiện và am hiểu sâu sắc về văn hóa cờ vua.
     {greeting_instruction}
@@ -95,12 +91,12 @@ def chat_analysis() -> Response:
     - Nếu phân tích nước đi, hãy nêu rõ vì sao nước đó tốt hay xấu dựa trên chênh lệch `{ctx['diff']:+.2f}`.
     """
 
-    # 5. Stream phản hồi từ Gemini
+    # 5. Handle streaming response from Gemini service
     def generate_response():
         try:
             for chunk in stream_gemini_response(prompt_context):
                 yield chunk
         except Exception as e:
-            yield f"\n[Error: {str(e)}]"
+            yield f"\n[Error connecting to AI: {str(e)}]"
 
     return Response(stream_with_context(generate_response()), content_type='text/event-stream')

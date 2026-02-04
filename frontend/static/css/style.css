@@ -1071,6 +1071,8 @@ body.allow-scroll {
   background-color: var(--color-chess-white);
   -webkit-box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
           box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  -webkit-transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #evaluation-score {
@@ -1123,8 +1125,8 @@ body.allow-scroll {
 }
 
 .highlight-check {
-  -webkit-box-shadow: inset 0 0 0 2000px var(--color-highlight-check);
-          box-shadow: inset 0 0 0 2000px var(--color-highlight-check);
+  -webkit-box-shadow: inset 0 0 0 2000px var(--color-highlight-check) !important;
+          box-shadow: inset 0 0 0 2000px var(--color-highlight-check) !important;
 }
 
 .move-annotation {
