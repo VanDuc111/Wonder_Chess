@@ -620,8 +620,7 @@ body.allow-scroll {
     right: 0;
     bottom: 0;
     background: rgba(15, 15, 25, 0.98);
-    -webkit-backdrop-filter: blur(20px);
-            backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     z-index: 9999;
     padding: 80px 20px 40px;
     overflow-y: auto;
@@ -792,8 +791,7 @@ body.allow-scroll {
 /* Auth Dropdown Customization */
 .auth-dropdown-menu {
   background: rgba(15, 15, 25, 0.95);
-  -webkit-backdrop-filter: blur(20px);
-          backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 15px;
   margin-top: 10px !important;
@@ -1528,8 +1526,7 @@ body.allow-scroll {
 .history-container {
   background: var(--color-element-background);
   border: 1px solid var(--color-border-subtle);
-  -webkit-backdrop-filter: blur(var(--blur-strong));
-          backdrop-filter: blur(var(--blur-strong));
+  backdrop-filter: blur(var(--blur-strong));
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -1739,8 +1736,7 @@ body.allow-scroll {
   padding: var(--padding-xs) var(--padding-sm);
   position: relative;
   z-index: 10;
-  -webkit-backdrop-filter: blur(var(--blur-medium));
-          backdrop-filter: blur(var(--blur-medium));
+  backdrop-filter: blur(var(--blur-medium));
   -webkit-box-shadow: var(--shadow-card);
           box-shadow: var(--shadow-card);
 }
@@ -2017,7 +2013,6 @@ body.allow-scroll {
   padding: var(--padding-xs) var(--padding-sm);
   padding-right: var(--radius-pill);
   font-size: 0.95rem;
-  /* Reset browser autofill styles to match design */
 }
 #chatbot-input::-webkit-input-placeholder {
   color: var(--color-text-placeholder);
@@ -2045,6 +2040,7 @@ body.allow-scroll {
   opacity: 0.6;
 }
 #chatbot-input:-webkit-autofill, #chatbot-input:-webkit-autofill:hover, #chatbot-input:-webkit-autofill:focus, #chatbot-input:-webkit-autofill:active {
+  /* Reset browser autofill styles to match design */
   -webkit-box-shadow: 0 0 0 1000px var(--color-input-background) inset !important;
   -webkit-text-fill-color: var(--color-text-light) !important;
   -webkit-transition: background-color 5000s ease-in-out 0s;
@@ -2237,8 +2233,7 @@ body.allow-scroll {
       -ms-flex-pack: center;
           justify-content: center;
   background: var(--chat-overlay-bg);
-  -webkit-backdrop-filter: blur(var(--blur-subtle));
-          backdrop-filter: blur(var(--blur-subtle));
+  backdrop-filter: blur(var(--blur-subtle));
   -webkit-animation: fadeIn 0.3s ease-out;
           animation: fadeIn 0.3s ease-out;
 }
@@ -2452,8 +2447,7 @@ body.allow-scroll {
   -webkit-box-align: center;
       -ms-flex-align: center;
           align-items: center;
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
 }
 
 #bot-settings-modal .modal-content {
@@ -2667,8 +2661,7 @@ body.allow-scroll {
   width: 100%;
   height: 100%;
   background: rgba(15, 15, 26, 0.85);
-  -webkit-backdrop-filter: blur(8px);
-          backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -3219,8 +3212,7 @@ body.allow-scroll {
   border-radius: 4px;
   font-size: 0.85rem;
   z-index: 10;
-  -webkit-backdrop-filter: blur(4px);
-          backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -4043,8 +4035,7 @@ body.allow-scroll {
   width: 80px;
   height: 80px;
   background: rgba(255, 255, 255, 0.1);
-  -webkit-backdrop-filter: blur(10px);
-          backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: -webkit-box;
@@ -4082,8 +4073,7 @@ body.allow-scroll {
 
 .step-content {
   background: var(--color-glass-background);
-  -webkit-backdrop-filter: blur(var(--blur-strong));
-          backdrop-filter: blur(var(--blur-strong));
+  backdrop-filter: blur(var(--blur-strong));
   padding: 1.5rem;
   border-radius: var(--radius-container);
   border: 1px solid var(--color-border-subtle);
@@ -4629,8 +4619,7 @@ body.allow-scroll {
   border: 1px solid var(--color-glass-strong);
   -webkit-transition: var(--transition-base);
   transition: var(--transition-base);
-  -webkit-backdrop-filter: blur(var(--blur-subtle));
-          backdrop-filter: blur(var(--blur-subtle));
+  backdrop-filter: blur(var(--blur-subtle));
 }
 
 .analysis-controls-horizontal {
