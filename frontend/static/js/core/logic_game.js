@@ -437,6 +437,7 @@ export class ChessCore {
             if (this.ui) {
                 this.ui.syncBoardAndEvalHeight();
             }
+            this.updateUI();
         };
 
         const ids = APP_CONST?.IDS || {};
@@ -538,7 +539,7 @@ export class ChessCore {
      * Board sync after snap animation.
      */
     onSnapEnd() { 
-        if (window.board && window.board.fen() !== this.game.fen()) {
+        if (window.board && window.board.fen() !== this.game.fen().split(' ')[0]) {
             window.board.position(this.game.fen(), false); 
         }
         this.updateUI(); 

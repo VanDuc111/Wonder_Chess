@@ -18,6 +18,9 @@ try:
 except ImportError:
     from vision_core import find_board_corners, get_board_mapping_matrix, map_point_to_grid
 
+from backend.config import VisionConfig
+
+
 # --- CẤU HÌNH ---
 # Tự động load model một lần duy nhất
 PIECE_NAMES = {0: 'BB', 1: 'BK', 2: 'BKN', 3: 'BP', 4: 'BQ', 5: 'BR', 6: 'WB', 7: 'WK', 8: 'WKN', 9: 'WP', 10: 'WQ', 11: 'WR'}
@@ -29,14 +32,14 @@ PIECE_MODEL = None
 def get_board_model():
     global BOARD_MODEL
     if BOARD_MODEL is None:
-        # Revert to 640 because ONNX model has fixed input shape
-        BOARD_MODEL = YOLOv8ONNX('backend/models/chessboard_detector_best.onnx', imgsz=640)
+        # Revert to config YOLO_IMGSZ because ONNX model has fixed input shape
+        BOARD_MODEL = YOLOv8ONNX('backend/models/chessboard_detector_best.onnx', imgsz=VisionConfig.YOLO_IMGSZ)
     return BOARD_MODEL
 
 def get_piece_model():
     global PIECE_MODEL
     if PIECE_MODEL is None:
-        PIECE_MODEL = YOLOv8ONNX('backend/models/chess_pieces_detector_best.onnx', imgsz=640)
+        PIECE_MODEL = YOLOv8ONNX('backend/models/chess_pieces_detector_best.onnx', imgsz=VisionConfig.YOLO_IMGSZ)
     return PIECE_MODEL
 
 CLASS_TO_FEN = {
@@ -72,7 +75,7 @@ def analyze_image_to_fen(image_path):
         return None, None, None, "Lỗi đọc ảnh."
 
     h, w = img.shape[:2] # Chiều cao, chiều rộng 
-    max_dim = 1024 
+    max_dim = VisionConfig.MAX_IMAGE_DIM 
     if max(h, w) > max_dim:
         scale = max_dim / max(h, w)
         new_w, new_h = int(w * scale), int(h * scale)
@@ -90,7 +93,7 @@ def analyze_image_to_fen(image_path):
 
         print("- Bước 1: Đang tìm bàn cờ...")
         model = get_board_model()
-        board_results = model.predict(img, conf=0.3)
+        board_results = model.predict(img, conf=VisionConfig.BOARD_CONF_THRESHOLD)
         
         # Nếu đang chạy trên Render (RAM thấp), có thể cân nhắc xóa luôn sau khi dùng
         # model.clear() 
@@ -156,14 +159,14 @@ def analyze_image_to_fen(image_path):
         crop_w = x2 - x1
         crop_h = y2 - y1
 
-        if crop_w > 10 and crop_h > 10:  
+        if crop_w > VisionConfig.BOARD_CROP_MIN_SIZE and crop_h > VisionConfig.BOARD_CROP_MIN_SIZE:  
             try:
                 # --- PHÁN ĐOÁN NHANH 2D/3D ĐỂ ÁP PADDING ---
                 initial_aspect = crop_w / crop_h
-                is_likely_2d = 0.90 < initial_aspect < 1.10 and board_box['confidence'] > 0.7
+                is_likely_2d = VisionConfig.BOARD_ASPECT_MIN < initial_aspect < VisionConfig.BOARD_ASPECT_MAX and board_box['confidence'] > VisionConfig.BOARD_CONF_2D_THRESHOLD
                 
                 # 2D chỉ cần 2% lề (để lấy đủ viền), 3D cần 15%
-                p_ratio = 0.02 if is_likely_2d else 0.15
+                p_ratio = VisionConfig.PAD_RATIO_2D if is_likely_2d else VisionConfig.PAD_RATIO_3D
                 pad_w = int(crop_w * p_ratio)
                 pad_h = int(crop_h * p_ratio)
                 
@@ -224,7 +227,7 @@ def analyze_image_to_fen(image_path):
     try:
         print("- Bước 2: Đang nhận diện quân cờ...")
         model = get_piece_model()
-        piece_results = model.predict(img, conf=0.3)
+        piece_results = model.predict(img, conf=VisionConfig.PIECE_CONF_THRESHOLD)
         
         # Proactive memory clearing
         import gc
@@ -261,7 +264,7 @@ def analyze_image_to_fen(image_path):
         
         if refined_corners is not None:
             detected_width = np.linalg.norm(refined_corners[0] - refined_corners[1])
-            if detected_width > w * 0.5:
+            if detected_width > w * VisionConfig.REFINED_WIDTH_RATIO:
                 from backend.services.vision_core import is_quad_too_distorted
                 if not is_quad_too_distorted(refined_corners):
                     print("✅ OpenCV tinh chỉnh được góc bàn cờ.")
@@ -277,9 +280,9 @@ def analyze_image_to_fen(image_path):
         if not is_2d_mode:
             print("💡 Fallback 3D: Dùng lưới nội bộ (trừ lề lấn background).")
             # Padding 10% để chắc chắn loại bỏ phần nền gỗ bị AI bắt nhầm
-            board_x1 = w * 0.1
-            board_y1 = h * 0.1
-            board_size = w * 0.8
+            board_x1 = w * VisionConfig.FALLBACK_3D_PAD
+            board_y1 = h * VisionConfig.FALLBACK_3D_PAD
+            board_size = w * (1.0 - 2 * VisionConfig.FALLBACK_3D_PAD)
             sq_w = board_size / 8
             sq_h = board_size / 8
             corners = np.array([
@@ -351,7 +354,7 @@ def analyze_image_to_fen(image_path):
         else:
             ref_x = p["x"]
             # Đối với 3D, chân quân cờ quan trọng hơn tâm
-            ref_y = p["y"] + (p["height"] / 2) * 0.95 # Giảm xuống 0.95 để an toàn hơn 1.05
+            ref_y = p["y"] + (p["height"] / 2) * VisionConfig.Y_OFFSET_3D_ANCHOR # Giảm xuống 0.95 để an toàn hơn 1.05
         
         row, col = -1, -1
         if use_perspective:

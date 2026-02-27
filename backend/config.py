@@ -139,6 +139,25 @@ class VisionConfig:
     # Image Preprocessing
     GAUSSIAN_BLUR_KERNEL = (7, 7)
     GAUSSIAN_BLUR_SIGMA = 0
+    MAX_IMAGE_DIM = 1024
+    
+    # YOLO Inference
+    YOLO_IMGSZ = 640
+    BOARD_CONF_THRESHOLD = 0.3
+    PIECE_CONF_THRESHOLD = 0.3
+    
+    # Board Crop & Aspect
+    BOARD_CROP_MIN_SIZE = 10
+    BOARD_ASPECT_MIN = 0.90
+    BOARD_ASPECT_MAX = 1.10
+    BOARD_CONF_2D_THRESHOLD = 0.7
+    PAD_RATIO_2D = 0.02
+    PAD_RATIO_3D = 0.15
+    REFINED_WIDTH_RATIO = 0.5
+    FALLBACK_3D_PAD = 0.1
+    
+    # Piece anchor
+    Y_OFFSET_3D_ANCHOR = 0.95
     
     # Adaptive Threshold
     ADAPTIVE_BLOCK_SIZE = 21
