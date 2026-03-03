@@ -93,7 +93,7 @@ def analyze_image_to_fen(image_path):
 
         print("- Bước 1: Đang tìm bàn cờ...")
         model = get_board_model()
-        board_results = model.predict(img, conf=VisionConfig.BOARD_CONF_THRESHOLD)
+        board_results = model.predict(img, conf=VisionConfig.BOARD_CONF_THRESHOLD, iou=VisionConfig.IOU_THRESHOLD)
         
         # Nếu đang chạy trên Render (RAM thấp), có thể cân nhắc xóa luôn sau khi dùng
         # model.clear() 
@@ -227,7 +227,7 @@ def analyze_image_to_fen(image_path):
     try:
         print("- Bước 2: Đang nhận diện quân cờ...")
         model = get_piece_model()
-        piece_results = model.predict(img, conf=VisionConfig.PIECE_CONF_THRESHOLD)
+        piece_results = model.predict(img, conf=VisionConfig.PIECE_CONF_THRESHOLD, iou=VisionConfig.IOU_THRESHOLD)
         
         # Proactive memory clearing
         import gc
@@ -246,7 +246,7 @@ def analyze_image_to_fen(image_path):
                 'class': cls_name,
                 'confidence': float(res['conf'])
             })
-        print(f"✅ Tìm thấy {len(piece_preds)} quân cờ (ngưỡng 0.15).")
+        print(f"✅ Tìm thấy {len(piece_preds)} quân cờ.")
         # Log chi tiết các quân cờ để debug
         if len(piece_preds) > 0:
             names_found = [p['class'] for p in piece_preds[:5]]
@@ -411,7 +411,6 @@ def analyze_image_to_fen(image_path):
             print(f"  - Mapped {det['class']} ({char}) to [r:{row}, c:{col}] (Conf: {conf:.2f})")
         else:
             existing = final_placements[pos]
-            # Vì ta đã sắp xếp Vua và Conf cao lên đầu, các đống đè sau thường là nhiễu
             print(f"  - ⚠️ Overlap at [r:{row}, c:{col}]: {char} vs {existing['char']}. Kept {existing['char']}")
 
     # 5. Vẽ Box và nhãn Debug (Vẽ dựa trên piece_preds gốc để đảm bảo đầy đủ)

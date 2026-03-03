@@ -230,9 +230,11 @@ class YOLOv8ONNX:
                 
         return results
 
-    def predict(self, img, conf=None):
-        if conf:
+    def predict(self, img, conf=None, iou=None):
+        if conf is not None:
             self.conf_threshold = conf
+        if iou is not None:
+            self.iou_threshold = iou
             
         img_input, orig_shape, new_shape = self.preprocess(img)
         outputs = self.session.run(None, {self.input_name: img_input})

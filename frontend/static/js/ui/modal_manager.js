@@ -58,6 +58,27 @@ export class ModalManager {
         const confirmLoadBtn = document.getElementById(ids.CONFIRM_LOAD_BTN || "confirm-load-btn");
         if (!confirmLoadBtn) return;
 
+        const modalFooter = document.querySelector('#loadDataModal .modal-footer');
+        const loadTabs = document.querySelectorAll('#loadTabs .nav-link');
+        
+        if (loadTabs.length > 0 && modalFooter) {
+            loadTabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', (e) => {
+                    const targetId = e.target.getAttribute('data-bs-target');
+                    if (targetId === '#image-pane') {
+                        modalFooter.classList.add('d-none');
+                    } else {
+                        modalFooter.classList.remove('d-none');
+                    }
+                });
+            });
+            // Initial check
+            const activeTab = document.querySelector("#loadTabs .nav-link.active");
+            if (activeTab && activeTab.getAttribute('data-bs-target') === '#image-pane') {
+                modalFooter.classList.add('d-none');
+            }
+        }
+
         confirmLoadBtn.addEventListener("click", async () => {
             let success = false;
             let fenToLoad = null;
@@ -66,7 +87,7 @@ export class ModalManager {
             const activeTabId = activeTab ? activeTab.id : null;
             const loader = document.getElementById(ids.MODAL_LOADER_OVERLAY || "modal-loader-overlay");
 
-            if (activeTabId === "image-pane" || activeTabId === "live-scan-pane") {
+            if (activeTabId === "live-scan-pane") {
                 if (loader) loader.classList.remove("d-none");
             }
 
@@ -85,27 +106,7 @@ export class ModalManager {
                         success = tempGame.load(fenText);
                         if (success) fenToLoad = fenText;
                     }
-                } else if (activeTabId === "image-pane") {
-                    const imageInput = document.getElementById(ids.IMAGE_UPLOAD_INPUT || "image-upload-input");
-                    const statusEl = document.getElementById(ids.IMAGE_UPLOAD_STATUS || "image-upload-status");
 
-                    if (!imageInput || imageInput.files.length === 0) {
-                        if (loader) loader.classList.add("d-none");
-                        if (statusEl) statusEl.textContent = msgs.ERROR_SELECT_IMAGE || "Lỗi: Vui lòng chọn một file ảnh.";
-                        return;
-                    }
-
-                    if (window.LOGIC_GAME && window.LOGIC_GAME.vision) {
-                        const data = await window.LOGIC_GAME.vision.analyzeUpload(imageInput.files[0]);
-                        if (data.success) {
-                            success = true;
-                            fenToLoad = data.fen;
-                        } else {
-                            if (loader) loader.classList.add("d-none");
-                            window.LOGIC_GAME.vision.showFriendlyError(statusEl, data.error);
-                            return;
-                        }
-                    }
                 } else if (activeTabId === "live-scan-pane") {
                     if (window.LOGIC_GAME && window.LOGIC_GAME.vision) {
                         await window.LOGIC_GAME.vision.performScan();

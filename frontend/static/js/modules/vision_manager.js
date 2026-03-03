@@ -266,7 +266,12 @@ export class VisionManager {
 
         // Upload and Analyze
         try {
+            const loader = document.getElementById(APP_CONST?.IDS?.MODAL_LOADER_OVERLAY || 'modal-loader-overlay');
+            if (loader) loader.classList.remove('d-none');
+            
             const data = await this.analyzeUpload(file);
+            
+            if (loader) loader.classList.add('d-none');
             
             if (data.success) {
                  if (this.dom.imageStatus) this.dom.imageStatus.textContent = APP_CONST?.MESSAGES?.VISION_ANALYZE_SUCCESS || "✅ Phân tích thành công!";
@@ -292,6 +297,8 @@ export class VisionManager {
             }
         } catch (e) {
             console.error(e);
+            const loader = document.getElementById(APP_CONST?.IDS?.MODAL_LOADER_OVERLAY || 'modal-loader-overlay');
+            if (loader) loader.classList.add('d-none');
             if (this.dom.imageStatus) this.dom.imageStatus.textContent = APP_CONST?.MESSAGES?.VISION_SERVER_ERROR || "❌ Lỗi kết nối server.";
         }
     }
