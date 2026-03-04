@@ -13,6 +13,9 @@
             </button>
 
             <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <button class="mobile-close-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Close menu">
+                    <i class="bi bi-x"></i>
+                </button>
                 <ul class="navbar-nav justify-content-center flex-grow-1">
                     <li class="nav-item">
                         <a id="nav-analyze" class="nav-link nav-mode-link {{ 'active' if active_page == 'analyze' }}" href="{{ url_for('main.home') }}" data-mode="analyze">Phân tích</a>
@@ -42,12 +45,12 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end auth-dropdown-menu">
                                 <li>
-                                    <a class="dropdown-item auth-dropdown-item" href="#">
+                                    <a class="dropdown-item auth-dropdown-item" href="#" onclick="showToast('Chức năng đang được cập nhật!', 'warning'); return false;">
                                         <i class="fas fa-user-circle"></i> Hồ sơ
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item auth-dropdown-item" href="#">
+                                    <a class="dropdown-item auth-dropdown-item" href="#" onclick="showToast('Chức năng đang được cập nhật!', 'warning'); return false;">
                                         <i class="fas fa-history"></i> Lịch sử ván đấu
                                     </a>
                                 </li>

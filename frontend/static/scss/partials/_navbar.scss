@@ -26,7 +26,7 @@
 }
 
 .brand-text {
-    font-family: 'Poppins', 'Roboto', sans-serif;
+    font-family: var(--font-logo);
     display: flex;
     align-items: baseline;
 }
@@ -137,12 +137,30 @@
         background: rgba(15, 15, 25, 0.98);
         backdrop-filter: blur(20px);
         z-index: 9999;
-        padding: 80px 20px 40px;
+        padding: 60px 20px 40px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
+    }
+
+    .mobile-close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        z-index: 10000;
+        transition: transform 0.3s ease;
+    }
+
+    .mobile-close-btn:hover {
+        transform: scale(1.1) rotate(90deg);
+        color: var(--color-primary);
     }
     
     .navbar-collapse.collapsing {
@@ -194,6 +212,23 @@
         display: block !important;
         width: 100%;
         margin-top: 1rem;
+    }
+
+    .auth-dropdown-menu {
+        position: static !important;
+        float: none !important;
+        width: 100%;
+        margin-top: 15px !important;
+        background: rgba(26, 26, 46, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: none;
+        transform: none !important;
+    }
+    
+    .auth-dropdown-item {
+        justify-content: center;
+        padding: 12px;
+        font-size: 1.1rem;
     }
 }
 

@@ -493,22 +493,33 @@ export class ChessCore {
                     continue;
                 }
                 
-                if (m.score === null) continue;
+                let preScoreObj = this.history[i-1].score;
+                let isPrevBook = this.history[i-1].isBookMove;
+
+                if (preScoreObj === null || preScoreObj === undefined) {
+                    if (isPrevBook) {
+                        preScoreObj = "0.00";
+                    } else continue;
+                }
 
                 const thresholds = APP_CONST?.QUALITY_THRESHOLDS || {};
                 const cur = this.engine.parseScore(m.score);
-                const pre = this.engine.parseScore(this.history[i-1].score);
+                const pre = this.engine.parseScore(preScoreObj);
                 const diff = isWhiteTurn ? (cur - pre) : (pre - cur);
                 const isBest = (this.history[i-1].bestMove === m.uci);
 
-                if (diff > (thresholds.BRILLIANT || 1.5)) counts.brilliant++;
-                else if (diff > (thresholds.GREAT || 0.8)) counts.great++;
-                else if (isBest) counts.best++;
-                else if (diff > (thresholds.GOOD || 0.1)) counts.good++;
-                else if (diff > (thresholds.SOLID || -0.3)) counts.solid++;
-                else if (diff < (thresholds.BLUNDER || -1.5)) counts.blunder++;
-                else if (diff < (thresholds.MISTAKE || -0.7)) counts.mistake++;
-                else if (diff <= (thresholds.INACCURATE || -0.3)) counts.inacc++;
+                const wasWinning = Math.abs(pre) >= (thresholds.MISS_WIN_FROM || 2.5);
+                const lostAdvantage = Math.abs(cur) <= (thresholds.MISS_WIN_TO || 0.6);
+
+                if (wasWinning && lostAdvantage && diff < -1.0) counts.blunder++;
+                else if (diff >= (thresholds.BRILLIANT || 1.6) && !isBest) counts.brilliant++;
+                else if (diff >= (thresholds.GREAT || 0.9)) counts.great++;
+                else if (isBest || diff >= (thresholds.BEST || -0.1)) counts.best++;
+                else if (diff >= (thresholds.GOOD || 0.2)) counts.good++;
+                else if (diff >= (thresholds.SOLID || -0.4)) counts.solid++;
+                else if (diff >= (thresholds.INACCURATE || -0.8)) counts.inacc++;
+                else if (diff >= (thresholds.MISTAKE || -1.6)) counts.mistake++;
+                else counts.blunder++;
             }
         }
         return counts;

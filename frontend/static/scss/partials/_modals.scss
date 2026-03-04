@@ -183,34 +183,35 @@
 
 /* Custom Select for Dark Modal */
 .form-select-custom {
-  background: var(--color-element-background);
+  background: var(--color-glass-medium);
   border: 1px solid var(--color-border-subtle);
   color: white;
-  padding: 12px 18px;
+  padding: 12px 36px 12px 18px; /* Increased right padding */
   border-radius: var(--radius-lg);
   width: 100%;
   cursor: pointer;
-  transition: var(--transition-base);
+  transition: var(--transition-bounce);
   appearance: none;
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 18px center;
-  background-size: 14px;
-  font-size: 1rem;
+  background-position: right 14px center;
+  background-size: 12px;
+  font-size: 0.95rem;
 }
 
 .form-select-custom:focus {
   background-color: var(--color-glass-strong);
   border-color: var(--color-primary);
-  box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
+  box-shadow: 0 0 15px rgba(20, 184, 166, 0.3);
   outline: none;
 }
 
 .form-select-custom option {
-  background-color: var(--color-modal-bg-dark);
+  background-color: #1a1a2e;
   color: white;
-  padding: 10px;
+  padding: 12px;
+  font-size: 0.95rem;
 }
 
 /* Custom Range Input */

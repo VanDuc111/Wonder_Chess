@@ -391,61 +391,42 @@ export class ChessUI {
 
         if (m.score === null || m.score === undefined || idx === 0) return '';
 
-        const cur = engineService.parseScore(m.score);
-        
-        // Wait for previous score for full quality analysis
-        if (!history[idx-1] || history[idx-1].score === null || history[idx-1].score === undefined) {
-            if (history[idx-1] && history[idx-1].bestMove === m.uci) {
-                return getIconHtml('BEST');
+        let preScoreObj = history[idx-1] ? history[idx-1].score : null;
+        let isPrevBook = history[idx-1] ? history[idx-1].isBookMove : false;
+
+        // Nếu nước đi trước được load từ lý thuyết, gán điểm giả định 0.00
+        if (preScoreObj === null || preScoreObj === undefined) {
+            if (isPrevBook) {
+                preScoreObj = "0.00";
+            } else {
+                if (history[idx-1] && history[idx-1].bestMove === m.uci) {
+                    return getIconHtml('BEST');
+                }
+                return ''; 
             }
-            return ''; 
         }
 
-        const pre = engineService.parseScore(history[idx-1].score);
+        const cur = engineService.parseScore(m.score);
+        const pre = engineService.parseScore(preScoreObj);
         const diff = (idx % 2 !== 0) ? (cur - pre) : (pre - cur);
-        const isBest = (history[idx-1].bestMove === m.uci);
+        const isBest = (history[idx-1] && history[idx-1].bestMove === m.uci);
 
         const thresholds = APP_CONST?.QUALITY_THRESHOLDS || {};
         let annot = '';
 
-        // 1. Missed Win: Advantage drop
         const wasWinning = Math.abs(pre) >= (thresholds.MISS_WIN_FROM || 2.5);
         const lostAdvantage = Math.abs(cur) <= (thresholds.MISS_WIN_TO || 0.6);
-        if (wasWinning && lostAdvantage && diff < -1.0) {
-            annot = getIconHtml('MISS');
-        } 
-        // 2. Brilliant: Rare depth discovery
-        else if (diff >= (thresholds.BRILLIANT || 1.6) && !isBest) {
-            annot = getIconHtml('BRILLIANT');
-        }
-        // 3. Great: Forced or significant positional move
-        else if (diff >= (thresholds.GREAT || 0.9)) {
-            annot = getIconHtml('GREAT');
-        }
-        // 4. Best: Engine top choice
-        else if (isBest || diff >= (thresholds.BEST || -0.1)) {
-            annot = getIconHtml('BEST');
-        }
-        // 5. Good: Positive improvement
-        else if (diff >= (thresholds.GOOD || 0.2)) {
-            annot = getIconHtml('GOOD');
-        }
-        // 6. Solid: Stable, minimal loss
-        else if (diff >= (thresholds.SOLID || -0.4)) {
-            annot = getIconHtml('SOLID');
-        }
-        // 7. Inaccuracy
-        else if (diff >= (thresholds.INACCURATE || -0.8)) {
-            annot = getIconHtml('INACCURATE');
-        }
-        // 8. Mistake
-        else if (diff >= (thresholds.MISTAKE || -1.6)) {
-            annot = getIconHtml('MISTAKE');
-        }
-        // 9. Blunder
-        else {
-            annot = getIconHtml('BLUNDER');
-        }
+
+        if (wasWinning && lostAdvantage && diff < -1.0) annot = getIconHtml('MISS');
+        else if (diff >= (thresholds.BRILLIANT || 1.6) && !isBest) annot = getIconHtml('BRILLIANT');
+        else if (diff >= (thresholds.GREAT || 0.9)) annot = getIconHtml('GREAT');
+        else if (isBest) annot = getIconHtml('BEST');
+        else if (diff >= (thresholds.GOOD || 0.2)) annot = getIconHtml('GOOD');
+        else if (diff >= (thresholds.BEST || -0.1)) annot = getIconHtml('BEST');
+        else if (diff >= (thresholds.SOLID || -0.4)) annot = getIconHtml('SOLID');
+        else if (diff >= (thresholds.INACCURATE || -0.8)) annot = getIconHtml('INACCURATE');
+        else if (diff >= (thresholds.MISTAKE || -1.6)) annot = getIconHtml('MISTAKE');
+        else annot = getIconHtml('BLUNDER');
 
         m.annotHtml = annot;
         return annot;

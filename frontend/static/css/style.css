@@ -13,10 +13,13 @@
   --color-glass-strong: rgba(255, 255, 255, 0.08);
   --color-input-background: #1e1e3f;
   --color-adventure-gradient: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F0F1A 100%);
-  --color-primary: #4CAF50;
-  --color-primary-hover: #45a049;
+  --color-primary: #14B8A6;
+  --color-primary-hover: #0D9488;
   --color-danger: #dc3545;
   --color-success: #3cb371;
+  /* Magical Fonts */
+  --font-sans: 'Inter', sans-serif;
+  --font-logo: 'Playfair Display', serif;
   /* Typography Colors */
   --color-text-light: #E0E0E0;
   --color-text-dark: #1e1e3f;
@@ -142,7 +145,7 @@ html, body {
 }
 
 body {
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-sans);
   margin: 0;
   padding: 0 !important;
   color: var(--color-text-light);
@@ -490,7 +493,7 @@ body.allow-scroll {
 }
 
 .brand-text {
-  font-family: "Poppins", "Roboto", sans-serif;
+  font-family: var(--font-logo);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -622,7 +625,7 @@ body.allow-scroll {
     background: rgba(15, 15, 25, 0.98);
     backdrop-filter: blur(20px);
     z-index: 9999;
-    padding: 80px 20px 40px;
+    padding: 60px 20px 40px;
     overflow-y: auto;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -637,6 +640,26 @@ body.allow-scroll {
     -webkit-box-align: center;
         -ms-flex-align: center;
             align-items: center;
+  }
+  .mobile-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 10000;
+    -webkit-transition: -webkit-transform 0.3s ease;
+    transition: -webkit-transform 0.3s ease;
+    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, -webkit-transform 0.3s ease;
+  }
+  .mobile-close-btn:hover {
+    -webkit-transform: scale(1.1) rotate(90deg);
+            transform: scale(1.1) rotate(90deg);
+    color: var(--color-primary);
   }
   .navbar-collapse.collapsing {
     -webkit-transition: none;
@@ -685,6 +708,25 @@ body.allow-scroll {
     display: block !important;
     width: 100%;
     margin-top: 1rem;
+  }
+  .auth-dropdown-menu {
+    position: static !important;
+    float: none !important;
+    width: 100%;
+    margin-top: 15px !important;
+    background: rgba(26, 26, 46, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    -webkit-box-shadow: none;
+            box-shadow: none;
+    -webkit-transform: none !important;
+            transform: none !important;
+  }
+  .auth-dropdown-item {
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    padding: 12px;
+    font-size: 1.1rem;
   }
 }
 /* User Section Styles */
@@ -2531,37 +2573,38 @@ body.allow-scroll {
 
 /* Custom Select for Dark Modal */
 .form-select-custom {
-  background: var(--color-element-background);
+  background: var(--color-glass-medium);
   border: 1px solid var(--color-border-subtle);
   color: white;
-  padding: 12px 18px;
+  padding: 12px 36px 12px 18px; /* Increased right padding */
   border-radius: var(--radius-lg);
   width: 100%;
   cursor: pointer;
-  -webkit-transition: var(--transition-base);
-  transition: var(--transition-base);
+  -webkit-transition: var(--transition-bounce);
+  transition: var(--transition-bounce);
   -moz-appearance: none;
        appearance: none;
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 18px center;
-  background-size: 14px;
-  font-size: 1rem;
+  background-position: right 14px center;
+  background-size: 12px;
+  font-size: 0.95rem;
 }
 
 .form-select-custom:focus {
   background-color: var(--color-glass-strong);
   border-color: var(--color-primary);
-  -webkit-box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
-          box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
+  -webkit-box-shadow: 0 0 15px rgba(20, 184, 166, 0.3);
+          box-shadow: 0 0 15px rgba(20, 184, 166, 0.3);
   outline: none;
 }
 
 .form-select-custom option {
-  background-color: var(--color-modal-bg-dark);
+  background-color: #1a1a2e;
   color: white;
-  padding: 10px;
+  padding: 12px;
+  font-size: 0.95rem;
 }
 
 /* Custom Range Input */
@@ -3632,6 +3675,7 @@ body.allow-scroll {
   font-weight: 800;
   font-size: 1.8rem;
   margin-bottom: 5px;
+  font-family: var(--font-logo);
 }
 
 .auth-subtitle {
