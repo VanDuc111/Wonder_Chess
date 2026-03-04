@@ -48,7 +48,8 @@ def chat_analysis() -> Response:
         engine_results = engine_service.get_best_move(
             fen=fen,
             engine_choice='stockfish',
-            time_limit=EngineConfig.CHAT_ANALYSIS_TIME_LIMIT
+            time_limit=EngineConfig.CHAT_ANALYSIS_TIME_LIMIT,
+            skill_level=EngineConfig.MAX_SKILL_LEVEL
         )
     except Exception as e:
         print(f"Engine Service Warning during chat_analysis: {e}")
