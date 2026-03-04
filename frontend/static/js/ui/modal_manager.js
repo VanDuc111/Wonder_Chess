@@ -129,7 +129,7 @@ export class ModalManager {
                         if (this.loadDataModalInstance) this.loadDataModalInstance.hide();
                     }
                 } else if (activeTabId === "pgn-pane" || activeTabId === "fen-pane") {
-                    alert(msgs.LOAD_ERROR_DATA || "Lỗi: Dữ liệu PGN/FEN không hợp lệ.");
+                    showToast(msgs.LOAD_ERROR_DATA || "Lỗi: Dữ liệu PGN/FEN không hợp lệ.", "error");
                 }
             } catch (err) {
                 console.error("Lỗi confirm-load:", err);

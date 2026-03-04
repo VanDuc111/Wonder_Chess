@@ -106,7 +106,7 @@ export class AliceChat {
         setTimeout(() => {
             const welcomeMsg = typeof msgs.WELCOME === 'function' ? 
                 msgs.WELCOME(nickname) : 
-                `Chào bạn${nickname !== 'bạn' ? ', ' + nickname : ''}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
+                `Chào ${nickname === 'bạn' ? 'bạn' : 'bạn ' + nickname}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
             this.displayMessage(welcomeMsg, true, true);
         }, chatConst.WELCOME_DELAY_MS || 300);
     }

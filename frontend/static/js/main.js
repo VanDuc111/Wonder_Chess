@@ -15,6 +15,7 @@ import { VisionManager } from './modules/vision_manager.js';
 import { AuthManager } from './modules/auth_manager.js';
 import { BotManager } from './core/bot_manager.js';
 import { ChessTimer } from './modules/timer_manager.js';
+import { showToast } from './modules/toast_service.js';
 
 // Initialize Global Constants if not already present (for legacy/other scripts)
 window.APP_CONST = APP_CONST;
@@ -62,13 +63,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Chatbot welcome message
     const ids = APP_CONST?.IDS || {};
     const chatbotMessages = document.getElementById(ids.CHATBOT_MESSAGES || "chatbot-messages");
-    if (chatbotMessages && !sessionStorage.getItem("alice_welcomed")) {
+    if (chatbotMessages && window.ALICE_CHAT && window.ALICE_CHAT.history.length === 0) {
         const welcomeMessage = APP_CONST?.MESSAGES?.WELCOME
             ? APP_CONST.MESSAGES.WELCOME(displayName)
-            : `Chào ${displayName}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
+            : `Chào ${displayName === 'bạn' ? 'bạn' : 'bạn ' + displayName}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`;
 
         window.ALICE_CHAT.displayMessage(welcomeMessage);
-        sessionStorage.setItem("alice_welcomed", "true");
     }
 
     // Clear backend cache on startup

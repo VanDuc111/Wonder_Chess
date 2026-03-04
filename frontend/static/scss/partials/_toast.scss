@@ -1,0 +1,72 @@
+/* _toast.scss */
+
+.toast-container {
+    padding: 20px;
+    z-index: 2100; /* Higher than modals */
+}
+
+.wonder-toast {
+    background: rgba(26, 26, 46, 0.85) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--color-border-subtle) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+    color: var(--color-text-light) !important;
+    min-width: 300px;
+    overflow: hidden;
+    position: relative;
+    border-left: 4px solid var(--color-primary) !important;
+    transition: var(--transition-bounce);
+}
+
+.wonder-toast.toast-success {
+    border-left-color: var(--color-primary) !important;
+}
+
+.wonder-toast.toast-error {
+    border-left-color: var(--color-danger) !important;
+}
+
+.wonder-toast.toast-warning {
+    border-left-color: #fdd663 !important;
+}
+
+.wonder-toast .toast-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: var(--color-text-light) !important;
+    padding: 10px 15px;
+}
+
+.wonder-toast .toast-body {
+    padding: 15px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.wonder-toast .btn-close {
+    filter: invert(1);
+    opacity: 0.7;
+    transition: var(--transition-fast);
+}
+
+.wonder-toast .btn-close:hover {
+    opacity: 1;
+}
+
+/* Animation for toast */
+@keyframes toastFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.wonder-toast.showing {
+    animation: toastFadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}

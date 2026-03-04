@@ -2355,6 +2355,26 @@ body.allow-scroll {
   -webkit-transition: var(--transition-base);
   transition: var(--transition-base);
 }
+.modal-dark .form-control::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1;
+}
+.modal-dark .form-control::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1;
+}
+.modal-dark .form-control:-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1;
+}
+.modal-dark .form-control::-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1;
+}
+.modal-dark .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1;
+}
 
 .modal-dark .form-control:focus {
   background: var(--color-glass-background);
@@ -3691,6 +3711,26 @@ body.allow-scroll {
   -webkit-transition: all 0.3s ease !important;
   transition: all 0.3s ease !important;
 }
+.auth-input::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1; /* Firefox */
+}
+.auth-input::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1; /* Firefox */
+}
+.auth-input:-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1; /* Firefox */
+}
+.auth-input::-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1; /* Firefox */
+}
+.auth-input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1; /* Firefox */
+}
 
 .auth-input:focus {
   background: rgba(46, 204, 113, 0.05) !important;
@@ -4643,6 +4683,96 @@ body.allow-scroll {
   opacity: 0;
   -webkit-filter: blur(10px);
           filter: blur(10px);
+}
+
+/* _toast.scss */
+.toast-container {
+  padding: 20px;
+  z-index: 2100; /* Higher than modals */
+}
+
+.wonder-toast {
+  background: rgba(26, 26, 46, 0.85) !important;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--color-border-subtle) !important;
+  border-radius: var(--radius-lg) !important;
+  -webkit-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+  color: var(--color-text-light) !important;
+  min-width: 300px;
+  overflow: hidden;
+  position: relative;
+  border-left: 4px solid var(--color-primary) !important;
+  -webkit-transition: var(--transition-bounce);
+  transition: var(--transition-bounce);
+}
+
+.wonder-toast.toast-success {
+  border-left-color: var(--color-primary) !important;
+}
+
+.wonder-toast.toast-error {
+  border-left-color: var(--color-danger) !important;
+}
+
+.wonder-toast.toast-warning {
+  border-left-color: #fdd663 !important;
+}
+
+.wonder-toast .toast-header {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-light) !important;
+  padding: 10px 15px;
+}
+
+.wonder-toast .toast-body {
+  padding: 15px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.wonder-toast .btn-close {
+  -webkit-filter: invert(1);
+          filter: invert(1);
+  opacity: 0.7;
+  -webkit-transition: var(--transition-fast);
+  transition: var(--transition-fast);
+}
+
+.wonder-toast .btn-close:hover {
+  opacity: 1;
+}
+
+/* Animation for toast */
+@-webkit-keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    -webkit-transform: translateX(100px) scale(0.9);
+            transform: translateX(100px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateX(0) scale(1);
+            transform: translateX(0) scale(1);
+  }
+}
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    -webkit-transform: translateX(100px) scale(0.9);
+            transform: translateX(100px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateX(0) scale(1);
+            transform: translateX(0) scale(1);
+  }
+}
+.wonder-toast.showing {
+  -webkit-animation: toastFadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          animation: toastFadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* 13. ANALYSIS SETTINGS */

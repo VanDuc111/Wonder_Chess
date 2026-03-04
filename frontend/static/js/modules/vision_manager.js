@@ -247,7 +247,7 @@ export class VisionManager {
      */
     async _handleImageFiles(file) {
         if (!file.type.startsWith('image/')) {
-            alert(APP_CONST?.MESSAGES?.INVALID_IMAGE || "Vui lòng chọn file ảnh hợp lệ (JPG, PNG).");
+            showToast(APP_CONST?.MESSAGES?.INVALID_IMAGE || "Vui lòng chọn file ảnh hợp lệ (JPG, PNG).", "error");
             return;
         }
 

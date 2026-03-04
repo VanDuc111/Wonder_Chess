@@ -229,7 +229,8 @@ const IDS = {
     SIGNIN_FORM: 'signin-form',
     SIGNUP_FORM: 'signup-form',
     LOGOUT_BTN: 'btn-logout',
-    BTN_AUTH_SUBMIT: '.btn-auth-submit'
+    BTN_AUTH_SUBMIT: '.btn-auth-submit',
+    TOAST_CONTAINER: 'toast-container'
 };
 
 const API = {
@@ -245,7 +246,7 @@ const API = {
 };
 
 const MESSAGES = {
-    WELCOME: (name) => `Chào bạn, ${name}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`,
+    WELCOME: (name) => `Chào ${name === 'bạn' ? 'bạn' : 'bạn ' + name}! Tôi là Alice. Tôi có thể giúp gì cho hành trình cờ vua của bạn?`,
     ALICE_IDLE: "Sẵn sàng...",
     ALICE_THINKING: "Alice đang suy nghĩ...",
     VISION_SUPPORTED_FORMATS: "Định dạng hỗ trợ: JPG, PNG. Ảnh rõ nét sẽ cho kết quả chính xác nhất.",

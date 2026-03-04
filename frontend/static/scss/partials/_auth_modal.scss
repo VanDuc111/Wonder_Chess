@@ -109,6 +109,11 @@
     border-radius: 14px !important;
     font-size: 0.95rem !important;
     transition: all 0.3s ease !important;
+
+    &::placeholder {
+        color: rgba(255, 255, 255, 0.4) !important;
+        opacity: 1; /* Firefox */
+    }
 }
 
 .auth-input:focus {

@@ -62,13 +62,14 @@ export class AuthManager {
                     const result = await response.json();
 
                     if (result.success) {
-                        window.location.reload(); 
+                        showToast(result.message || 'Đăng nhập thành công!', 'success');
+                        setTimeout(() => window.location.reload(), 800);
                     } else {
-                        alert(result.message || msgs.AUTH_LOGIN_ERROR || 'Đăng nhập không thành công.');
+                        showToast(result.message || msgs.AUTH_LOGIN_ERROR || 'Đăng nhập không thành công.', 'error');
                     }
                 } catch (error) {
                     console.error('Login Error:', error);
-                    alert(msgs.AUTH_SYSTEM_ERROR || 'Có lỗi xảy ra, vui lòng thử lại.');
+                    showToast(msgs.AUTH_SYSTEM_ERROR || 'Có lỗi xảy ra, vui lòng thử lại.', 'error');
                 } finally {
                     this._setBtnLoading(signInForm, false);
                 }
@@ -94,13 +95,14 @@ export class AuthManager {
                     const result = await response.json();
 
                     if (result.success) {
-                        window.location.reload();
+                        showToast(result.message || 'Đăng ký thành công!', 'success');
+                        setTimeout(() => window.location.reload(), 800);
                     } else {
-                        alert(result.message || msgs.AUTH_SIGNUP_ERROR || 'Đăng ký không thành công.');
+                        showToast(result.message || msgs.AUTH_SIGNUP_ERROR || 'Đăng ký không thành công.', 'error');
                     }
                 } catch (error) {
                     console.error('Signup Error:', error);
-                    alert(msgs.AUTH_SYSTEM_ERROR || 'Có lỗi xảy ra, vui lòng thử lại.');
+                    showToast(msgs.AUTH_SYSTEM_ERROR || 'Có lỗi xảy ra, vui lòng thử lại.', 'error');
                 } finally {
                     this._setBtnLoading(signUpForm, false);
                 }
