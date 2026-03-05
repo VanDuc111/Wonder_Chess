@@ -392,7 +392,9 @@ export class BoardEditor {
                 top: (touch.clientY - offset) + 'px'
             });
             document.body.appendChild(touchPiece);
-            if (e.cancelable) e.preventDefault();
+            if (e.cancelable) {
+                e.preventDefault();
+            }
         }, { passive: false });
 
         const move = (e) => {
@@ -401,7 +403,9 @@ export class BoardEditor {
             const offset = APP_CONST?.EDITOR?.TOUCH_PIECE_OFFSET || 22;
             touchPiece.style.left = (t.clientX - offset) + 'px';
             touchPiece.style.top = (t.clientY - offset) + 'px';
-            if (e.cancelable) e.preventDefault();
+            if (e.cancelable) {
+                e.preventDefault();
+            }
         };
         imgEl.addEventListener('touchmove', move, { passive: false });
 

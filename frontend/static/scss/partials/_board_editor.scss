@@ -344,23 +344,22 @@
 
 @media (max-width: 991.98px) {
     .board-editor-container {
-        flex-direction: row;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 5px;
+        gap: 15px;
         width: 100%;
-        margin-bottom: 10px;
+        margin-bottom: 20px;
         padding: 0;
     }
     
     .editor-board-wrapper {
-        flex: 1;
+        order: 1; /* Board on top */
         width: 100% !important;
-        max-width: none !important;
+        max-width: 100% !important;
         margin: 0 !important;
-        border: none;
-        box-shadow: none;
-        order: unset;
+        border: 2px solid var(--color-border-subtle);
+        box-shadow: var(--shadow-deep);
+        border-radius: var(--radius-default);
     }
     
     #editorBoard {
@@ -368,26 +367,38 @@
     }
 
     .piece-selector {
-        flex-direction: column;
-        width: auto;
-        padding: 2px;
-        gap: 4px;
-        background: none;
-        border: none;
+        order: 2; /* Selectors below board */
+        flex-direction: row;
+        width: 100%;
+        padding: 8px;
+        gap: 8px;
+        background: var(--color-glass-subtle);
+        border: 1px solid var(--color-border-subtle);
         justify-content: center;
+        align-items: center;
+    }
+
+    .piece-selector-right {
+        order: 3;
     }
     
     .piece-buttons {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: nowrap;
         gap: 4px;
-        grid-template-columns: none;
+        justify-content: center;
     }
     
     .btn-piece, .btn-editor-tool {
-        width: 40px; /* Base mobile size */
-        height: 40px;
-        padding: 2px;
+        width: 42px;
+        height: 42px;
+        padding: 4px;
+        flex: 0 0 auto;
+    }
+
+    .btn-editor-tool {
+        margin-right: 4px; /* Space between tool and pieces */
     }
 
     .board-editor-split {
@@ -395,19 +406,23 @@
     }
 
     .reference-image-container {
-        height: 200px; /* Shorter image for mobile to focus on board */
-        margin-top: 10px;
+        height: 250px;
+        margin-top: 15px;
     }
 }
 
 @media (max-width: 576.98px) {
     .btn-piece, .btn-editor-tool {
-        width: 36px; /* Even smaller for narrow phones */
-        height: 36px;
+        width: 40px; 
+        height: 40px;
     }
     
     .board-editor-container {
-        gap: 2px;
+        gap: 10px;
+    }
+
+    .piece-buttons {
+        gap: 4px;
     }
 
     .editor-actions {

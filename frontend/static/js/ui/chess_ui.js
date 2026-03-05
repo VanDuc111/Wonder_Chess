@@ -129,7 +129,10 @@ export class ChessUI {
      * @private
      */
     _applyEvalUI(percent, score) {
-        if (this.dom.evalBar) this.dom.evalBar.style.height = `${percent}%`;
+        if (this.dom.evalBar) {
+            this.dom.evalBar.style.height = window.innerWidth < 768 ? '100%' : `${percent}%`;
+            this.dom.evalBar.style.width = window.innerWidth < 768 ? `${percent}%` : '100%';
+        }
         if (this.dom.evalScore) this.dom.evalScore.textContent = score;
     }
 
@@ -158,16 +161,31 @@ export class ChessUI {
                 const rootStyles = getComputedStyle(document.documentElement);
                 this._cachedOffsets = {
                     desktop: parseInt(rootStyles.getPropertyValue('--eval-offset-desktop')) || (offsets.DESKTOP || 45),
-                    tablet: parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || (offsets.TABLET || 55),
-                    mobile: parseInt(rootStyles.getPropertyValue('--eval-offset-mobile')) || (offsets.MOBILE || 48)
+                    tablet: parseInt(rootStyles.getPropertyValue('--eval-offset-tablet')) || (offsets.TABLET || 55)
                 };
             }
             
             const screenWidth = window.innerWidth;
-            let offset;
-            if (screenWidth >= (offsets.BREAKPOINT_LG || 992)) offset = this._cachedOffsets.desktop;
-            else if (screenWidth >= (offsets.BREAKPOINT_MD || 577)) offset = this._cachedOffsets.tablet;
-            else offset = this._cachedOffsets.mobile;
+            if (screenWidth < 768) {
+                // Remove inline heights on mobile so CSS can take over horizontally
+                this.dom.wrapper.style.height = '';
+                this.dom.barCont.style.height = '';
+                
+                // Keep percentage updated correctly if screen resized
+                if (this.dom.evalBar && this.dom.evalBar.style.height.includes('%') && this.dom.evalBar.style.height !== '100%') {
+                   this.dom.evalBar.style.width = this.dom.evalBar.style.height;
+                   this.dom.evalBar.style.height = '100%';
+                }
+                return;
+            }
+
+            // Restore width to 100% if returning from mobile
+            if (this.dom.evalBar && this.dom.evalBar.style.width.includes('%')) {
+                this.dom.evalBar.style.height = this.dom.evalBar.style.width;
+                this.dom.evalBar.style.width = '100%';
+            }
+
+            let offset = screenWidth >= (offsets.BREAKPOINT_LG || 992) ? this._cachedOffsets.desktop : this._cachedOffsets.tablet;
             
             const wrapperHeight = h - (offset * 2);
             this.dom.wrapper.style.height = `${wrapperHeight}px`;

@@ -1585,7 +1585,9 @@
     // -------------------------------------------------------------------------
 
     function stopDefault (evt) {
-      evt.preventDefault()
+      if (evt && evt.cancelable !== false) {
+        evt.preventDefault()
+      }
     }
 
     function mousedownSquare (evt) {
@@ -1655,7 +1657,9 @@
       if (!isDragging) return
 
       // prevent screen from scrolling
-      evt.preventDefault()
+      if (evt && evt.cancelable !== false) {
+        evt.preventDefault()
+      }
 
       updateDraggedPiece(evt.originalEvent.changedTouches[0].pageX,
         evt.originalEvent.changedTouches[0].pageY)

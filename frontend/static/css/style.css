@@ -214,8 +214,8 @@ body.allow-scroll {
     margin-right: 0 !important;
   }
   .container-fluid {
-    padding-left: 15px !important;
-    padding-right: 15px !important;
+    padding-left: 0;
+    padding-right: 0;
     overflow-x: hidden !important;
   }
   .navbar .container-fluid {
@@ -3533,67 +3533,83 @@ body.allow-scroll {
 
 @media (max-width: 991.98px) {
   .board-editor-container {
-    -webkit-box-orient: horizontal;
+    -webkit-box-orient: vertical;
     -webkit-box-direction: normal;
-        -ms-flex-direction: row;
-            flex-direction: row;
+        -ms-flex-direction: column;
+            flex-direction: column;
     -webkit-box-align: center;
         -ms-flex-align: center;
             align-items: center;
-    -webkit-box-pack: center;
-        -ms-flex-pack: center;
-            justify-content: center;
-    gap: 5px;
+    gap: 15px;
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     padding: 0;
   }
   .editor-board-wrapper {
-    -webkit-box-flex: 1;
-        -ms-flex: 1;
-            flex: 1;
+    -webkit-box-ordinal-group: 2;
+        -ms-flex-order: 1;
+            order: 1; /* Board on top */
     width: 100% !important;
-    max-width: none !important;
+    max-width: 100% !important;
     margin: 0 !important;
-    border: none;
-    -webkit-box-shadow: none;
-            box-shadow: none;
-    -webkit-box-ordinal-group: unset;
-        -ms-flex-order: unset;
-            order: unset;
+    border: 2px solid var(--color-border-subtle);
+    -webkit-box-shadow: var(--shadow-deep);
+            box-shadow: var(--shadow-deep);
+    border-radius: var(--radius-default);
   }
   #editorBoard {
     width: 100% !important;
   }
   .piece-selector {
-    -webkit-box-orient: vertical;
+    -webkit-box-ordinal-group: 3;
+        -ms-flex-order: 2;
+            order: 2; /* Selectors below board */
+    -webkit-box-orient: horizontal;
     -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-            flex-direction: column;
-    width: auto;
-    padding: 2px;
-    gap: 4px;
-    background: none;
-    border: none;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    width: 100%;
+    padding: 8px;
+    gap: 8px;
+    background: var(--color-glass-subtle);
+    border: 1px solid var(--color-border-subtle);
     -webkit-box-pack: center;
         -ms-flex-pack: center;
             justify-content: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+  }
+  .piece-selector-right {
+    -webkit-box-ordinal-group: 4;
+        -ms-flex-order: 3;
+            order: 3;
   }
   .piece-buttons {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
-    -webkit-box-orient: vertical;
+    -webkit-box-orient: horizontal;
     -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-            flex-direction: column;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    -ms-flex-wrap: nowrap;
+        flex-wrap: nowrap;
     gap: 4px;
-    grid-template-columns: none;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
   }
   .btn-piece, .btn-editor-tool {
-    width: 40px; /* Base mobile size */
-    height: 40px;
-    padding: 2px;
+    width: 42px;
+    height: 42px;
+    padding: 4px;
+    -webkit-box-flex: 0;
+        -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+  }
+  .btn-editor-tool {
+    margin-right: 4px; /* Space between tool and pieces */
   }
   .board-editor-split {
     -webkit-box-orient: vertical;
@@ -3602,17 +3618,20 @@ body.allow-scroll {
             flex-direction: column;
   }
   .reference-image-container {
-    height: 200px; /* Shorter image for mobile to focus on board */
-    margin-top: 10px;
+    height: 250px;
+    margin-top: 15px;
   }
 }
 @media (max-width: 576.98px) {
   .btn-piece, .btn-editor-tool {
-    width: 36px; /* Even smaller for narrow phones */
-    height: 36px;
+    width: 40px;
+    height: 40px;
   }
   .board-editor-container {
-    gap: 2px;
+    gap: 10px;
+  }
+  .piece-buttons {
+    gap: 4px;
   }
   .editor-actions {
     display: grid;
@@ -5165,11 +5184,10 @@ body.allow-scroll {
             flex: 0 0 100% !important;
   }
   .chess-board-area {
-    max-width: 650px !important; /* Allow slightly larger board on generic tablets */
+    max-width: 100% !important;
     width: 100%;
     margin: 0 auto;
-    padding-right: calc(var(--timer-width) + var(--padding-xs)) !important;
-    padding-left: var(--padding-xs) !important;
+    padding: 0 !important;
   }
   #history-col {
     margin-top: var(--spacing-sm) !important;
@@ -5271,20 +5289,91 @@ body.allow-scroll {
     height: 500px;
   }
   .score-alignment-wrapper {
-    position: absolute;
-    left: 0; /* Moves it further away from the board due to container padding */
+    position: relative;
+    left: auto;
     right: auto;
-    top: 48px !important;
-    bottom: 48px !important;
+    top: auto !important;
+    bottom: auto !important;
     margin-right: 0 !important;
     margin-left: 0 !important;
     margin-top: 0 !important;
-    width: var(--eval-wrapper-width-mobile);
+    margin-bottom: 8px !important;
+    width: 100%;
     padding-top: 0;
     height: auto !important;
     max-height: none;
-    -ms-flex-item-align: start;
-        align-self: flex-start;
+    -ms-flex-item-align: center;
+        align-self: center;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    -webkit-transform: none !important;
+            transform: none !important;
+    z-index: 1000;
+  }
+  .score-bar-container {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    width: 100%;
+    height: auto;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+  }
+  #evaluation-bar {
+    width: 100%;
+    height: 12px !important;
+    min-height: 12px;
+    margin-top: 0 !important;
+    -webkit-box-flex: 1;
+        -ms-flex-positive: 1;
+            flex-grow: 1;
+    border-radius: 6px;
+    background: -webkit-gradient(linear, left top, right top, from(var(--color-eval-gradient-start)), to(var(--color-eval-gradient-end)));
+    background: linear-gradient(to right, var(--color-eval-gradient-start) 0%, var(--color-eval-gradient-end) 100%);
+  }
+  .eval-advantage-bar {
+    height: 100% !important;
+    bottom: 0;
+    top: 0;
+    left: 0;
+    -webkit-transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #evaluation-score {
+    width: auto;
+    min-width: 40px;
+    font-size: 0.75rem;
+    margin-top: 0 !important;
+    margin-left: 10px;
+    min-height: 10px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+  #board-col {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  #chessboard-main-container {
+    min-width: 0;
+    max-width: 100%;
+    padding-left: 0 !important;
+    position: relative;
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -5292,38 +5381,14 @@ body.allow-scroll {
     -webkit-box-direction: normal;
         -ms-flex-direction: column;
             flex-direction: column;
-    z-index: 1000;
-  }
-  #evaluation-bar {
-    width: var(--eval-bar-width);
-    margin-top: 0 !important;
-    -webkit-box-flex: 1;
-        -ms-flex-positive: 1;
-            flex-grow: 1;
-    border-radius: 10px;
-  }
-  #evaluation-score {
-    width: auto;
-    min-width: 50px;
-    font-size: 0.7rem;
-    margin-top: 8px !important;
-    min-height: 20px;
-    white-space: nowrap;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  }
-  #chessboard-main-container {
-    min-width: 0;
-    max-width: 100%;
-    padding-left: var(--mobile-board-padding-left) !important;
-    position: relative;
   }
   .chess-board-area {
-    padding: var(--padding-xxs) !important;
-    padding-right: var(--padding-xxs) !important;
+    padding: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     -webkit-box-sizing: border-box;
             box-sizing: border-box;
+    border-radius: 0 !important;
   }
   #myBoard {
     width: 100% !important;
