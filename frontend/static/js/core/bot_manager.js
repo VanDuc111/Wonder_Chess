@@ -187,6 +187,8 @@ export class BotManager {
             
             this.sfEngine = new Worker(workerUrl);
             this.sfEngine.postMessage("uci");
+            this.sfEngine.postMessage("setoption name Threads value 1");
+            this.sfEngine.postMessage("setoption name Hash value 16");
             this.sfEngine.postMessage("isready");
             this.sfIsReady = true;
             console.log("BotManager: Stockfish WASM Initialized");
@@ -208,6 +210,15 @@ export class BotManager {
             this.sfEngine.postMessage(`position fen ${fen}`);
             
             const sideToMove = fen.split(' ')[1]; // 'w' or 'b'
+            let isResolved = false;
+
+            const cleanupAndResolve = (result) => {
+                if (isResolved) return;
+                isResolved = true;
+                this.sfEngine.removeEventListener('message', onMsg);
+                if (timeoutId) clearTimeout(timeoutId);
+                resolve(result);
+            };
 
             const onMsg = (event) => {
                 const line = event.data;
@@ -235,8 +246,7 @@ export class BotManager {
                     const bestMoveRegex = botConst.REGEX?.BESTMOVE || /bestmove\s([a-h][1-8][a-h][1-8][qrbn]?)/;
                     const match = line.match(bestMoveRegex);
                     if (match) {
-                        this.sfEngine.removeEventListener('message', onMsg);
-                        resolve({
+                        cleanupAndResolve({
                             move: match[1],
                             score: lastScore
                         });
@@ -246,6 +256,14 @@ export class BotManager {
 
             this.sfEngine.addEventListener('message', onMsg);
             this.sfEngine.postMessage(`go movetime ${timeLimitMs}`);
+
+            // Fallback timeout cleanup (timeLimit + 2 seconds buffer)
+            const timeoutId = setTimeout(() => {
+                if (!isResolved) {
+                    console.warn("BotManager: Stockfish WASM timed out.");
+                    cleanupAndResolve(null); // Resolve with null to let logic game recover
+                }
+            }, timeLimitMs + 2000);
         });
     }
 
