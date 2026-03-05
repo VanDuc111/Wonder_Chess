@@ -100,4 +100,4 @@ def chat_analysis() -> Response:
         except Exception as e:
             yield f"\n[Error connecting to AI: {str(e)}]"
 
-    return Response(stream_with_context(generate_response()), content_type='text/event-stream')
+    return Response(stream_with_context(generate_response()), content_type='text/plain')

@@ -37,13 +37,18 @@ class StockfishStrategy(EngineStrategy):
         skill_level: int, 
         time_limit: float
     ) -> Dict[str, Any]:
-        """Get move from Stockfish"""
+        """Get move from Stockfish with Minimax fallback"""
         results = get_stockfish_move(fen, skill_level, time_limit)
-        results['success'] = results.get('success', True)
-        return results
+        
+        if results.get('success'):
+            return results
+            
+        # Fallback to Minimax if Stockfish fails (e.g., path error, OOM)
+        print(f"⚠️ Stockfish failed, falling back to Minimax: {results.get('error')}")
+        return MinimaxStrategy().get_move(fen, skill_level, time_limit)
     
     def evaluate(self, fen: str) -> Dict[str, Any]:
-        """Quick evaluation with Stockfish"""
+        """Quick evaluation with Stockfish with Minimax fallback"""
         results = get_stockfish_move(
             fen,
             skill_level=EngineConfig.MAX_SKILL_LEVEL,
@@ -53,12 +58,12 @@ class StockfishStrategy(EngineStrategy):
         if results.get('success'):
             return results
         
-        # Fallback to Minimax if Stockfish fails
+        # Fallback to Minimax
         return MinimaxStrategy().evaluate(fen)
 
 
 class MinimaxStrategy(EngineStrategy):
-    """Custom Minimax engine strategy (for production)"""
+    """Fallback Minimax engine strategy (lightweight for Production)"""
     
     def get_move(
         self, 
@@ -66,51 +71,45 @@ class MinimaxStrategy(EngineStrategy):
         skill_level: int, 
         time_limit: float
     ) -> Dict[str, Any]:
-        """Get move from Minimax"""
-        results = find_best_move(fen, time_limit=time_limit, skill_level=skill_level)
-        results['success'] = True if results.get('best_move') else False
-        return results
+        """Get move from internal Minimax"""
+        move, score = find_best_move(fen)
+        return {
+            "success": True,
+            "best_move": move,
+            "search_score": score
+        }
     
     def evaluate(self, fen: str) -> Dict[str, Any]:
         """Quick evaluation with Minimax"""
-        return find_best_move(
-            fen,
-            max_depth=EngineConfig.FALLBACK_MAX_DEPTH,
-            time_limit=EngineConfig.FALLBACK_TIME_LIMIT,
-            skill_level=EngineConfig.MAX_SKILL_LEVEL
-        )
+        _, score = find_best_move(fen)
+        return {
+            "success": True,
+            "search_score": score
+        }
 
 
 class EngineService:
     """
-    Service layer for chess engine operations.
-    Handles environment detection, engine selection, and result formatting.
+    Orchestrator for chess engine operations.
+    Handles environment detection and strategy selection.
     """
     
     def __init__(self):
-        """Initialize with environment-appropriate strategy"""
-        self.is_production = os.environ.get('RENDER') is not None
+        # Render environment detect
+        self.is_production = os.environ.get("RENDER") is not None
         self._strategy: Optional[EngineStrategy] = None
     
     def _get_strategy(self, engine_choice: str = 'stockfish') -> EngineStrategy:
         """
-        Get appropriate engine strategy based on environment.
-        
-        Args:
-            engine_choice: User's engine preference ('stockfish' or 'minimax')
-            
-        Returns:
-            EngineStrategy: Appropriate strategy for current environment
+        Get appropriate engine strategy. 
+        Will attempt Stockfish if requested, otherwise fallback to Minimax.
         """
-        # Production: Always use Minimax regardless of choice
-        if self.is_production:
-            return MinimaxStrategy()
-        
-        # Local: Respect user's choice
+        # Even on Production, if Stockfish is requested, try to use it
+        # The StockfishStrategy now has a built-in fallback to Minimax
         if engine_choice == 'stockfish':
             return StockfishStrategy()
-        else:
-            return MinimaxStrategy()
+        
+        return MinimaxStrategy()
     
     def get_best_move(
         self,
