@@ -225,11 +225,19 @@ class ChessAnalysisManager:
         
         is_best = (last_move_uci == best_move_uci) if last_move_uci and best_move_uci else False
 
+        # Calculate missed best move for the last player (what they should have done)
+        prev_fen = data.get('prev_fen')
+        missed_best_move_uci = data.get('missed_best_move_uci')
+        missed_best_move_san = AnalysisConfig.PLAYER_NA
+        if prev_fen and missed_best_move_uci:
+            missed_best_move_san = self.uci_to_san(prev_fen, missed_best_move_uci)
+
         return {
             "fen": fen,
             "pgn": data.get('pgn', AnalysisConfig.PLAYER_NA),
             "last_move_san": last_move_san or AnalysisConfig.PLAYER_NA,
             "best_move_san": self.uci_to_san(fen, best_move_uci),
+            "missed_best_move_san": missed_best_move_san,
             "diff": diff,
             "diff_str": diff_str,
             "quality_label": self.get_move_quality_label(diff, is_best, prev_v, cur_v),

@@ -69,12 +69,24 @@ export class SettingsModal {
             this.baseSwitches[key].checked = value;
         }
         
+        // Save to Local Storage
+        const storageKey = `wonderchess_setting_${key}`;
+        localStorage.setItem(storageKey, value);
+
         // Immediate Logic Trigger via LOGIC_GAME interface
         if (window.LOGIC_GAME) {
             switch(key) {
                 case settingKeys.FLIP:
                     if (typeof window.LOGIC_GAME.flipBoard === 'function') {
-                        window.LOGIC_GAME.flipBoard();
+                        // Flip requires special handling because board orientation might not be initialized yet
+                        const currentOrientation = window.board ? window.board.orientation() : 'white';
+                        const targetOrientation = value ? 'black' : 'white';
+                        if (currentOrientation !== targetOrientation && window.board) {
+                            window.board.orientation(targetOrientation);
+                            if (window.LOGIC_GAME.ui && window.LOGIC_GAME.ui.syncOrientation) {
+                                window.LOGIC_GAME.ui.syncOrientation(value);
+                            }
+                        }
                     }
                     break;
                 case settingKeys.BEST_MOVE:
@@ -106,5 +118,35 @@ export class SettingsModal {
                     break;
             }
         }
+    }
+
+    /**
+     * Restore user settings from Local Storage on page load
+     */
+    restoreSettings() {
+        const settingKeys = APP_CONST?.SETTINGS?.KEYS || {
+            FLIP: 'flip',
+            BEST_MOVE: 'bestMove',
+            NOTATE: 'notate',
+            EVAL_BAR: 'evalBar'
+        };
+
+        // Delay execution slightly to ensure LOGIC_GAME and UI are fully mounted
+        setTimeout(() => {
+            Object.keys(this.modalSwitches).forEach(key => {
+                const storageKey = `wonderchess_setting_${key}`;
+                const savedValue = localStorage.getItem(storageKey);
+                
+                if (savedValue !== null) {
+                    const isChecked = savedValue === 'true';
+                    
+                    // Only update if it differs from default checked state
+                    if (this.modalSwitches[key] && this.modalSwitches[key].checked !== isChecked) {
+                        this.modalSwitches[key].checked = isChecked;
+                        this._updateSetting(key, isChecked);
+                    }
+                }
+            });
+        }, 500); // Wait for board rendering hooks
     }
 }

@@ -359,18 +359,29 @@ export class ChessUI {
         const htmlParts = [];
         const thresholds = APP_CONST?.QUALITY_THRESHOLDS || {};
         
-        for (let i = 1; i < history.length; i += 2) {
-            const w = history[i], b = history[i + 1];
-            const wH = (i === curIdx) ? 'current-move-highlight' : '';
-            const bH = (b && (i+1) === curIdx) ? 'current-move-highlight' : '';
-            
-            // Only generate annotations if needed
-            const wAnnot = w.annotHtml || (this._annot ? this._annot(history, i, engineService) : '');
-            const bAnnot = (b) ? (b.annotHtml || (this._annot ? this._annot(history, i+1, engineService) : '')) : '';
-            
-            htmlParts.push(`<tr><td class="move-number-cell">${Math.floor((i-1)/2)+1}.</td>`);
-            htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${wAnnot}</td>`);
-            htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${bAnnot}</td></tr>`);
+        if (history.length <= 1) {
+            htmlParts.push(`
+                <tr>
+                    <td colspan="3" class="text-center text-white-50 opacity-50 py-5" style="border: none;">
+                        <i class="bi bi-cloud-arrow-up display-4 mb-2 d-block"></i>
+                        <small>Nhấn nút <strong class="text-white">LOAD</strong> góc dưới bàn cờ để tải dữ liệu (Ảnh, PGN, FEN).</small>
+                    </td>
+                </tr>
+            `);
+        } else {
+            for (let i = 1; i < history.length; i += 2) {
+                const w = history[i], b = history[i + 1];
+                const wH = (i === curIdx) ? 'current-move-highlight' : '';
+                const bH = (b && (i+1) === curIdx) ? 'current-move-highlight' : '';
+                
+                // Only generate annotations if needed
+                const wAnnot = w.annotHtml || (this._annot ? this._annot(history, i, engineService) : '');
+                const bAnnot = (b) ? (b.annotHtml || (this._annot ? this._annot(history, i+1, engineService) : '')) : '';
+                
+                htmlParts.push(`<tr><td class="move-number-cell">${Math.floor((i-1)/2)+1}.</td>`);
+                htmlParts.push(`<td class="move-cell ${wH}" data-index="${i}">${w.san} ${wAnnot}</td>`);
+                htmlParts.push(`<td class="move-cell ${bH}" data-index="${i+1}">${b ? b.san : ''} ${bAnnot}</td></tr>`);
+            }
         }
         
         this.dom.pgnList.innerHTML = htmlParts.join('');

@@ -81,10 +81,11 @@ def chat_analysis() -> Response:
 
     **DỮ LIỆU PHÂN TÍCH TRẬN ĐẤU (Ngữ cảnh):**
     - Thế trận: {ctx['formatted_score']} ({ctx['last_player']} vừa đi **{ctx['last_move_san']}**)
-    - Chênh lệch: {ctx['diff_str']} -> **{ctx['quality_label']}**
+    - Chênh lệch: {ctx['diff_str']} -> **{ctx['quality_label']}** (Âm (-) là lợi cho Đen, Dương (+) là lợi cho Trắng)
+    - Lẽ ra {ctx['last_player']} nên đi: **{ctx['missed_best_move_san']}** (nước đi bị bỏ lỡ)
+    - Gợi ý tốt nhất cho {ctx['current_turn']} bây giờ là: **{ctx['best_move_san']}**
     - Lịch sử (PGN): {ctx['pgn']}
-    - Gợi ý tốt nhất: **{ctx['best_move_san']}**
-    - Biến hóa (PV): {ctx['engine_pv']}
+    - Biến hóa cho {ctx['current_turn']} (PV): {ctx['engine_pv']}
 
     **QUY TẮC BẮT BUỘC:**
     - Trả lời trong khoảng {AIConfig.MIN_RESPONSE_SENTENCES}-{AIConfig.MAX_RESPONSE_SENTENCES} câu.

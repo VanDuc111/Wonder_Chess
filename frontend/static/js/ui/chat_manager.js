@@ -280,6 +280,8 @@ export class AliceChat {
                     fen: currentFen,
                     current_score: historyArr[curIdx]?.score || "0.00",
                     prev_score: (curIdx > 0) ? (historyArr[curIdx - 1]?.score || "0.00") : "0.00",
+                    prev_fen: (curIdx > 0) ? historyArr[curIdx - 1]?.fen : null,
+                    missed_best_move_uci: (curIdx > 0) ? historyArr[curIdx - 1]?.bestMove : null,
                     opening_name: this.dom.openingName?.textContent || "N/A",
                     move_count: historyArr.length > 0 ? historyArr.length - 1 : 0,
                     pgn: pgn,

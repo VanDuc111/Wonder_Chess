@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.ALICE_CHAT.init();
     window.CAPTURED_PIECES.init();
     window.SETTINGS_MODAL.init();
+    window.SETTINGS_MODAL.restoreSettings();
     window.BOARD_EDITOR.init();
     window.MODAL_MANAGER.init();
     window.NAV_MANAGER.init();
