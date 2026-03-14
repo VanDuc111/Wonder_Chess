@@ -25,6 +25,10 @@ export class BoardEditor {
         this.hasDebugImage = false; 
         /** @type {boolean} Internal flag for AI-initiated opening */
         this._isOpeningWithAI = false;
+        /** @type {Array|null} Raw detections from AI */
+        this.allDetections = null;
+        /** @type {number} Current piece confidence threshold */
+        this.currentConf = 0.5;
         /** @type {boolean} Flag for overall initialization */
         this._initialized = false;
     }
@@ -38,14 +42,27 @@ export class BoardEditor {
         this.modal = document.getElementById(ids.EDITOR_MODAL || 'boardEditorModal');
         if (!this.modal) return;
         
+        this.dom = {
+            confControl: document.getElementById('editor-confidence-control'),
+            confSlider: document.getElementById('conf-slider'),
+            confVal: document.getElementById('conf-val'),
+            detectionCanvas: document.getElementById('editor-detection-canvas'),
+            lightboxCanvas: document.getElementById('editor-lightbox-canvas')
+        };
+        
         this._initialized = true;
         
+        this.modal.addEventListener('hidden.bs.modal', () => {
+             this.allDetections = null;
+        });
+
         this.modal.addEventListener('shown.bs.modal', () => this.onModalShown());
         
         this.setupPieceSelectors();
         this.setupToolButtons();
         this.setupControlButtons();
         this.setupSettingsListeners();
+        this.setupConfidenceSlider();
         this.setupDoneButton();
         this.setupLightbox();
         this._setupResize();
@@ -55,13 +72,19 @@ export class BoardEditor {
     /**
      * Opens the editor with a specific FEN and optional AI debug image.
      * @param {string} fen
-     * @param {string|null} debugImage Base64 string
+     * @param {string|null} mainImage Original or AI image
+     * @param {Array|null} detections Optional raw detections
+     * @param {string|null} debugImage Full debug image from backend (with boxes)
      */
-    openWithFen(fen, debugImage = null) {
+    openWithFen(fen, mainImage = null, detections = null, debugImage = null) {
         if (!this.modal) this.init();
         if (!this.modal) return;
 
         this._isOpeningWithAI = true;
+        this.allDetections = detections;
+        this.debugBase64 = debugImage; // Keep for fallback
+        this.currentConf = 0.5; // Reset to default
+
         try {
             this._loadFenToState(fen);
         } catch (e) {
@@ -71,17 +94,171 @@ export class BoardEditor {
         const bsModal = new bootstrap.Modal(this.modal);
         bsModal.show();
 
-        this._toggleAIPreview(debugImage);
+        this._toggleAIPreview(mainImage);
+        this._updateConfidenceUI(mainImage !== null || this.debugBase64 !== null);
         
         // Ensure UI is ready after modal transition
         setTimeout(() => this.recreateBoard(), APP_CONST?.EDITOR?.RECREATE_DELAY || 200);
     }
     
     /**
+     * Shows/hides confidence slider based on AI context.
+     * @private
+     */
+    _updateConfidenceUI(show) {
+        if (!this.dom.confControl) return;
+        if (show && this.allDetections && this.allDetections.length > 0) {
+            this.dom.confControl.classList.remove('d-none');
+            if (this.dom.confSlider) this.dom.confSlider.value = this.currentConf;
+            if (this.dom.confVal) this.dom.confVal.textContent = this.currentConf.toFixed(2);
+            this.drawDetectionBoxes(this.currentConf);
+        } else {
+            this.dom.confControl.classList.add('d-none');
+            this.clearDetectionCanvas();
+        }
+    }
+
+    /**
+     * Clears dynamic detection canvases.
+     * @param {HTMLCanvasElement|null} specificCanvas 
+     */
+    clearDetectionCanvas(specificCanvas = null) {
+        const canvases = specificCanvas ? [specificCanvas] : [this.dom.detectionCanvas, this.dom.lightboxCanvas];
+        canvases.forEach(canvas => {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+    }
+
+    /**
+     * Draws AI detection boxes on all overlay canvases.
+     * @param {number} threshold 
+     */
+    drawDetectionBoxes(threshold) {
+        if (!this.allDetections) return;
+
+        // 1. Draw on preview thumbnail
+        const previewImg = document.getElementById(APP_CONST?.IDS?.EDITOR_REF_IMAGE || 'editor-reference-image');
+        this._renderBoxesOnCanvas(this.dom.detectionCanvas, previewImg, threshold);
+
+        // 2. Draw on lightbox (if visible or initialized)
+        const lightboxImg = document.getElementById(APP_CONST?.IDS?.EDITOR_LIGHTBOX_IMG || 'lightbox-img');
+        this._renderBoxesOnCanvas(this.dom.lightboxCanvas, lightboxImg, threshold);
+    }
+
+    /**
+     * Helper to draw boxes on a specific canvas overlaying a specific image.
+     * @private
+     */
+    _renderBoxesOnCanvas(canvas, img, threshold) {
+        if (!canvas || !img) return;
+        
+        // If image hasn't loaded yet, or has no dimensions, wait
+        if (!img.complete || img.naturalWidth === 0) {
+            if (img.src && !img.src.endsWith('base64,')) {
+                img.onload = () => this._renderBoxesOnCanvas(canvas, img, threshold);
+            }
+            return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        const naturalW = img.naturalWidth;
+        const naturalH = img.naturalHeight;
+        
+        if (naturalW === 0 || naturalH === 0) return;
+
+        // Sync canvas size to displayed image size
+        const rect = img.getBoundingClientRect();
+        canvas.width = rect.width || img.clientWidth || img.width;
+        canvas.height = rect.height || img.clientHeight || img.height;
+
+        if (canvas.width === 0 || canvas.height === 0) {
+            // Last fallback if everything is 0
+            canvas.width = img.width;
+            canvas.height = img.height;
+        }
+
+        canvas.style.display = 'block';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const scaleX = canvas.width / naturalW;
+        const scaleY = canvas.height / naturalH;
+
+        this.allDetections.forEach(det => {
+            if (det.conf < threshold) return;
+
+            const x = det.x * scaleX;
+            const y = det.y * scaleY;
+            const w = (det.w || 40) * scaleX;
+            const h = (det.h || 50) * scaleY;
+
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - w/2, y - h/2, w, h);
+
+            ctx.fillStyle = '#00ff00';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(det.class, x - w/2, y - h/2 - 5);
+        });
+    }
+
+    /**
+     * Initializes confidence slider listeners.
+     */
+    setupConfidenceSlider() {
+        if (!this.dom.confSlider) return;
+        this.dom.confSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            this.currentConf = val;
+            if (this.dom.confVal) this.dom.confVal.textContent = val.toFixed(2);
+            this.updateFromDetections(val);
+            this.drawDetectionBoxes(val);
+        });
+    }
+
+    /**
+     * Filters raw detections by threshold and updates board.
+     * @param {number} threshold 
+     */
+    updateFromDetections(threshold) {
+        if (!this.allDetections) return;
+        
+        const pos = {};
+        // 1. Group by square, keep only those >= threshold
+        const squareGroups = {};
+        this.allDetections.forEach(det => {
+            if (det.conf < threshold) return;
+            const key = `${det.row},${det.col}`;
+            if (!squareGroups[key] || det.conf > squareGroups[key].conf) {
+                squareGroups[key] = det;
+            }
+        });
+
+        // 2. King Guard: Chess logic often fails if we don't have kings. 
+        // We'll trust the highest confidence kings.
+        // (The backend already does some of this, but we're re-filtering)
+
+        // 3. Map groups to board position
+        const files = APP_CONST?.CHESS_RULES?.BOARD_FILES || ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        Object.values(squareGroups).forEach(det => {
+            if (det.row >= 0 && det.row < 8 && det.col >= 0 && det.col < 8) {
+                const square = files[det.col] + (8 - det.row);
+                // Convert FEN char ('P', 'k') to Piece Code ('wP', 'bK')
+                const isWhite = det.char === det.char.toUpperCase();
+                pos[square] = (isWhite ? 'w' : 'b') + det.char.toUpperCase();
+            }
+        });
+
+        this.currentPosition = pos;
+        this._syncAll();
+    }
+
+    /**
      * Updates the UI layout when an AI debug image is provided.
      * @private
      */
-    _toggleAIPreview(debugImage) {
+    _toggleAIPreview(currentImage) {
         const ids = APP_CONST?.IDS || {};
         const splitContainer = this.modal.querySelector('.board-editor-split');
         const rightPane = this.modal.querySelector('.editor-right-pane');
@@ -90,12 +267,20 @@ export class BoardEditor {
         
         if (!rightPane || !imgEl || !splitContainer) return;
 
-        if (debugImage) {
+        if (currentImage || this.debugBase64) {
             splitContainer.classList.add('has-image');
             rightPane.style.display = 'flex';
-            imgEl.src = 'data:image/jpeg;base64,' + debugImage;
-            imgEl.style.display = 'block';
-            if (placeholderEl) placeholderEl.style.display = 'none';
+            
+            // Fallback to full debug image if original is missing
+            const imageSrc = currentImage || this.debugBase64;
+            if (imageSrc) {
+                imgEl.src = 'data:image/jpeg;base64,' + imageSrc;
+                imgEl.style.display = 'block';
+                if (placeholderEl) placeholderEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none';
+                if (placeholderEl) placeholderEl.style.display = 'block';
+            }
             
             const dialog = this.modal.querySelector('.modal-dialog');
             dialog.classList.remove('modal-lg');
@@ -112,6 +297,18 @@ export class BoardEditor {
             
             this.hasDebugImage = false;
         }
+    }
+
+    /**
+     * Set up window resize listener to keep canvas in sync.
+     * @private
+     */
+    _setupResize() {
+        window.addEventListener('resize', () => {
+            if (this.hasDebugImage) {
+                this.drawDetectionBoxes(this.currentConf);
+            }
+        });
     }
 
     /**
@@ -620,10 +817,16 @@ export class BoardEditor {
             if (thumb.src && !thumb.src.endsWith('/')) {
                 lbImg.src = thumb.src;
                 lb.classList.remove('d-none');
+                // Allow layout engine to compute dimensions
+                setTimeout(() => this.drawDetectionBoxes(this.currentConf), 50);
             }
         });
 
-        const close = () => { lb.classList.add('d-none'); lbImg.src = ''; };
+        const close = () => { 
+            lb.classList.add('d-none'); 
+            lbImg.src = ''; 
+            this.clearDetectionCanvas(this.dom.lightboxCanvas);
+        };
         lb.addEventListener('click', (e) => { if (e.target === lb || e.target.closest('.lightbox-close-btn')) close(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
     }

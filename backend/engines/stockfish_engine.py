@@ -1,64 +1,101 @@
 import chess
 import chess.engine
 import os
+import threading
+import atexit
+import platform
+import shutil
+
+class StockfishEngineManager:
+    """
+    Singleton manager for persistent Stockfish engine process.
+    Reuses the same process to avoid expensive startup/shutdown overhead.
+    """
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __init__(self):
+        self.engine = None
+        self.engine_path = self._find_engine_path()
+        
+    @classmethod
+    def get_instance(cls):
+        if not cls._instance:
+            with cls._lock:
+                if not cls._instance:
+                    cls._instance = cls()
+        return cls._instance
+
+    def _find_engine_path(self):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        if platform.system() == "Windows":
+            path = os.path.join(base_dir, "stockfish.exe")
+        else:
+            path = os.path.join(base_dir, "stockfish")
+            if not os.path.exists(path):
+                path = shutil.which("stockfish") or path
+        return path
+
+    def get_engine(self):
+        """Ensures the engine process is running and configured."""
+        with self._lock:
+            if self.engine is None:
+                if not os.path.exists(self.engine_path):
+                    return None
+                
+                try:
+                    self.engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
+                    self.engine.configure({
+                        "Threads": 1,      # Minimize CPU usage
+                        "Hash": 16,        # Minimize RAM usage
+                    })
+                    # Register cleanup
+                    atexit.register(self.shutdown)
+                except Exception as e:
+                    print(f"Failed to start Stockfish: {e}")
+                    self.engine = None
+            return self.engine
+
+    def shutdown(self):
+        """Kills the Stockfish process."""
+        with self._lock:
+            if self.engine:
+                try:
+                    self.engine.quit()
+                except:
+                    pass
+                self.engine = None
 
 def get_stockfish_move(fen, skill_level=10, time_limit=1.0):
     """
-    Giao tiếp với Stockfish engine qua giao thức UCI.
-    :param fen: Chuỗi FEN hiện tại của bàn cờ.
-    :param skill_level: Cấp độ kỹ năng (0-20).
-    :param time_limit: Giới hạn thời gian suy nghĩ (giây).
-    :return: Dictionary chứa nước đi và điểm số.
+    Persistent-process Stockfish communication.
+    Uses the singleton manager to avoid CPU-heavy process spawning.
     """
-    # Đường dẫn tới file thực thi Stockfish
-    import platform
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    manager = StockfishEngineManager.get_instance()
+    engine = manager.get_engine()
     
-    if platform.system() == "Windows":
-        engine_path = os.path.join(base_dir, "stockfish.exe")
-    else:
-        # Trên Linux (Render), script cài đặt đặt tên là 'stockfish'
-        engine_path = os.path.join(base_dir, "stockfish")
-        # Nếu không tìm thấy trong thư mục engines, thử tìm trong PATH hệ thống
-        if not os.path.exists(engine_path):
-            import shutil
-            engine_path = shutil.which("stockfish") or engine_path
-    
-    if not os.path.exists(engine_path):
-        return {"success": False, "error": f"Không tìm thấy Stockfish tại: {engine_path}"}
+    if not engine:
+        return {"success": False, "error": f"Stockfish not found at {manager.engine_path}"}
     
     try:
-        # Khởi tạo engine (Synchronous)
-        with chess.engine.SimpleEngine.popen_uci(engine_path) as engine:
-            # --- TỐI ƯU CHO RENDER FREE (0.1 CPU / 512MB RAM) ---
-            engine.configure({
-                "Threads": 1,      # Chỉ dùng 1 luồng để tránh treo CPU
-                "Hash": 16,        # Chỉ dùng 16MB RAM cho bảng băm (mặc định thường là 16-1024MB)
-                "Skill Level": skill_level
-            })
-            
+        # Use common lock to prevent concurrent commands to the same engine instance
+        with manager._lock:
             board = chess.Board(fen)
             
-            # Yêu cầu Engine tính toán
-            # Giới hạn thời gian suy nghĩ cực ngắn (tối đa 0.5s) để trả về kết quả nhanh
-            search_time = min(0.5, time_limit) 
-            result = engine.play(board, chess.engine.Limit(time=search_time))
+            # Configure engine for current search
+            engine.configure({"Skill Level": skill_level})
             
-            # Lấy thông tin đánh giá nhanh
-            info = engine.analyse(board, chess.engine.Limit(time=0.1))
-            score = info.get("score")
+            # Request move and analysis info
+            # We use play() which is efficient for getting both the move and score in one call
+            result = engine.play(board, chess.engine.Limit(time=min(0.5, time_limit)))
             
-            # Định dạng điểm số trả về cho Frontend (Luôn từ góc nhìn Trắng)
+            # Extract score from result info or fallback to quick analysis if info missing
             score_str = "0.00"
-            if score:
-                white_score = score.white()
-                if white_score.is_mate():
-                    mate_moves = white_score.mate()
-                    score_str = f"+M{mate_moves}" if mate_moves > 0 else f"-M{abs(mate_moves)}"
-                else:
-                    cp = white_score.score()
-                    if cp is not None:
-                        score_str = f"{cp / 100:+.2f}"
+            if result.info and "score" in result.info:
+                score_str = _parse_score(result.info["score"])
+            else:
+                info = engine.analyse(board, chess.engine.Limit(time=0.1))
+                score_str = _parse_score(info.get("score"))
 
             return {
                 "success": True,
@@ -67,5 +104,22 @@ def get_stockfish_move(fen, skill_level=10, time_limit=1.0):
             }
             
     except Exception as e:
-        print(f"Stockfish Error: {e}")
+        print(f"Stockfish Communication Error: {e}")
+        # Reset engine instance on crash to attempt restart next time
+        manager.shutdown()
         return {"success": False, "error": str(e)}
+
+def _parse_score(score):
+    """Helper to convert engine score to string (view from White)."""
+    if not score:
+        return "0.00"
+    
+    white_score = score.white()
+    if white_score.is_mate():
+        mate_moves = white_score.mate()
+        return f"+M{mate_moves}" if mate_moves > 0 else f"-M{abs(mate_moves)}"
+    
+    cp = white_score.score()
+    if cp is not None:
+        return f"{cp / 100:+.2f}"
+    return "0.00"

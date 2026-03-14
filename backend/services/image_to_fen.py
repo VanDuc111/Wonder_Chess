@@ -72,7 +72,7 @@ def analyze_image_to_fen(image_path):
     # 1. Đọc ảnh và Resize nếu quá lớn (Tránh lỗi 413)
     img = cv2.imread(image_path)
     if img is None:
-        return None, None, None, "Lỗi đọc ảnh."
+        return None, None, None, None, None, "Lỗi đọc ảnh."
 
     h, w = img.shape[:2] # Chiều cao, chiều rộng 
     max_dim = VisionConfig.MAX_IMAGE_DIM 
@@ -122,7 +122,7 @@ def analyze_image_to_fen(image_path):
 
     except Exception as e:
         print(f"❌ Lỗi YOLO Board Inference: {str(e)}")
-        return None, None, None, f"Lỗi xử lý AI (Board): {str(e)}"
+        return None, None, None, None, None, f"Lỗi xử lý AI (Board): {str(e)}"
 
     # Biến lưu tọa độ cắt (Offset)
     offset_x = 0
@@ -253,7 +253,7 @@ def analyze_image_to_fen(image_path):
             print(f"   Detections (top 5): {', '.join(names_found)}...")
     except Exception as e:
         print(f"❌ Lỗi YOLO Piece Inference: {str(e)}")
-        return None, None, None, f"Lỗi xử lý AI (Pieces): {str(e)}"
+        return None, None, None, None, None, f"Lỗi xử lý AI (Pieces): {str(e)}"
 
     # 5. Xử lý hình học
 
@@ -373,10 +373,15 @@ def analyze_image_to_fen(image_path):
 
         if fen_char != '?':
             mapped_detections.append({
-                'row': row, 'col': col, 
-                'char': fen_char, 'conf': conf, 
-                'class': class_name,
-                'x': p['x'], 'y': p['y'] # Giữ lại tọa độ để vẽ debug
+                'row': int(row), 
+                'col': int(col), 
+                'char': fen_char, 
+                'conf': float(conf), 
+                'class': str(class_name),
+                'x': float(p['x']), 
+                'y': float(p['y']),
+                'w': float(p['width']),
+                'h': float(p['height'])
             })
 
     # 2. Quy tắc SẮT ĐÁ: Mỗi màu chỉ có duy nhất 1 quân Vua (King)
@@ -508,7 +513,11 @@ def analyze_image_to_fen(image_path):
         if empty > 0: line += str(empty)
         fen_rows.append(line)
 
+    # Encode original image for frontend dynamic boxes
+    _, orig_buffer = cv2.imencode('.jpg', img)
+    original_base64 = base64.b64encode(orig_buffer).decode('utf-8')
+    
     final_fen = "/".join(fen_rows) + " w KQkq - 0 1"
     print(f" Final FEN: {final_fen}")
 
-    return final_fen, debug_base64, warped_base64, None
+    return final_fen, debug_base64, original_base64, warped_base64, mapped_detections, None

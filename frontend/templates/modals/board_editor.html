@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content modal-dark">
             <div class="modal-header">
-                <h5 class="modal-title" id="boardEditorModalLabel">
+                <h5 class="modal-title d-flex align-items-center text-nowrap" id="boardEditorModalLabel">
                     <i class="bi bi-pencil-square me-2"></i>Chỉnh sửa bàn cờ
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -146,12 +146,21 @@
                     <!-- RIGHT PANE: REFERENCE IMAGE (AI DEBUG) -->
                     <div class="editor-right-pane">
                         <div class="reference-image-container">
-                            <span class="reference-label">Alice's Analysis</span>
-                            <img id="editor-reference-image" src="" alt="AI Analysis Result">
+                            <div class="position-relative d-inline-block">
+                                <img id="editor-reference-image" src="" alt="AI Analysis Result">
+                                <canvas id="editor-detection-canvas" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none;"></canvas>
+                            </div>
                             <div id="editor-no-image-placeholder" class="text-secondary text-center p-3">
                                 <i class="bi bi-image display-1 mb-3 d-block opacity-25"></i>
                                 <p class="small">Chưa có ảnh phân tích</p>
                             </div>
+                        </div>
+                        <!-- Confidence Logic moved below image -->
+                        <div class="confidence-control mt-2 d-none" id="editor-confidence-control">
+                            <label for="conf-slider" class="form-label small text-white-50 d-flex justify-content-between mb-0">
+                                Độ tin cậy (Conf): <span id="conf-val" class="fw-bold text-info">0.50</span>
+                            </label>
+                            <input type="range" class="form-range" id="conf-slider" min="0.1" max="0.95" step="0.05" value="0.50">
                         </div>
                         <div class="alert alert-info bg-opacity-10 border-0 text-white small">
                             <i class="bi bi-info-circle me-2"></i>
@@ -159,22 +168,25 @@
                         </div>
                     </div>
                 </div>
-            </div>
             
             <!-- Image Lightbox -->
             <div id="editor-image-lightbox" class="lightbox-overlay d-none">
                 <button class="lightbox-close-btn"><i class="bi bi-x-lg"></i></button>
-                <img id="lightbox-img" src="" alt="Full Reference">
+                <div class="position-relative">
+                    <img id="lightbox-img" src="" alt="Full Screen Preview">
+                    <canvas id="editor-lightbox-canvas" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none;"></canvas>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-premium-cancel" data-bs-dismiss="modal">
-                    Hủy bỏ
-                </button>
-                <button type="button" class="btn btn-premium-confirm" id="editor-done-btn">
-                    Xác nhận & Cập nhật
-                </button>
-            </div>
+        </div> <!-- End modal-body -->
+        <div class="modal-footer">
+            <button type="button" class="btn btn-premium-cancel" data-bs-dismiss="modal">
+                Hủy bỏ
+            </button>
+            <button type="button" class="btn btn-premium-confirm" id="editor-done-btn">
+                Xác nhận & Cập nhật
+            </button>
         </div>
-    </div>
-</div>
+    </div> <!-- End modal-content -->
+</div> <!-- End modal-dialog -->
+</div> <!-- End modal -->
 
