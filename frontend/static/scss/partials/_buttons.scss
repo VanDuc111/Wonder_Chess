@@ -67,27 +67,19 @@
     grid-row: 2;
 }
 
-.settings-icon-btn {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
-    grid-row: 2;
-}
-
-.settings-icon-btn:hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
-}
-
 /* Organized Grid Ordering */
 .button-group-container .btn[data-action="first"] { grid-column: 1; order: 1; }
 .button-group-container .btn[data-action="prev"]  { grid-column: 2; order: 2; }
 .button-group-container .btn[data-action="next"]  { grid-column: 3; order: 3; }
 .button-group-container .btn[data-action="last"]  { grid-column: 4; order: 4; }
 
-.button-group-container #load-pgn-btn   { grid-column: 1; order: 5; }
-.button-group-container #edit-board-btn { grid-column: 2; order: 6; }
-.button-group-container .btn[data-action="clear"] { grid-column: 3; order: 7; }
+.button-group-container #load-pgn-btn     { grid-column: 1; order: 5; }
+.button-group-container #edit-board-btn   { grid-column: 2; order: 6; }
+.button-group-container #export-pgn-btn   { grid-column: 3; order: 7; }
 .button-group-container .settings-icon-btn { grid-column: 4; order: 8; }
 
 /* Responsive adjustments */
+
 @media (max-width: 991.98px) {
     .button-group-container {
         gap: var(--gap-md);
@@ -99,14 +91,15 @@
         min-height: 52px; /* Substantially larger for tablet/mobile */
     }
 
-    #load-pgn-btn, #edit-board-btn, .btn[data-action="clear"], .settings-icon-btn {
-        font-size: 0; /* Hide text on small screens */
+    #load-pgn-btn, #edit-board-btn, #export-pgn-btn, .settings-icon-btn {
+        font-size: 0 !important; /* Hide text on small screens */
     }
     
-    #load-pgn-btn i, #edit-board-btn i, .btn[data-action="clear"] i, .settings-icon-btn i {
-        font-size: 1.4rem;
+    #load-pgn-btn i, #edit-board-btn i, #export-pgn-btn i, .settings-icon-btn i {
+        font-size: 1.4rem !important;
     }
 }
+
 
 @media (max-width: 576.98px) {
     .button-group-container {

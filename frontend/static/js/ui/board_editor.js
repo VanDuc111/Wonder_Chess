@@ -54,6 +54,7 @@ export class BoardEditor {
         
         this.modal.addEventListener('hidden.bs.modal', () => {
              this.allDetections = null;
+             this.debugBase64 = null; // Clear fallback image on close
         });
 
         this.modal.addEventListener('shown.bs.modal', () => this.onModalShown());
@@ -184,6 +185,8 @@ export class BoardEditor {
 
         const scaleX = canvas.width / naturalW;
         const scaleY = canvas.height / naturalH;
+
+        if (!this.allDetections) return; // Fix: Prevent crash if detections were cleared
 
         this.allDetections.forEach(det => {
             if (det.conf < threshold) return;
@@ -317,6 +320,8 @@ export class BoardEditor {
     onModalShown() {
         if (!this._isOpeningWithAI) {
             const mainGame = window.LOGIC_GAME?.game;
+            this.allDetections = null; // Ensure fresh state
+            this.debugBase64 = null; 
             if (mainGame) this._loadFenToState(mainGame.fen());
             this._toggleAIPreview(null); // Ensure AI pane is hidden for manual edit
         }
@@ -706,7 +711,11 @@ export class BoardEditor {
     validatePosition() {
         const p = Object.values(this.currentPosition);
         if (p.filter(x => x === 'wK').length !== 1 || p.filter(x => x === 'bK').length !== 1) {
-            this.showValidationError(APP_CONST?.MESSAGES?.INVALID_FEN_KING || 'Mỗi bên phải có đúng 1 vua!');
+            const msg = APP_CONST?.MESSAGES?.INVALID_FEN_KING || 'Mỗi bên phải có đúng 1 vua!';
+            this.showValidationError(msg);
+            if (window.showToast) {
+                window.showToast(msg, 'warning', 'Vị trí không hợp lệ');
+            }
             return false;
         }
         this.hideValidationError();

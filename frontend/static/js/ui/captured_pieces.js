@@ -116,15 +116,16 @@ export class CapturedPiecesManager {
         container.innerHTML = '';
         
         // Add piece images
-        const pieceImages = APP_CONST?.PATHS?.PIECE_IMAGES || {};
-        const staticPath = APP_CONST?.PATHS?.STATIC || '/static/';
-
         pieces.forEach(piece => {
             const img = document.createElement('div');
             img.className = 'captured-piece';
-            if (pieceImages[piece]) {
-                img.style.backgroundImage = `url('${staticPath}${pieceImages[piece]}')`;
-            }
+            
+            // Use PIECE_THEME with character mapping for consistency (1 single source of truth)
+            const theme = APP_CONST?.PATHS?.PIECE_THEME || '/static/img/chesspieces/wikipedia/{piece}.png';
+            const pieceCode = piece === piece.toUpperCase() ? 'w' + piece : 'b' + piece.toUpperCase();
+            const fullPath = theme.replace('{piece}', pieceCode);
+            
+            img.style.backgroundImage = `url('${fullPath}')`;
             img.title = this.getPieceName(piece);
             container.appendChild(img);
         });

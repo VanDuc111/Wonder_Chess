@@ -1,0 +1,77 @@
+<div class="modal fade" id="shareDataModal" tabindex="-1" aria-labelledby="shareDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content modal-dark">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareDataModalLabel">
+                    <i class="bi bi-share-fill me-2"></i>Chia sẻ & Tải xuống ván cờ
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <ul class="nav nav-pills custom-modal-tabs" id="shareTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="share-pgn-tab" data-bs-toggle="tab" data-bs-target="#share-pgn-pane"
+                            type="button" role="tab">PGN</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="share-fen-tab" data-bs-toggle="tab" data-bs-target="#share-fen-pane"
+                            type="button" role="tab">FEN</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="share-image-tab" data-bs-toggle="tab" data-bs-target="#share-image-pane"
+                            type="button" role="tab">Ảnh</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-4" id="shareTabsContent">
+
+                    <!-- PGN Pane -->
+                    <div class="tab-pane fade show active" id="share-pgn-pane" role="tabpanel" aria-labelledby="share-pgn-tab"
+                        tabindex="0">
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 small text-uppercase fw-bold">PGN</label>
+                            <div class="position-relative">
+                                <textarea class="form-control pgn-viewer-textarea" id="share-pgn-content" rows="8" readonly></textarea>
+                                <button class="btn btn-copy-absolute" id="copy-pgn-modal-btn" title="Sao chép PGN">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FEN Pane -->
+                    <div class="tab-pane fade" id="share-fen-pane" role="tabpanel" aria-labelledby="share-fen-tab" tabindex="0">
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 small text-uppercase fw-bold">FEN</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control fen-viewer-input" id="share-fen-content" readonly />
+                                <button class="btn btn-outline-secondary" type="button" id="copy-fen-modal-btn">
+                                    <i class="bi bi-clipboard me-1"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Pane -->
+                    <div class="tab-pane fade" id="share-image-pane" role="tabpanel" aria-labelledby="share-image-tab">
+                        <div class="text-center py-4">
+                            <div id="board-preview-container" class="mb-4">
+                                <!-- Preview image will be injected here -->
+                                <div class="preview-placeholder">
+                                    <i class="bi bi-image" style="font-size: 3rem; opacity: 0.2;"></i>
+                                    <p class="mt-2 text-white-50">Nhấn nút bên dưới để tạo ảnh</p>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-premium-confirm px-4" id="generate-image-btn">
+                                <i class="bi bi-camera-fill me-2"></i>Tải ảnh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

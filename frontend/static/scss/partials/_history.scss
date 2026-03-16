@@ -150,3 +150,46 @@
     cursor: pointer;
     transition: var(--transition-fast);
 }
+
+.share-actions {
+    min-height: fit-content;
+    flex-shrink: 0;
+}
+
+.share-actions .btn-chess-action-alt {
+    white-space: nowrap !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    text-transform: none !important;
+}
+
+.share-actions .btn-chess-action-alt i {
+    color: #ffffff !important;
+    opacity: 1 !important;
+    margin-right: 6px;
+    font-size: 1.1rem;
+}
+
+.share-actions .btn-chess-action-alt:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 991.98px) {
+    .share-actions {
+        padding-bottom: 5px;
+    }
+    
+    .share-actions .btn-chess-action-alt {
+        padding: 8px 4px;
+        font-size: 0.7rem;
+    }
+}

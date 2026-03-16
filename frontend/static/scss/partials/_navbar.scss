@@ -12,7 +12,9 @@
     padding: 0;
     transition: none !important;
     flex-shrink: 0;
+    user-select: none; /* Prevent text selection of logo */
 }
+
 
 .navbar-brand:hover {
     filter: brightness(1.2);

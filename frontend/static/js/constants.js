@@ -5,19 +5,7 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const PATHS = {
     STATIC: '/static/',
-    PIECE_THEME: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
-    PIECE_IMAGES: {
-        'p': 'img/chesspieces/wikipedia/bP.png',
-        'n': 'img/chesspieces/wikipedia/bN.png',
-        'b': 'img/chesspieces/wikipedia/bB.png',
-        'r': 'img/chesspieces/wikipedia/bR.png',
-        'q': 'img/chesspieces/wikipedia/bQ.png',
-        'P': 'img/chesspieces/wikipedia/wP.png',
-        'N': 'img/chesspieces/wikipedia/wN.png',
-        'B': 'img/chesspieces/wikipedia/wB.png',
-        'R': 'img/chesspieces/wikipedia/wR.png',
-        'Q': 'img/chesspieces/wikipedia/wQ.png',
-    }
+    PIECE_THEME: '/static/img/chesspieces/wikipedia/{piece}.png'
 };
 
 const PIECE_VALUES = {

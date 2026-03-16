@@ -64,10 +64,11 @@
                             </button>
                             <button id="edit-board-btn" class="btn btn-sm btn-chess-action" 
                                     data-bs-toggle="modal" data-bs-target="#boardEditorModal" title="Edit Board">
-                                <i class="bi bi-pencil-square"></i>
+                                <i class="bi bi-pencil-square"></i> Edit
                             </button>
-                            <button class="btn btn-sm btn-chess-danger" data-action="clear" title="Clear Board">
-                                <i class="bi bi-trash"></i>
+                            <button id="export-pgn-btn" class="btn btn-sm btn-chess-action" data-action="export"
+                                    data-bs-toggle="modal" data-bs-target="#shareDataModal" title="Export ván cờ">
+                                <i class="bi bi-download"></i> Export
                             </button>
                             <!-- Settings Icon Button (moved inside container for grid layout) -->
                             <button class="btn btn-sm btn-chess-action settings-icon-btn" 
@@ -158,6 +159,7 @@
 
 {% include 'modals/bot_settings.html' %}
 {% include 'modals/load_data.html' %}
+{% include 'modals/share_data.html' %}
 {% include 'modals/game_over.html' %}
 {% include 'modals/settings.html' %}
 {% include 'modals/auth.html' %}

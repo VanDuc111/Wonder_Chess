@@ -7,37 +7,41 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 10px;
-    width: max-content;
-    min-width: 100%;
+    width: 100%; /* Changed from max-content to prevent overflow */
     position: relative;
 }
 
 /* Tighten Modal Padding locally for Board Editor */
 #boardEditorModal {
     .modal-dialog {
-        min-width: 500px;
+        /* Removed min-width: 500px to fix mobile overflow */
+        margin: 0.5rem;
+        @media (min-width: 576px) {
+            margin: 1.75rem auto;
+            max-width: 500px;
+        }
         @media (min-width: 1200px) {
             max-width: 1140px; // Standard xl
         }
     }
     .modal-header {
-        min-width: 480px; 
         padding: 0.75rem 1.25rem;
     }
     .modal-body {
         padding: 1rem 1.25rem;
-        overflow-x: auto; 
+        overflow-x: hidden; /* Changed from auto to hidden to prevent side scroll */
         @media (max-width: 767.98px) {
-            padding: 0.5rem 0.25rem;
+            padding: 0.75rem 0.5rem;
         }
     }
     .modal-footer {
         padding: 0.75rem 1.25rem; 
         @media (max-width: 767.98px) {
-            padding: 0.5rem;
+            padding: 0.75rem 0.5rem;
         }
     }
 }
+
 
 /* New Split Layout for Board Editor */
 .board-editor-split {
@@ -259,9 +263,9 @@
 }
 
 .editor-board-wrapper {
-    flex: 0 0 auto;
+    flex: 0 1 auto; /* Allow shrinking */
     width: 400px;
-    min-width: 400px;
+    max-width: 100%;
     border: 2px solid var(--color-border-subtle);
     border-radius: var(--radius-default);
     overflow: hidden;
@@ -276,6 +280,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     touch-action: none; /* Critical for mobile drag and drop */
 }
+
 
 .editor-controls {
     background: var(--color-glass-subtle);
@@ -379,36 +384,27 @@
     .board-editor-container {
         flex-direction: column;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
         width: 100%;
-        margin-bottom: 20px;
+        margin-bottom: 30px; 
         padding: 0;
     }
     
     .editor-board-wrapper {
         order: 1; /* Board on top */
         width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        border: 2px solid var(--color-border-subtle);
-        box-shadow: var(--shadow-deep);
-        border-radius: var(--radius-default);
+        max-width: 360px !important; /* Fixed width for better phone sizing */
+        margin: 0 auto !important;
     }
     
-    #editorBoard {
-        width: 100% !important;
-    }
-
     .piece-selector {
         order: 2; /* Selectors below board */
         flex-direction: row;
         width: 100%;
-        padding: 8px;
-        gap: 8px;
-        background: var(--color-glass-subtle);
-        border: 1px solid var(--color-border-subtle);
+        max-width: 360px;
+        padding: 6px;
+        gap: 6px;
         justify-content: center;
-        align-items: center;
     }
 
     .piece-selector-right {
@@ -418,54 +414,71 @@
     .piece-buttons {
         display: flex;
         flex-direction: row;
-        flex-wrap: nowrap;
+        flex-wrap: wrap; 
         gap: 4px;
         justify-content: center;
     }
     
     .btn-piece, .btn-editor-tool {
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
         padding: 4px;
         flex: 0 0 auto;
     }
 
     .btn-editor-tool {
-        margin-right: 4px; /* Space between tool and pieces */
+        width: 38px !important;
+        margin-right: 0;
     }
 
     .board-editor-split {
         flex-direction: column;
+        gap: 15px;
     }
 
     .reference-image-container {
-        height: 250px;
-        margin-top: 15px;
+        height: 220px;
+        margin-top: 10px;
     }
 }
 
 @media (max-width: 576.98px) {
+    .piece-selector {
+        max-width: 100%;
+        padding: 4px;
+    }
+
     .btn-piece, .btn-editor-tool {
-        width: 40px; 
-        height: 40px;
+        width: 36px; 
+        height: 36px;
     }
     
-    .board-editor-container {
-        gap: 10px;
-    }
-
-    .piece-buttons {
-        gap: 4px;
-    }
-
     .editor-actions {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* Three icons in a row for mobile */
-        gap: 6px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
     }
     
     .editor-actions .btn {
         font-size: 0.75rem;
         padding: 8px 4px;
     }
+
+    .editor-settings {
+        padding: 8px;
+        
+        .row {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+
+        .col-auto, .col {
+            width: 100%;
+        }
+        
+        .custom-check {
+            flex: 0 0 45%; /* Two checks per row */
+        }
+    }
 }
+

@@ -13,6 +13,7 @@ import { ModalManager } from './ui/modal_manager.js';
 import { NavigationManager } from './ui/navigation_manager.js';
 import { VisionManager } from './modules/vision_manager.js';
 import { AuthManager } from './modules/auth_manager.js';
+import { ShareManager } from './modules/share_manager.js';
 import { BotManager } from './core/bot_manager.js';
 import { ChessTimer } from './modules/timer_manager.js';
 import { showToast } from './modules/toast_service.js';
@@ -26,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.TIMER_MANAGER = new ChessTimer();
     window.BOT_MANAGER = new BotManager();
     window.LOGIC_GAME = new ChessCore();
+    window.SHARE_MANAGER = new ShareManager(window.LOGIC_GAME);
     window.ALICE_CHAT = new AliceChat();
     window.CAPTURED_PIECES = new CapturedPiecesManager();
     window.SETTINGS_MODAL = new SettingsModal();
@@ -39,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Component Initialization Logic
     window.BOT_MANAGER.init();
+    window.SHARE_MANAGER.init();
     window.ALICE_CHAT.init();
     window.CAPTURED_PIECES.init();
     window.SETTINGS_MODAL.init();
@@ -52,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 3. Preload piece images
     const pieces = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"];
-    const theme = APP_CONST?.PATHS?.PIECE_THEME || 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png';
+    const theme = APP_CONST?.PATHS?.PIECE_THEME || '/static/img/chesspieces/wikipedia/{piece}.png';
     pieces.forEach((p) => {
         const img = new Image();
         img.src = theme.replace('{piece}', p);
