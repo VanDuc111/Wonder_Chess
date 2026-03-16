@@ -187,6 +187,15 @@
         align-items: center;
         transform: none !important;
         z-index: 1000;
+        
+        &.rotated-score {
+            flex-direction: row-reverse;
+            transform: none !important;
+
+            #evaluation-score {
+                transform: none !important;
+            }
+        }
     }
 
     .score-bar-container {

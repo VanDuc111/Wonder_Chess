@@ -147,31 +147,44 @@ export class BotManager {
     async getBestMove(fen, level, timeLimit) {
         const engineType = window.selectedBotEngine || this.selectedEngine;
         
-        if (engineType === 'stockfish') {
-            const defaultTime = APP_CONST?.BOT?.DEFAULT_WASM_MOVETIME || 500;
-            return await this.getStockfishMove(fen, level, defaultTime); 
-        } else {
-            // Wonder Engine (Custom Minimax) or others via API
-            try {
-                const url = (APP_CONST && APP_CONST.API && APP_CONST.API.BOT_MOVE) 
-                    ? APP_CONST.API.BOT_MOVE : '/api/game/bot_move';
-                
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        fen, 
-                        engine: engineType, 
-                        skill_level: level, 
-                        time_limit: timeLimit 
-                    })
-                });
-                const d = await resp.json();
-                return d.success ? { move: d.move_uci, score: d.evaluation, fen: d.fen } : null;
-            } catch (error) {
-                console.error("Error fetching bot move from API:", error);
-                return null;
-            }
+        // 1. Hande Server-side engine (Native .exe) or Wonder Engine
+        if (engineType === 'server' || engineType === 'custom') {
+            return await this._getBestMoveFromAPI(fen, engineType, level, timeLimit);
+        }
+
+        // 2. Handle Client-side engine (Stockfish WASM)
+        const defaultTime = APP_CONST?.BOT?.DEFAULT_WASM_MOVETIME || 500;
+        const result = await this.getStockfishMove(fen, level, defaultTime);
+
+        // FALLBACK: If WASM times out or fails, try the server engine automatically
+        if (result === null) {
+            console.warn("BotManager: WASM failed, falling back to Server Engine");
+            return await this._getBestMoveFromAPI(fen, 'server', level, timeLimit);
+        }
+        
+        return result;
+    }
+
+    async _getBestMoveFromAPI(fen, engineType, level, timeLimit) {
+        try {
+            const url = (APP_CONST && APP_CONST.API && APP_CONST.API.BOT_MOVE) 
+                ? APP_CONST.API.BOT_MOVE : '/api/game/bot_move';
+            
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    fen, 
+                    engine: engineType === 'server' ? 'stockfish' : engineType, 
+                    skill_level: level, 
+                    time_limit: timeLimit 
+                })
+            });
+            const d = await resp.json();
+            return d.success ? { move: d.move_uci, score: d.evaluation, fen: d.fen } : null;
+        } catch (error) {
+            console.error("Error fetching bot move from API:", error);
+            return null;
         }
     }
 
@@ -186,12 +199,20 @@ export class BotManager {
             const workerUrl = URL.createObjectURL(blob);
             
             this.sfEngine = new Worker(workerUrl);
+            const onInitMsg = (e) => {
+                const line = e.data;
+                if (line === "readyok") {
+                    this.sfIsReady = true;
+                    console.log("BotManager: Stockfish WASM Ready (readyok)");
+                    this.sfEngine.removeEventListener('message', onInitMsg);
+                }
+            };
+            this.sfEngine.addEventListener('message', onInitMsg);
+
             this.sfEngine.postMessage("uci");
             this.sfEngine.postMessage("setoption name Threads value 1");
             this.sfEngine.postMessage("setoption name Hash value 16");
             this.sfEngine.postMessage("isready");
-            this.sfIsReady = true;
-            console.log("BotManager: Stockfish WASM Initialized");
         } catch (error) {
             console.error("BotManager: Failed to initialize Stockfish:", error);
         }
@@ -199,10 +220,22 @@ export class BotManager {
 
     getStockfishMove(fen, skillLevel, timeLimitMs) {
         return new Promise(async (resolve, reject) => {
+            // Wait for engine to be initialized if not already
             if (!this.sfEngine) await this.initStockfish();
+            
+            // If still no engine or after reasonable wait not ready, return null to trigger fallback
             if (!this.sfEngine) {
-                reject("Stockfish engine not available");
-                return;
+                return resolve(null);
+            }
+
+            // Wait up to 2 seconds for sfIsReady if it just started
+            if (!this.sfIsReady) {
+                let checkAttempts = 0;
+                while (!this.sfIsReady && checkAttempts < 20) {
+                    await new Promise(r => setTimeout(r, 100));
+                    checkAttempts++;
+                }
+                if (!this.sfIsReady) return resolve(null);
             }
 
             let lastScore = "0.00";
@@ -257,13 +290,13 @@ export class BotManager {
             this.sfEngine.addEventListener('message', onMsg);
             this.sfEngine.postMessage(`go movetime ${timeLimitMs}`);
 
-            // Fallback timeout cleanup (timeLimit + 2 seconds buffer)
+            // Fallback timeout cleanup (timeLimit + 5 seconds buffer to handle slow WASM initialization/search)
             const timeoutId = setTimeout(() => {
                 if (!isResolved) {
-                    console.warn("BotManager: Stockfish WASM timed out.");
-                    cleanupAndResolve(null); // Resolve with null to let logic game recover
+                    console.warn(`BotManager: Stockfish WASM timed out after ${timeLimitMs + 5000}ms.`);
+                    cleanupAndResolve(null); 
                 }
-            }, timeLimitMs + 2000);
+            }, timeLimitMs + 5000);
         });
     }
 

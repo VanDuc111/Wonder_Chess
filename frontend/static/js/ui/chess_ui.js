@@ -124,14 +124,28 @@ export class ChessUI {
 
     /**
      * Applies the calculated evaluation to the DOM.
-     * @param {number} percent - Height percentage for the white advantage bar.
+     * @param {number} percent - Height/Width percentage for the white advantage bar.
      * @param {string} score - Formatted score text.
      * @private
      */
     _applyEvalUI(percent, score) {
         if (this.dom.evalBar) {
-            this.dom.evalBar.style.height = window.innerWidth < 768 ? '100%' : `${percent}%`;
-            this.dom.evalBar.style.width = window.innerWidth < 768 ? `${percent}%` : '100%';
+            const isMobile = window.innerWidth < 768;
+            const isFlipped = this.dom.wrapper && this.dom.wrapper.classList.contains('rotated-score');
+
+            if (isMobile) {
+                this.dom.evalBar.style.height = '100%';
+                this.dom.evalBar.style.width = `${percent}%`;
+                // On mobile horizontal bar, if flipped, white advantage grows from right
+                this.dom.evalBar.style.left = isFlipped ? 'auto' : '0';
+                this.dom.evalBar.style.right = isFlipped ? '0' : 'auto';
+            } else {
+                this.dom.evalBar.style.width = '100%';
+                this.dom.evalBar.style.height = `${percent}%`;
+                this.dom.evalBar.style.left = '0';
+                this.dom.evalBar.style.right = 'auto';
+                // Vertical bar bottom: 0 is handled by CSS, rotation handles flipping
+            }
         }
         if (this.dom.evalScore) this.dom.evalScore.textContent = score;
     }

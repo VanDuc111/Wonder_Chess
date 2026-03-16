@@ -35,7 +35,7 @@ const BOT = {
     DEFAULT_WASM_MOVETIME: 500,
     INIT_DELAY_MS: 2000,
     DEFAULT_LEVEL: 10,
-    DEFAULT_ENGINE: 'stockfish',
+    DEFAULT_ENGINE: 'server',
     DEFAULT_COLOR: 'r',
     DEFAULT_TIME: '0',
     LEVEL_THRESHOLDS: [
