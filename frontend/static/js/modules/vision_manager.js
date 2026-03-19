@@ -288,7 +288,7 @@ export class VisionManager {
                 
                 setTimeout(() => {
                     if (window.BOARD_EDITOR && typeof window.BOARD_EDITOR.openWithFen === 'function') {
-                         window.BOARD_EDITOR.openWithFen(data.fen, data.original_image, data.detections, data.debug_image);
+                         window.BOARD_EDITOR.openWithFen(data.fen, data.original_image, data.detections, data.debug_image, data.board_corners);
                     }
                 }, APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
 
@@ -407,7 +407,7 @@ export class VisionManager {
                 // Wait a bit for modal to close, then open Editor
                 setTimeout(() => {
                     if (window.BOARD_EDITOR) {
-                        window.BOARD_EDITOR.openWithFen(newFen, data.original_image, data.detections, data.debug_image);
+                        window.BOARD_EDITOR.openWithFen(newFen, data.original_image, data.detections, data.debug_image, data.board_corners);
                     } else {
                         console.error('Board Editor not initialized!');
                         // Fallback

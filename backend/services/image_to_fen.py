@@ -72,7 +72,7 @@ def analyze_image_to_fen(image_path):
     # 1. Đọc ảnh và Resize nếu quá lớn (Tránh lỗi 413)
     img = cv2.imread(image_path)
     if img is None:
-        return None, None, None, None, None, "Lỗi đọc ảnh."
+        return None, None, None, None, None, None, "Lỗi đọc ảnh."
 
     h, w = img.shape[:2] # Chiều cao, chiều rộng 
     max_dim = VisionConfig.MAX_IMAGE_DIM 
@@ -122,7 +122,7 @@ def analyze_image_to_fen(image_path):
 
     except Exception as e:
         print(f"❌ Lỗi YOLO Board Inference: {str(e)}")
-        return None, None, None, None, None, f"Lỗi xử lý AI (Board): {str(e)}"
+        return None, None, None, None, None, None, f"Lỗi xử lý AI (Board): {str(e)}"
 
     # Biến lưu tọa độ cắt (Offset)
     offset_x = 0
@@ -253,7 +253,7 @@ def analyze_image_to_fen(image_path):
             print(f"   Detections (top 5): {', '.join(names_found)}...")
     except Exception as e:
         print(f"❌ Lỗi YOLO Piece Inference: {str(e)}")
-        return None, None, None, None, None, f"Lỗi xử lý AI (Pieces): {str(e)}"
+        return None, None, None, None, None, None, f"Lỗi xử lý AI (Pieces): {str(e)}"
 
     # 5. Xử lý hình học
 
@@ -424,17 +424,36 @@ def analyze_image_to_fen(image_path):
         x, y = int(p['x']), int(p['y'])
         w_p, h_p = int(p['width']), int(p['height'])
 
-        # Vẽ Box đỏ
+        color_map = {
+            'BB': (130, 0, 75), 'BK': (130, 0, 160), 'BKN': (0, 200, 255),
+            'BP': (0, 0, 255), 'BQ': (200, 0, 200), 'BR': (0, 100, 255),
+            'WB': (255, 255, 0), 'WK': (255, 0, 255), 'WKN': (0, 255, 255),
+            'WP': (0, 255, 0), 'WQ': (200, 200, 255), 'WR': (0, 165, 255)
+        }
+        color = color_map.get(class_name, (255, 255, 255))
+
         top_left = (int(x - w_p / 2), int(y - h_p / 2))
         bottom_right = (int(x + w_p / 2), int(y + h_p / 2))
-        cv2.rectangle(debug_img, top_left, bottom_right, (0, 0, 255), 2)
+        
+        # Vẽ Box với màu tương ứng
+        cv2.rectangle(debug_img, top_left, bottom_right, color, 2)
 
         # Vẽ tâm vàng
         cv2.circle(debug_img, (x, y), 3, (0, 255, 255), -1)
 
-        # Thêm nhãn class
-        cv2.putText(debug_img, class_name, (top_left[0], top_left[1] - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        # Thêm nhãn class + conf
+        conf = p.get('confidence', 0)
+        label = f"{class_name} {conf:.2f}"
+        
+        # Background cho nhãn
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
+        text_bg_y1 = max(0, top_left[1] - th - 4)
+        cv2.rectangle(debug_img, (top_left[0], text_bg_y1), 
+                      (top_left[0] + tw, top_left[1]), color, -1)
+                      
+        text_color = (0, 0, 0) if sum(color) > 382 else (255, 255, 255)
+        cv2.putText(debug_img, label, (top_left[0], top_left[1] - 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, text_color, 1)
 
     # --- LƯU ẢNH DEBUG VÀO FILE ---
     try:
@@ -520,4 +539,8 @@ def analyze_image_to_fen(image_path):
     final_fen = "/".join(fen_rows) + " w KQkq - 0 1"
     print(f" Final FEN: {final_fen}")
 
-    return final_fen, debug_base64, original_base64, warped_base64, mapped_detections, None
+    board_corners_list = None
+    if corners is not None:
+        board_corners_list = [{"x": float(c[0]), "y": float(c[1])} for c in corners]
+
+    return final_fen, debug_base64, original_base64, warped_base64, mapped_detections, board_corners_list, None

@@ -46,7 +46,7 @@ def analyze_image() -> jsonify:
         file.save(filepath)
 
         try:
-            detected_fen, debug_image_b64, original_base64, warped_image_b64, detections, error = analyze_image_to_fen(filepath)
+            detected_fen, debug_image_b64, original_base64, warped_image_b64, detections, board_corners, error = analyze_image_to_fen(filepath)
 
             if detected_fen:
                 return jsonify({
@@ -56,6 +56,7 @@ def analyze_image() -> jsonify:
                     'original_image': original_base64,
                     'warped_image': warped_image_b64,
                     'detections': detections,
+                    'board_corners': board_corners,
                     'message': SuccessMessages.IMAGE_ANALYSIS_SUCCESS
                 })
             else:

@@ -77,12 +77,13 @@ export class BoardEditor {
      * @param {Array|null} detections Optional raw detections
      * @param {string|null} debugImage Full debug image from backend (with boxes)
      */
-    openWithFen(fen, mainImage = null, detections = null, debugImage = null) {
+    openWithFen(fen, mainImage = null, detections = null, debugImage = null, boardCorners = null) {
         if (!this.modal) this.init();
         if (!this.modal) return;
 
         this._isOpeningWithAI = true;
         this.allDetections = detections;
+        this.boardCorners = boardCorners;
         this.debugBase64 = debugImage; // Keep for fallback
         this.currentConf = 0.5; // Reset to default
 
@@ -186,24 +187,62 @@ export class BoardEditor {
         const scaleX = canvas.width / naturalW;
         const scaleY = canvas.height / naturalH;
 
-        if (!this.allDetections) return; // Fix: Prevent crash if detections were cleared
+        if (!this.allDetections && !this.boardCorners) return; // Fix: Prevent crash if detections were cleared
 
-        this.allDetections.forEach(det => {
-            if (det.conf < threshold) return;
+        if (this.boardCorners && this.boardCorners.length === 4) {
+            ctx.beginPath();
+            ctx.moveTo(this.boardCorners[0].x * scaleX, this.boardCorners[0].y * scaleY);
+            ctx.lineTo(this.boardCorners[1].x * scaleX, this.boardCorners[1].y * scaleY);
+            ctx.lineTo(this.boardCorners[2].x * scaleX, this.boardCorners[2].y * scaleY);
+            ctx.lineTo(this.boardCorners[3].x * scaleX, this.boardCorners[3].y * scaleY);
+            ctx.closePath();
+            
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.15)';
+            ctx.fill();
+        }
 
-            const x = det.x * scaleX;
-            const y = det.y * scaleY;
-            const w = (det.w || 40) * scaleX;
-            const h = (det.h || 50) * scaleY;
+        const colorMap = {
+            'BB': '#82004b', 'BK': '#8200a0', 'BKN': '#00c8ff',
+            'BP': '#0000ff', 'BQ': '#c800c8', 'BR': '#0064ff',
+            'WB': '#ffff00', 'WK': '#ff00ff', 'WKN': '#00ffff',
+            'WP': '#00ff00', 'WQ': '#c8c8ff', 'WR': '#00a5ff'
+        };
 
-            ctx.strokeStyle = '#ff0000';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x - w/2, y - h/2, w, h);
+        if (this.allDetections) {
+            this.allDetections.forEach(det => {
+                if (det.conf < threshold) return;
 
-            ctx.fillStyle = '#00ff00';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText(det.class, x - w/2, y - h/2 - 5);
-        });
+                const x = det.x * scaleX;
+                const y = det.y * scaleY;
+                const w = (det.w || 40) * scaleX;
+                const h = (det.h || 50) * scaleY;
+
+                const color = colorMap[det.class] || '#ffffff';
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x - w/2, y - h/2, w, h);
+
+                const label = `${det.class} ${det.conf.toFixed(2)}`;
+                ctx.font = 'bold 10px Arial';
+                const textWidth = ctx.measureText(label).width;
+                
+                ctx.fillStyle = color;
+                ctx.fillRect(x - w/2, y - h/2 - 14, textWidth + 4, 14);
+
+                const hex = color.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16) || 0;
+                const g = parseInt(hex.substr(2, 2), 16) || 0;
+                const b = parseInt(hex.substr(4, 2), 16) || 0;
+                
+                ctx.fillStyle = (r + g + b) > 382 ? '#000000' : '#ffffff';
+                ctx.fillText(label, x - w/2 + 2, y - h/2 - 3);
+            });
+        }
     }
 
     /**
