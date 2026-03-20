@@ -15,6 +15,7 @@
 
 .modal-content.modal-dark .modal-header {
   border-bottom: 1px solid var(--color-glass-subtle);
+  position: relative;
 }
 
 .modal-content.modal-dark .modal-title {
@@ -141,20 +142,43 @@
   color: var(--color-text-light);
 }
 
-#bot-settings-modal .close-btn {
-  color: var(--color-text-secondary);
-  float: right;
-  font-size: var(--modal-close-size);
-  font-weight: bold;
+.btn-modal-close-custom {
   position: absolute;
-  top: var(--timer-top-offset);
-  right: 20px;
+  top: 15px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
-  transition: color var(--transition-base);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  padding: 0;
 }
 
-#bot-settings-modal .close-btn:hover {
-  color: var(--color-text-light);
+.btn-modal-close-custom i {
+    font-size: 1.2rem;
+    transition: transform 0.4s ease;
+}
+
+.btn-modal-close-custom:hover {
+  background: rgba(255, 59, 48, 0.15);
+  border-color: rgba(255, 59, 48, 0.4);
+  color: #ff3b30;
+  box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
+}
+
+.btn-modal-close-custom:hover i {
+    transform: rotate(90deg);
+}
+
+#bot-settings-modal .close-btn {
+  display: none; /* Hide old close-btn in favor of new custom one if added */
 }
 
 #bot-settings-modal h2 {

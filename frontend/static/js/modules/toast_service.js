@@ -27,14 +27,17 @@ export const showToast = (message, type = 'success', title = null) => {
 
     const toastHtml = `
       <div id="${toastId}" class="toast wonder-toast fade ${className}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-        <div class="toast-header">
+        <div class="toast-header border-0 pb-0">
           <i class="bi ${icon} me-2 ${type === 'success' ? 'text-success' : (type === 'error' ? 'text-danger' : 'text-warning')}"></i>
           <strong class="me-auto">${finalTitle}</strong>
-          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+          <button type="button" class="btn-close-custom" data-bs-dismiss="toast">
+            <i class="bi bi-x"></i>
+          </button>
         </div>
-        <div class="toast-body">
+        <div class="toast-body pt-1 pb-3">
           ${message}
         </div>
+        <div class="toast-timer-bar"></div>
       </div>
     `;
 
@@ -43,12 +46,23 @@ export const showToast = (message, type = 'success', title = null) => {
 
     const toastEl = document.getElementById(toastId);
     if (toastEl && typeof bootstrap !== 'undefined') {
+        const delay = 4000;
         const toast = bootstrap.Toast.getOrCreateInstance(toastEl, {
-            delay: 4000,
+            delay: delay,
             autohide: true
         });
         
         toast.show();
+
+        // Timer Bar Animation
+        const timerBar = toastEl.querySelector('.toast-timer-bar');
+        if (timerBar) {
+            timerBar.style.transition = `width ${delay}ms linear`;
+            // Trigger animation in next frame
+            requestAnimationFrame(() => {
+                timerBar.style.width = '0%';
+            });
+        }
 
         // Cleanup after the toast is fully hidden and transition finished
         toastEl.addEventListener('hidden.bs.toast', () => {
