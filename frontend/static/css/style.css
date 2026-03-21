@@ -1558,6 +1558,54 @@ body.allow-scroll {
     min-height: 48px;
   }
 }
+/* Consolidated Close Button (Used in Toasts & Modals) */
+.btn-close-app, .btn-close-custom, .btn-modal-close-custom {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  cursor: pointer;
+  -webkit-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  padding: 0;
+}
+
+.btn-close-app i, .btn-close-custom i, .btn-modal-close-custom i {
+  font-size: 1.2rem;
+  -webkit-transition: -webkit-transform 0.4s ease;
+  transition: -webkit-transform 0.4s ease;
+  transition: transform 0.4s ease;
+  transition: transform 0.4s ease, -webkit-transform 0.4s ease;
+}
+
+.btn-close-app:hover, .btn-close-custom:hover, .btn-modal-close-custom:hover {
+  background: rgba(255, 59, 48, 0.15);
+  border-color: rgba(255, 59, 48, 0.4);
+  color: #ff3b30;
+  -webkit-box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
+          box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
+}
+
+.btn-close-app:hover i, .btn-close-custom:hover i, .btn-modal-close-custom:hover i {
+  -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+}
+
 /* 7. MOVE HISTORY DISPLAY */
 /* _history.scss */
 .history-container {
@@ -2572,53 +2620,6 @@ body.allow-scroll {
   color: var(--color-text-light);
 }
 
-.btn-modal-close-custom {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-pack: center;
-      -ms-flex-pack: center;
-          justify-content: center;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
-  cursor: pointer;
-  -webkit-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-  padding: 0;
-}
-
-.btn-modal-close-custom i {
-  font-size: 1.2rem;
-  -webkit-transition: -webkit-transform 0.4s ease;
-  transition: -webkit-transform 0.4s ease;
-  transition: transform 0.4s ease;
-  transition: transform 0.4s ease, -webkit-transform 0.4s ease;
-}
-
-.btn-modal-close-custom:hover {
-  background: rgba(255, 59, 48, 0.15);
-  border-color: rgba(255, 59, 48, 0.4);
-  color: #ff3b30;
-  -webkit-box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
-          box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
-}
-
-.btn-modal-close-custom:hover i {
-  -webkit-transform: rotate(90deg);
-          transform: rotate(90deg);
-}
-
 #bot-settings-modal .close-btn {
   display: none; /* Hide old close-btn in favor of new custom one if added */
 }
@@ -2873,13 +2874,13 @@ body.allow-scroll {
 }
 
 /* Game Over Wonderland Enhancement */
-.gameOver-wonderland {
+.gameOver-modern {
   border: 1px solid var(--color-primary) !important;
   -webkit-box-shadow: 0 0 40px rgba(76, 175, 80, 0.25) !important;
           box-shadow: 0 0 40px rgba(76, 175, 80, 0.25) !important;
 }
 
-.wonderland-spinner {
+.spinner-modern {
   position: relative;
   width: 60px;
   height: 60px;
@@ -2930,8 +2931,12 @@ body.allow-scroll {
             transform: rotate(360deg);
   }
 }
-.wonderland-stats-shuffler {
-  padding: 20px;
+.stats-shuffler {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -2945,6 +2950,8 @@ body.allow-scroll {
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
+  padding: 20px;
+  z-index: 2;
 }
 
 .shuffling-icons {
@@ -3881,21 +3888,7 @@ body.allow-scroll {
 }
 
 .auth-modal-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  -webkit-filter: invert(1);
-          filter: invert(1);
-  z-index: 10;
-  -webkit-transition: -webkit-transform 0.3s ease;
-  transition: -webkit-transform 0.3s ease;
-  transition: transform 0.3s ease;
-  transition: transform 0.3s ease, -webkit-transform 0.3s ease;
-}
-
-.auth-modal-close:hover {
-  -webkit-transform: rotate(90deg);
-          transform: rotate(90deg);
+  display: none; /* Replaced by btn-modal-close-custom */
 }
 
 .auth-box {
@@ -4979,7 +4972,7 @@ body.allow-scroll {
   z-index: 2100; /* Higher than modals */
 }
 
-.wonder-toast {
+.toast-modern {
   background: rgba(18, 18, 30, 0.9) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -5002,47 +4995,34 @@ body.allow-scroll {
   transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), -webkit-transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 
-.wonder-toast.toast-success {
+.toast-modern.toast-success {
   border-left-color: var(--color-primary) !important;
 }
 
-.wonder-toast.toast-error {
+.toast-modern.toast-error {
   border-left-color: var(--color-danger) !important;
 }
 
-.wonder-toast.toast-warning {
+.toast-modern.toast-warning {
   border-left-color: #fdd663 !important;
 }
 
-.wonder-toast .toast-header {
+.toast-modern .toast-header {
   background: transparent !important;
   border-bottom: none !important;
   color: var(--color-text-light) !important;
   padding: 12px 15px 5px;
 }
 
-.wonder-toast .toast-body {
+.toast-modern .toast-body {
   padding: 15px;
   font-size: 0.95rem;
   line-height: 1.5;
 }
 
-.wonder-toast .btn-close-custom {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 1.25rem;
-  padding: 0;
-  line-height: 1;
-  -webkit-transition: var(--transition-fast);
-  transition: var(--transition-fast);
-  cursor: pointer;
-}
-
-.wonder-toast .btn-close-custom:hover {
-  color: var(--color-text-light);
-  -webkit-transform: scale(1.1);
-          transform: scale(1.1);
+.btn-close-custom {
+  top: 10px;
+  right: 10px;
 }
 
 .toast-timer-bar {
@@ -5068,13 +5048,13 @@ body.allow-scroll {
 }
 
 /* Entry animation using Bootstrap classes */
-.wonder-toast.show {
+.toast-modern.show {
   opacity: 1;
   -webkit-transform: translateX(0) scale(1);
           transform: translateX(0) scale(1);
 }
 
-.wonder-toast.hiding {
+.toast-modern.hiding {
   opacity: 0;
   -webkit-transform: translateX(20px) scale(0.95);
           transform: translateX(20px) scale(0.95);

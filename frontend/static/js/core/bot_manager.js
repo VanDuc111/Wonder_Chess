@@ -58,6 +58,12 @@ export class BotManager {
         setTimeout(() => this.initStockfish(), delay);
     }
 
+    close() {
+        if (this.dom.modal) {
+            this.dom.modal.style.display = 'none';
+        }
+    }
+
     setupEventListeners() {
         // Sync Slider and Level Display/Select
         if (this.dom.levelSlider) {

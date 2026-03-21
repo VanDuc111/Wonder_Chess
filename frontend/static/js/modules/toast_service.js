@@ -26,11 +26,11 @@ export const showToast = (message, type = 'success', title = null) => {
     const finalTitle = title || defaultTitle;
 
     const toastHtml = `
-      <div id="${toastId}" class="toast wonder-toast fade ${className}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+      <div id="${toastId}" class="toast toast-modern fade ${className}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
         <div class="toast-header border-0 pb-0">
           <i class="bi ${icon} me-2 ${type === 'success' ? 'text-success' : (type === 'error' ? 'text-danger' : 'text-warning')}"></i>
           <strong class="me-auto">${finalTitle}</strong>
-          <button type="button" class="btn-close-custom" data-bs-dismiss="toast">
+          <button type="button" class="btn-close-app" data-bs-dismiss="toast">
             <i class="bi bi-x"></i>
           </button>
         </div>

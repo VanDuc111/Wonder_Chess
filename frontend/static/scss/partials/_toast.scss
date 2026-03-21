@@ -5,7 +5,7 @@
     z-index: 2100; /* Higher than modals */
 }
 
-.wonder-toast {
+.toast-modern {
     background: rgba(18, 18, 30, 0.9) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -28,45 +28,36 @@
 
 
 
-.wonder-toast.toast-success {
+.toast-modern.toast-success {
     border-left-color: var(--color-primary) !important;
 }
 
-.wonder-toast.toast-error {
+.toast-modern.toast-error {
     border-left-color: var(--color-danger) !important;
 }
 
-.wonder-toast.toast-warning {
+.toast-modern.toast-warning {
     border-left-color: #fdd663 !important;
 }
 
-.wonder-toast .toast-header {
+.toast-modern .toast-header {
     background: transparent !important;
     border-bottom: none !important;
     color: var(--color-text-light) !important;
     padding: 12px 15px 5px;
 }
 
-.wonder-toast .toast-body {
+.toast-modern .toast-body {
     padding: 15px;
     font-size: 0.95rem;
     line-height: 1.5;
 }
 
-.wonder-toast .btn-close-custom {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 1.25rem;
-    padding: 0;
-    line-height: 1;
-    transition: var(--transition-fast);
-    cursor: pointer;
-}
-
-.wonder-toast .btn-close-custom:hover {
-    color: var(--color-text-light);
-    transform: scale(1.1);
+.btn-close-custom {
+    @extend .btn-close-app;
+    // Overrides for toast specifically
+    top: 10px;
+    right: 10px;
 }
 
 .toast-timer-bar {
@@ -92,12 +83,12 @@
 }
 
 /* Entry animation using Bootstrap classes */
-.wonder-toast.show {
+.toast-modern.show {
     opacity: 1;
     transform: translateX(0) scale(1);
 }
 
-.wonder-toast.hiding {
+.toast-modern.hiding {
     opacity: 0;
     transform: translateX(20px) scale(0.95);
     transition: opacity 0.2s ease, transform 0.2s ease !important;
