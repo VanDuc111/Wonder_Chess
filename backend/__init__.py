@@ -26,44 +26,49 @@ def create_app():
     # Enable Gzip compression
     Compress(app)
     
-    # Database Configuration
-    database_url = os.environ.get("DATABASE_URL")
+    # Database & OAuth Configuration (Optional)
+    db_url = os.environ.get("DATABASE_URL")
+    db_name = os.environ.get("DB_NAME")
     
-    if database_url:
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    else:
-        # Fallback for Local environment
-        db_user = os.environ.get("DB_USER", "postgres")
-        db_password = os.environ.get("DB_PASSWORD")
-        db_host = os.environ.get("DB_HOST", "localhost")
-        db_port = os.environ.get("DB_PORT", "5432")
-        db_name = os.environ.get("DB_NAME", "wonder_chess_db")
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
+    # Only initialize DB if configuration exists
+    is_db_configured = db_url or db_name
     
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
-    }
-    
-    # Initialize Extensions
-    db.init_app(app)
-    login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'  # redirect page if login required
-    oauth.init_app(app)
+    if is_db_configured:
+        if db_url and db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+        
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url or f'postgresql://{os.environ.get("DB_USER", "postgres")}:{os.environ.get("DB_PASSWORD")}@{os.environ.get("DB_HOST", "localhost")}:{os.environ.get("DB_PORT", "5432")}/{db_name}'
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True, "pool_recycle": 300}
 
-    # Cấu hình Google OAuth
-    oauth.register(
-        name='google',
-        client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={
-            'scope': 'openid email profile'
-        }
-    )
+        db.init_app(app)
+        login_manager.init_app(app)
+        login_manager.login_view = 'auth.login'
+        oauth.init_app(app)
+
+        # Configure Google OAuth if keys exist
+        google_id = os.environ.get("GOOGLE_CLIENT_ID")
+        google_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+        if google_id and google_secret:
+            oauth.register(
+                name='google',
+                client_id=google_id,
+                client_secret=google_secret,
+                server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+                client_kwargs={'scope': 'openid email profile'}
+            )
+
+        # Flask-Login User Loader
+        try:
+            from backend.models import User
+            @login_manager.user_loader
+            def load_user(user_id):
+                return User.query.get(int(user_id))
+        except ImportError:
+            pass
+    else:
+        app.logger.warning("Database not configured. Running in standalone mode (Login/Register disabled).")
+
 
     # Flask-Login User Loader
     from backend.models import User
@@ -82,6 +87,14 @@ def create_app():
     app.register_blueprint(game_bp, url_prefix='/api/game')
     app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
     app.register_blueprint(image_bp, url_prefix='/api/image')
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+    # Only register auth if DB is configured
+    if is_db_configured:
+        try:
+            from backend.api.auth_routes import auth_bp
+            app.register_blueprint(auth_bp, url_prefix='/api/auth')
+        except ImportError:
+            pass
+
     
     return app
