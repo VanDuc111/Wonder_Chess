@@ -29,9 +29,3 @@ backend/engines/stockfish.exe
 
 # Agent Skills
 .agent/
-
-backend/api/auth_routes.py
-backend/models.py
-frontend/templates/modals/auth.html
-frontend/static/js/modules/auth_manager.js
-frontend/static/scss/partials/_auth_modal.scss
