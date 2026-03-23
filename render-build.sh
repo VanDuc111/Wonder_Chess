@@ -11,24 +11,20 @@ echo ""
 echo "--- Installing Python dependencies ---"
 pip install -r requirements.txt
 
-# 2. Initialize Database (create tables)
-echo ""
-echo "--- Initializing Database ---"
-python << END
+# 2. Initialize Database (Optional)
+if [[ -n "$DATABASE_URL" || -n "$DB_NAME" ]]; then
+    echo ""
+    echo "--- Initializing Database ---"
+    python << END
 from backend import create_app, db
-
 app = create_app()
 with app.app_context():
-    # Create all tables (users, games)
     db.create_all()
     print("✅ Database tables created successfully!")
-    
-    # Verify tables
-    from sqlalchemy import inspect
-    inspector = inspect(db.engine)
-    tables = inspector.get_table_names()
-    print(f"📊 Tables created: {', '.join(tables)}")
 END
+else:
+    echo "--- Skipping Database init (Standalone Mode) ---"
+fi
 
 # 3. Create engines directory if it doesn't exist
 echo ""

@@ -30,8 +30,12 @@ def create_app():
     db_url = os.environ.get("DATABASE_URL")
     db_name = os.environ.get("DB_NAME")
     
-    # Only initialize DB if configuration exists
-    is_db_configured = db_url or db_name
+    # Check if Auth/DB files physically exist in the current environment
+    auth_files_present = os.path.exists(os.path.join(app.root_path, 'models.py')) or \
+                         os.path.exists(os.path.join(os.path.dirname(__file__), 'models.py'))
+    
+    # Only initialize DB if configuration exists AND code files are present
+    is_db_configured = (db_url or db_name) and auth_files_present
     
     if is_db_configured:
         if db_url and db_url.startswith("postgres://"):
@@ -67,21 +71,16 @@ def create_app():
         except ImportError:
             pass
     else:
-        app.logger.warning("Database not configured. Running in standalone mode (Login/Register disabled).")
+        app.logger.warning("Database not configured or model files missing. Running in standalone mode.")
 
 
-    # Flask-Login User Loader
-    from backend.models import User
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
-    
+
     # Register Blueprints
     from backend.api.main_routes import main_bp
     from backend.api.game_routes import game_bp
     from backend.api.analysis_routes import analysis_bp
     from backend.api.image_routes import image_bp
-    from backend.api.auth_routes import auth_bp
+
     
     app.register_blueprint(main_bp)
     app.register_blueprint(game_bp, url_prefix='/api/game')
