@@ -11,6 +11,11 @@ echo ""
 echo "--- Installing Python dependencies ---"
 pip install -r requirements.txt
 
+# 2. Compile SASS styles
+echo ""
+echo "--- Compiling SASS styles ---"
+npx -y sass frontend/static/scss/style.scss frontend/static/css/style.css
+
 # 2. Initialize Database (Optional)
 if [[ -n "$DATABASE_URL" || -n "$DB_NAME" ]]; then
     echo ""
@@ -26,7 +31,7 @@ with app.app_context():
     else:
         print("--- Skipping DB tables creation: App initialized in Standalone mode ---")
 END
-else:
+else
     echo "--- Skipping Database init (No DB variables found) ---"
 fi
 

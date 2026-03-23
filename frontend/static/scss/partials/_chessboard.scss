@@ -44,7 +44,10 @@
   .chess-board-area {
     padding-left: var(--spacing-md);
     padding-right: var(--spacing-md);
-    max-width: 650px; /* Increased back to a larger size */
+    /* Laptop-friendly scaling: Uses height percentage to ensure buttons stay in viewport */
+    max-width: var(--board-max-size); 
+
+    /* High-res screens: Already handled by board-max-width-4k ceiling in variable */
   }
 }
 

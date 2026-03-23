@@ -115,8 +115,13 @@
     --eval-offset-mobile: 55px;
     
     /* Board Layout Tokens */
-    --board-col-desktop-width: 45%; 
-    --board-col-desktop-min-width: 580px;
+    --board-col-desktop-width: 38%; 
+    --board-col-desktop-min-width: 0;
+    --board-max-width-4k: 950px;
+    --board-col-max-width-4k: 1000px;
+    --board-max-size: min(var(--board-max-width-4k), var(--board-vh-limit)); 
+
+    --board-vh-limit: 52vh; /* Ultra-aggressive limit for laptop demo */
     --chat-col-desktop-width: 30%; /* Balanced width */
     --mobile-board-padding-left: 48px;
     
@@ -181,3 +186,4 @@ $breakpoint-md: 768px;
 $breakpoint-lg: 992px;
 $breakpoint-xl: 1200px;
 $breakpoint-xxl: 1400px;
+$breakpoint-4k: 2000px;
