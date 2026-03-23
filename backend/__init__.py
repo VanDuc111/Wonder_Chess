@@ -34,7 +34,7 @@ def create_app():
     auth_files_present = os.path.exists(os.path.join(app.root_path, 'models.py')) or \
                          os.path.exists(os.path.join(os.path.dirname(__file__), 'models.py'))
     
-    # Only initialize DB if configuration exists AND code files are present
+    # Only initialize Real DB if configuration exists AND code files are present
     is_db_configured = (db_url or db_name) and auth_files_present
     
     if is_db_configured:
@@ -42,11 +42,19 @@ def create_app():
             db_url = db_url.replace("postgres://", "postgresql://", 1)
         
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url or f'postgresql://{os.environ.get("DB_USER", "postgres")}:{os.environ.get("DB_PASSWORD")}@{os.environ.get("DB_HOST", "localhost")}:{os.environ.get("DB_PORT", "5432")}/{db_name}'
-        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True, "pool_recycle": 300}
+    else:
+        # Fallback to in-memory SQLite to prevent 'Not Registered' errors if routes import db
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        app.logger.warning("Database not configured or model files missing. Running in standalone mode with SQLite fallback.")
 
-        db.init_app(app)
-        login_manager.init_app(app)
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True, "pool_recycle": 300}
+
+    # ALWAYS initialize db and login_manager to prevent import/registration errors
+    db.init_app(app)
+    login_manager.init_app(app)
+    
+    if is_db_configured:
         login_manager.login_view = 'auth.login'
         oauth.init_app(app)
 
