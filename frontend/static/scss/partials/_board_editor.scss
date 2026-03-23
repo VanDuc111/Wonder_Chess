@@ -16,11 +16,11 @@
     .modal-dialog {
         /* Removed min-width: 500px to fix mobile overflow */
         margin: 0.5rem;
-        @media (min-width: 576px) {
+        @media (min-width: $breakpoint-sm) {
             margin: 1.75rem auto;
             max-width: 500px;
         }
-        @media (min-width: 1200px) {
+        @media (min-width: $breakpoint-xl) {
             max-width: 1140px; // Standard xl
         }
     }
@@ -30,13 +30,13 @@
     .modal-body {
         padding: 1rem 1.25rem;
         overflow-x: hidden; /* Changed from auto to hidden to prevent side scroll */
-        @media (max-width: 767.98px) {
+        @media (max-width: #{$breakpoint-md - 0.02px}) {
             padding: 0.75rem 0.5rem;
         }
     }
     .modal-footer {
         padding: 0.75rem 1.25rem; 
-        @media (max-width: 767.98px) {
+        @media (max-width: #{$breakpoint-md - 0.02px}) {
             padding: 0.75rem 0.5rem;
         }
     }
@@ -380,7 +380,7 @@
     color: #0dcaf0 !important;
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: #{$breakpoint-lg - 0.02px}) {
     .board-editor-container {
         flex-direction: column;
         align-items: center;
@@ -442,7 +442,7 @@
     }
 }
 
-@media (max-width: 576.98px) {
+@media (max-width: $breakpoint-sm) {
     .piece-selector {
         max-width: 100%;
         padding: 4px;

@@ -80,7 +80,7 @@
 
 /* Responsive adjustments */
 
-@media (max-width: 991.98px) {
+@media (max-width: #{$breakpoint-lg - 0.02px}) {
     .button-group-container {
         gap: var(--gap-md);
         margin-top: var(--space-lg2);
@@ -101,7 +101,7 @@
 }
 
 
-@media (max-width: 576.98px) {
+@media (max-width: $breakpoint-sm) {
     .button-group-container {
         margin-top: var(--space-sm2);
         gap: var(--gap-sm);

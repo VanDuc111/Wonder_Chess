@@ -589,7 +589,7 @@
 }
 
 /* Responsive height for tablets and mobiles to avoid button overflow */
-@media (max-width: 991.98px) {
+@media (max-width: #{$breakpoint-lg - 0.02px}) {
     #loadDataModal .modal-content,
     #shareDataModal .modal-content {
         height: auto !important;

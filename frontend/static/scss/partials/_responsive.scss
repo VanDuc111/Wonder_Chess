@@ -1,42 +1,82 @@
 /* _responsive.scss */
 
 /* Large Screens (Desktop) */
-@media (min-width: 992px) {
+@media (min-width: $breakpoint-lg) {
     .main-content-row {
         flex-wrap: nowrap !important;
         display: flex !important;
         align-items: stretch;
-        height: calc(100vh - 110px) !important;
+        height: var(--content-height) !important;
+        max-height: var(--content-height) !important;
+        overflow-y: hidden !important;
     }
 
-    /* Game Column (Left) */
+
     .main-content-row > div:first-child {
-        flex: 0 0 auto;
+        flex: 1 1 auto;
         width: var(--board-col-desktop-width);
-        min-width: var(--board-col-desktop-min-width);
-        align-self: flex-start;
+        min-width: var(--board-col-desktop-min-width); 
+        max-width: 750px; /* Reverted from 850 */
+        align-self: center;
+        display: flex;
+        justify-content: center;
+        max-height: 100%;
+        overflow: hidden;
     }
+
+
+
     
-    /* Force board container to align top */
+    /* Center board container in all states */
     #game-view-container {
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
     }
+
+    #chessboard-main-container {
+        max-height: 100%;
+        width: 100%; /* Force fill the column width */
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+
+
 
     /* History Column (Middle) */
     #history-col {
         flex: 1 1 auto;
         min-width: 200px;
+        max-height: 100%; /* Ensure it fits the row and scrolls */
+        display: flex;
+        flex-direction: column;
         padding-left: var(--padding-sm);
         padding-right: var(--padding-sm);
+    }
+
+    .history-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     /* Chat Column (Right) */
     #chat-col {
         flex: 0 0 auto;
         width: var(--chat-col-desktop-width); 
+        max-height: 100%; /* Ensure it fits the row and scrolls */
+        display: flex;
+        flex-direction: column;
         padding-right: var(--spacing-sm) !important;
     }
+
 
     #chat-col.shrunk {
         flex: 0 0 48px;
@@ -51,19 +91,33 @@
 }
 
 /* Tablet screens (stack logically) */
-@media (max-width: 991.98px) {
+@media (max-width: #{$breakpoint-lg - 0.02px}) {
     #board-col, #history-col, #chat-col {
         width: 100% !important;
         max-width: 100% !important;
         flex: 0 0 100% !important;
     }
 
+    #chessboard-main-container {
+        width: 100% !important;
+        max-width: 100% !important; /* Allow it to take up available column width */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        margin: 0 auto;
+    }
+
     .chess-board-area {
         max-width: 100% !important; 
-        width: 100%;
+        width: 100% !important;
         margin: 0 auto;
-        padding: 0 !important;
+        padding: 0 !important; /* Remove the padding that was shrinking the board */
+        border-radius: var(--radius-container) !important;
     }
+
+
+
 
     #history-col {
         margin-top: var(--spacing-sm) !important;
@@ -162,7 +216,7 @@
     }
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: #{$breakpoint-lg - 0.02px}) {
     .chatbot-container {
         height: 500px;
     }
@@ -239,6 +293,9 @@
         white-space: nowrap;
         text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     }
+}
+
+@media (max-width: #{$breakpoint-md - 0.02px}) {
 
     #board-col {
         padding-left: 0 !important;
@@ -246,21 +303,23 @@
     }
 
     #chessboard-main-container {
-        min-width: 0;
-        max-width: 100%;
-        padding-left: 0 !important;
-        position: relative;
-        display: flex;
-        flex-direction: column;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
     }
 
     .chess-board-area {
         padding: 0 !important;
-        width: 100% !important;
+        width: 100% !important; 
         max-width: 100% !important;
         box-sizing: border-box;
         border-radius: 0 !important;
+        margin: 0 !important;
     }
+
+
+
+
 
     #myBoard {
         width: 100% !important;
@@ -340,7 +399,7 @@
 /* End of Responsive Styles */
 
 /* Compact Analysis Settings media query from original */
-@media (max-width: 1200px) {
+@media (max-width: $breakpoint-xl) {
     .analysis-controls-horizontal {
         display: grid !important;
         grid-template-columns: 1fr 1fr;

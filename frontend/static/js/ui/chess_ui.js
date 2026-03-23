@@ -130,7 +130,7 @@ export class ChessUI {
      */
     _applyEvalUI(percent, score) {
         if (this.dom.evalBar) {
-            const isMobile = window.innerWidth < 768;
+            const isMobile = window.innerWidth < 992;
             const isFlipped = this.dom.wrapper && this.dom.wrapper.classList.contains('rotated-score');
 
             if (isMobile) {
@@ -180,7 +180,7 @@ export class ChessUI {
             }
             
             const screenWidth = window.innerWidth;
-            if (screenWidth < 768) {
+            if (screenWidth < 992) {
                 // Remove inline heights on mobile so CSS can take over horizontally
                 this.dom.wrapper.style.height = '';
                 this.dom.barCont.style.height = '';
@@ -191,12 +191,6 @@ export class ChessUI {
                    this.dom.evalBar.style.height = '100%';
                 }
                 return;
-            }
-
-            // Restore width to 100% if returning from mobile
-            if (this.dom.evalBar && this.dom.evalBar.style.width.includes('%')) {
-                this.dom.evalBar.style.height = this.dom.evalBar.style.width;
-                this.dom.evalBar.style.width = '100%';
             }
 
             let offset = screenWidth >= (offsets.BREAKPOINT_LG || 992) ? this._cachedOffsets.desktop : this._cachedOffsets.tablet;

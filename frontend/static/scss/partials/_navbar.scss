@@ -129,7 +129,7 @@
 }
 
 /* Mobile navbar - fullscreen overlay */
-@media (max-width: 991.98px) {
+@media (max-width: #{$breakpoint-lg - 0.02px}) {
     .navbar-collapse {
         position: fixed;
         top: 0;

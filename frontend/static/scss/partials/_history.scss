@@ -183,7 +183,7 @@
     transform: translateY(-1px);
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: #{$breakpoint-lg - 0.02px}) {
     .share-actions {
         padding-bottom: 5px;
     }

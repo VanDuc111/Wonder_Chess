@@ -30,7 +30,7 @@
                         <a id="nav-learn" class="nav-link nav-mode-link {{ 'active' if active_page == 'learn' }}" href="{{ url_for('main.learn_page') }}">Học tập</a>
                     </li> -->
                 </ul>
-                <div class="d-flex align-items-center" id="navbar-user-section">
+                <div class="d-flex align-items-center d-none" id="navbar-user-section">
                     {% if current_user.is_authenticated %}
                         <div class="dropdown">
                             <a class="user-profile-btn dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

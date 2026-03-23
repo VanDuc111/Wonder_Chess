@@ -12,7 +12,7 @@
   max-width: 100%;
   overflow: visible !important;
 
-  @media (min-width: 992px) {
+  @media (min-width: $breakpoint-lg) {
     justify-content: flex-end; 
   }
 }
@@ -32,18 +32,28 @@
   position: relative;
   box-shadow: var(--shadow-card);
   transition: var(--transition-base);
-  height: auto !important;
+  height: auto;
+  max-height: calc(100% - 10px); /* Leave tiny gap */
   min-height: 0;
+  overflow: hidden; /* Prevent internal scroll of area */
 }
 
+
 /* Center board with equal spacing on both sides */
-@media (min-width: 577px) {
+@media (min-width: #{$breakpoint-sm + 1px}) {
   .chess-board-area {
     padding-left: var(--spacing-md);
     padding-right: var(--spacing-md);
-    max-width: 520px;
+    max-width: 650px; /* Increased back to a larger size */
   }
 }
+
+@media (min-width: $breakpoint-xxl) {
+  .chess-board-area {
+    max-width: 750px; /* Even larger on wide screens */
+  }
+}
+
 
 .board-relative-wrapper {
   position: relative;
@@ -51,12 +61,25 @@
 }
 
 #chessboard-main-container {
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: var(--max-content-width);
+  display: flex;
+  flex-direction: row;
+  align-items: center; /* Changed from flex-start to center for desktop */
+  justify-content: center;
+  gap: var(--eval-margin-desktop);
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
   min-width: 0;
   position: relative;
+  
+  /* Fallback for when score is hidden */
+  & > .score-alignment-wrapper[style*="display: none"] + .chess-board-area {
+    margin-left: 0;
+  }
 }
+
+
 
 #myBoard {
   width: 100% !important;
@@ -109,7 +132,7 @@
 }
 
 /* Rotated Board Timer Logic for non-mobile */
-@media (min-width: 768px) {
+@media (min-width: $breakpoint-md) {
   .chess-board-area.rotated-board .timer-top-right {
     top: auto;
     bottom: 0;
@@ -123,11 +146,13 @@
 
 /* Evaluation Bar */
 .score-alignment-wrapper {
-  position: absolute;
-  right: 100%; 
-  top: var(--eval-offset-desktop);
-  bottom: var(--eval-offset-desktop);
-  margin-right: var(--eval-margin-desktop);
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  padding-top: var(--eval-offset-desktop);
+  padding-bottom: var(--eval-offset-desktop);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -136,11 +161,15 @@
   z-index: 999;
   pointer-events: auto;
   width: var(--eval-wrapper-width-desktop);
-  height: auto;
+  height: 100%; /* Fill the main container height */
+  max-height: 100%;
+  flex-shrink: 0;
 }
 
+
+
 /* Tablet specific - symmetric offsets to match captured pieces rows */
-@media (min-width: 577px) and (max-width: 991.98px) {
+@media (min-width: #{$breakpoint-sm + 1px}) and (max-width: #{$breakpoint-lg - 0.02px}) {
   .score-alignment-wrapper {
     top: var(--eval-offset-tablet);
     bottom: var(--eval-offset-tablet); 
@@ -148,12 +177,13 @@
 }
 
 /* Mobile specific - even more space needed */
-@media (max-width: 576.98px) {
+@media (max-width: $breakpoint-sm) {
   .score-alignment-wrapper {
     top: var(--eval-offset-mobile);
     bottom: var(--eval-offset-mobile);
   }
 }
+
 
 
 .score-alignment-wrapper.rotated-score {
@@ -209,7 +239,7 @@
   white-space: nowrap;
 }
 
-@media (min-width: 768px) {
+@media (min-width: $breakpoint-md) {
   #evaluation-score {
     font-size: 0.85rem;
     width: 50px;

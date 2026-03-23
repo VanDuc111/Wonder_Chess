@@ -61,7 +61,7 @@
     font-weight: 500;
 }
 
-@media (max-width: 1400px) {
+@media (max-width: $breakpoint-xxl) {
     .custom-switch-sm .form-check-label {
         font-size: 0.72rem;
     }

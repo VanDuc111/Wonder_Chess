@@ -115,8 +115,8 @@
     --eval-offset-mobile: 55px;
     
     /* Board Layout Tokens */
-    --board-col-desktop-width: 45%; /* Slightly reduced to give room to middle col */
-    --board-col-desktop-min-width: 550px;
+    --board-col-desktop-width: 45%; 
+    --board-col-desktop-min-width: 580px;
     --chat-col-desktop-width: 30%; /* Balanced width */
     --mobile-board-padding-left: 48px;
     
@@ -154,7 +154,13 @@
     --transition-base: all 0.3s ease;
     --transition-fast: all 0.2s ease;
     --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Layout Height Tokens */
+    --navbar-height: 70px;
+    --main-padding: 15px;
+    --content-height: calc(100vh - var(--navbar-height) - (var(--main-padding) * 2));
 }
+
 
 /* SCSS Variables (Mapping for compatibility and faster access in SCSS) */
 $color-primary: var(--color-primary);
@@ -168,3 +174,10 @@ $radius-default: var(--radius-default);
 $blur-strong: var(--blur-strong);
 $transition-base: var(--transition-base);
 $transition-bounce: var(--transition-bounce);
+
+/* Responsive Breakpoints */
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1400px;
