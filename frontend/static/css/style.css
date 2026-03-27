@@ -2346,6 +2346,23 @@ body.allow-scroll {
   color: white !important;
 }
 
+/* Mobile Small (< 400px) Tab Fix - Prevent wrapping */
+@media (max-width: 400px) {
+  .custom-modal-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 4px; /* Slightly tighter padding around pills */
+  }
+  .custom-modal-tabs .nav-link {
+    padding: 6px 12px !important; /* Narrower padding */
+    font-size: 0.78rem !important; /* Compact font */
+    white-space: nowrap;
+  }
+}
 /* Game Over Wonderland Enhancement */
 .gameOver-modern {
   border: 1px solid var(--color-primary) !important;
@@ -2608,10 +2625,16 @@ body.allow-scroll {
 }
 
 #loadDataModal .modal-footer.d-none {
-  display: flex !important;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  display: none !important;
+}
+
+/* Fix Chessboard.js piece cut-off bug on mobile */
+#live-mini-board img {
+  max-width: none !important;
+  height: 100% !important;
+  width: 100% !important;
+  display: block !important;
+  margin: 0 !important;
 }
 
 /* Output Viewers for Export Modal */

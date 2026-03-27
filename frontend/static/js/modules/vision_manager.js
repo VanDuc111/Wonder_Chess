@@ -13,7 +13,7 @@ export class VisionManager {
         this.autoScanInterval = null;
         /** @type {number} Delay between auto-scans in ms */
         this.autoScanDelay = (APP_CONST && APP_CONST.AUTO_SCAN && APP_CONST.AUTO_SCAN.DELAY_MS) 
-            ? APP_CONST.AUTO_SCAN.DELAY_MS : 5000;
+            ? APP_CONST.AUTO_SCAN.DELAY_MS : 2000;
 
         /** @type {Object<string, HTMLElement|null>} DOM element cache */
         this.dom = {
@@ -143,12 +143,27 @@ export class VisionManager {
      * @private
      */
     _initTabListeners() {
+        const modalId = APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
+        const modalEl = document.getElementById(modalId);
+
         if (this.dom.liveScanTab) {
-            this.dom.liveScanTab.addEventListener('shown.bs.tab', () => this.startWebcam());
+            this.dom.liveScanTab.addEventListener('shown.bs.tab', () => {
+                this.startWebcam();
+                if (modalEl) {
+                    const footer = modalEl.querySelector('.modal-footer');
+                    if (footer) footer.classList.add('d-none');
+                }
+            });
         }
 
         this.dom.otherTabs.forEach(tab => {
-            tab.addEventListener('shown.bs.tab', () => this.stopWebcam());
+            tab.addEventListener('shown.bs.tab', () => {
+                this.stopWebcam();
+                if (modalEl) {
+                    const footer = modalEl.querySelector('.modal-footer');
+                    if (footer) footer.classList.remove('d-none');
+                }
+            });
         });
     }
 
@@ -379,11 +394,6 @@ export class VisionManager {
                     this.dom.scanStatus.textContent = APP_CONST?.MESSAGES?.VISION_SCAN_SUCCESS || '✅ Đã cập nhật thế cờ!';
                     this.dom.scanStatus.style.color = 'green';
                 }
-                
-                // Show warped board confirmation if available
-                if (data.warped_image) {
-                     this._showWarpedConfirmation(data.warped_image);
-                }
 
                 if (data.debug_image && this.dom.debugOverlay) {
                     this.dom.debugOverlay.src = 'data:image/jpeg;base64,' + data.debug_image;
@@ -393,27 +403,55 @@ export class VisionManager {
                     }, APP_CONST?.VISION?.DEBUG_SHOW_DURATION_MS || 1500);
                 }
 
-                // --- NEW FLOW: Open Editor instead of direct apply ---
+                // --- NEW AR FLOW: Show Live Preview instead of redirect ---
                 const newFen = data.fen;
                 
-                // Close the Load Data Modal first to avoid stacking modals
-                const modalId = APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal';
-                const loadDataModalEl = document.getElementById(modalId);
-                const loadDataModal = bootstrap.Modal.getInstance(loadDataModalEl);
-                if (loadDataModal) {
-                    loadDataModal.hide();
+                const resultPanel = document.getElementById('live-scan-result-panel');
+                
+                if (resultPanel) {
+                    resultPanel.style.display = 'block';
+                    resultPanel.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }
 
-                // Wait a bit for modal to close, then open Editor
+                // Initialize or Update Mini Board
                 setTimeout(() => {
-                    if (window.BOARD_EDITOR) {
-                        window.BOARD_EDITOR.openWithFen(newFen, data.original_image, data.detections, data.debug_image, data.board_corners);
-                    } else {
-                        console.error('Board Editor not initialized!');
-                        // Fallback
-                        if (window.LOGIC_GAME && window.LOGIC_GAME.initBoard) window.LOGIC_GAME.initBoard('white', newFen);
+                    if (!this.liveMiniBoard && typeof window.Chessboard !== 'undefined') {
+                        this.liveMiniBoard = window.Chessboard('live-mini-board', {
+                            position: newFen,
+                            showNotation: false,
+                            pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png'
+                        });
+                        this.liveMiniBoard.resize(); // Fix the piece cut-off bug
+                        
+                        // Attach Event Listeners to Action Buttons
+                        const btnContinue = document.getElementById('btn-live-continue');
+                        
+                        if (btnContinue) {
+                            btnContinue.onclick = () => {
+                                // Stop tracking safely
+                                if (this.dom.autoScanToggle) this.dom.autoScanToggle.checked = false;
+                                if (this.autoScanInterval) {
+                                    clearTimeout(this.autoScanInterval);
+                                    this.autoScanInterval = null;
+                                }
+                                
+                                const modal = bootstrap.Modal.getInstance(document.getElementById(APP_CONST?.IDS?.LOAD_DATA_MODAL || 'loadDataModal'));
+                                if (modal) modal.hide();
+                                setTimeout(() => {
+                                    if (window.BOARD_EDITOR) {
+                                        window.BOARD_EDITOR.openWithFen(this.liveFen, this.lastData.original_image, this.lastData.detections, this.lastData.debug_image, this.lastData.board_corners);
+                                    }
+                                }, 300);
+                            };
+                        }
+                    } else if (this.liveMiniBoard) {
+                        this.liveMiniBoard.position(newFen, false);
+                        this.liveMiniBoard.resize();
                     }
-                }, APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
+                }, 50);
+                
+                this.liveFen = newFen;
+                this.lastData = data;
             } else {
                 this.showFriendlyError(this.dom.scanStatus, data.error);
             }
