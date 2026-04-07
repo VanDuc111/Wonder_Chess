@@ -161,7 +161,12 @@ export class VisionManager {
                 this.stopWebcam();
                 if (modalEl) {
                     const footer = modalEl.querySelector('.modal-footer');
-                    if (footer) footer.classList.remove('d-none');
+                    // Hide footer for image tab as well, show for PGN and FEN
+                    if (tab.id === 'image-tab') {
+                        if (footer) footer.classList.add('d-none');
+                    } else {
+                        if (footer) footer.classList.remove('d-none');
+                    }
                 }
             });
         });
@@ -441,14 +446,14 @@ export class VisionManager {
                                     if (window.BOARD_EDITOR) {
                                         window.BOARD_EDITOR.openWithFen(this.liveFen, this.lastData.original_image, this.lastData.detections, this.lastData.debug_image, this.lastData.board_corners);
                                     }
-                                }, 300);
+                                }, APP_CONST?.VISION?.MODAL_TRANSITION_MS || 300);
                             };
                         }
                     } else if (this.liveMiniBoard) {
                         this.liveMiniBoard.position(newFen, false);
                         this.liveMiniBoard.resize();
                     }
-                }, 50);
+                }, APP_CONST?.VISION?.MINI_BOARD_RENDER_DELAY_MS || 50);
                 
                 this.liveFen = newFen;
                 this.lastData = data;
