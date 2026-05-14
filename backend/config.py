@@ -3,6 +3,8 @@ Backend Configuration Module
 Centralized configuration for all backend services and API routes.
 """
 
+import os
+
 # ==================== CHESS CONSTANTS ====================
 
 class ChessConfig:
