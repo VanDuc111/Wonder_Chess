@@ -83,6 +83,8 @@ def analyze_image_to_fen(image_path):
         cv2.imwrite(image_path, img)
         h, w = new_h, new_w
 
+    orig_h, orig_w = h, w
+
     # 2. XỬ LÝ AI - BƯỚC 1: TÌM BÀN CỜ
     board_box = None
     board_polygon = None
@@ -302,6 +304,7 @@ def analyze_image_to_fen(image_path):
     
     board_grid = [["1" for _ in range(8)] for _ in range(8)]
     debug_img = img.copy()
+    transparent_overlay = np.zeros((orig_h, orig_w, 4), dtype=np.uint8)
 
     # --- VẼ KHUNG VÀ LƯỚI BÀN CỜ ---
     if corners is not None:
@@ -437,9 +440,15 @@ def analyze_image_to_fen(image_path):
         
         # Vẽ Box với màu tương ứng
         cv2.rectangle(debug_img, top_left, bottom_right, color, 2)
+        
+        tl_overlay = (int(x - w_p / 2 + offset_x), int(y - h_p / 2 + offset_y))
+        br_overlay = (int(x + w_p / 2 + offset_x), int(y + h_p / 2 + offset_y))
+        color_rgba = (color[0], color[1], color[2], 255)
+        cv2.rectangle(transparent_overlay, tl_overlay, br_overlay, color_rgba, 3)
 
         # Vẽ tâm vàng
         cv2.circle(debug_img, (x, y), 3, (0, 255, 255), -1)
+        cv2.circle(transparent_overlay, (int(x + offset_x), int(y + offset_y)), 3, (0, 255, 255, 255), -1)
 
         # Thêm nhãn class + conf
         conf = p.get('confidence', 0)
@@ -454,6 +463,13 @@ def analyze_image_to_fen(image_path):
         text_color = (0, 0, 0) if sum(color) > 382 else (255, 255, 255)
         cv2.putText(debug_img, label, (top_left[0], top_left[1] - 2),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, text_color, 1)
+                    
+        text_bg_y1_ov = max(0, tl_overlay[1] - th - 4)
+        cv2.rectangle(transparent_overlay, (tl_overlay[0], text_bg_y1_ov), 
+                      (tl_overlay[0] + tw, tl_overlay[1]), color_rgba, -1)
+        text_color_rgba = (text_color[0], text_color[1], text_color[2], 255)
+        cv2.putText(transparent_overlay, label, (tl_overlay[0], tl_overlay[1] - 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, text_color_rgba, 1)
 
     # --- LƯU ẢNH DEBUG VÀO FILE ---
     try:
@@ -497,7 +513,7 @@ def analyze_image_to_fen(image_path):
         print(f"⚠️ Lỗi khi lưu/dọn dẹp ảnh debug: {e}")
 
     # --- MÃ HÓA ẢNH THÀNH BASE64 ---
-    _, buffer = cv2.imencode('.jpg', debug_img)
+    _, buffer = cv2.imencode('.png', transparent_overlay)
     debug_base64 = base64.b64encode(buffer).decode('utf-8')
 
     warped_base64 = None

@@ -13,7 +13,7 @@ export class VisionManager {
         this.autoScanInterval = null;
         /** @type {number} Delay between auto-scans in ms */
         this.autoScanDelay = (APP_CONST && APP_CONST.AUTO_SCAN && APP_CONST.AUTO_SCAN.DELAY_MS) 
-            ? APP_CONST.AUTO_SCAN.DELAY_MS : 2000;
+            ? APP_CONST.AUTO_SCAN.DELAY_MS : 1000;
 
         /** @type {Object<string, HTMLElement|null>} DOM element cache */
         this.dom = {
@@ -401,11 +401,8 @@ export class VisionManager {
                 }
 
                 if (data.debug_image && this.dom.debugOverlay) {
-                    this.dom.debugOverlay.src = 'data:image/jpeg;base64,' + data.debug_image;
+                    this.dom.debugOverlay.src = 'data:image/png;base64,' + data.debug_image;
                     this.dom.debugOverlay.style.display = 'block';
-                    setTimeout(() => { 
-                        if (this.dom.debugOverlay) this.dom.debugOverlay.style.display = 'none'; 
-                    }, APP_CONST?.VISION?.DEBUG_SHOW_DURATION_MS || 1500);
                 }
 
                 // --- NEW AR FLOW: Show Live Preview instead of redirect ---

@@ -18,7 +18,18 @@ API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if API_KEY:
     try:
-        genai.configure(api_key=API_KEY)
+        # Use client_options if a custom endpoint is provided (e.g. for proxies)
+        from google.api_core import client_options
+        
+        c_opts = None
+        if GeminiConfig.API_ENDPOINT:
+            c_opts = client_options.ClientOptions(api_endpoint=GeminiConfig.API_ENDPOINT)
+            
+        genai.configure(
+            api_key=API_KEY,
+            transport=GeminiConfig.TRANSPORT_TYPE,
+            client_options=c_opts
+        )
     except Exception as e:
         print(f"Client initialization error: {e}")
         API_KEY = None
@@ -114,6 +125,16 @@ def stream_gemini_response(prompt_context: str):
 
         except Exception as e:
             # Non-retriable error - fail immediately
-            print(f"Unexpected Gemini error: {e}")
-            yield f"{GeminiConfig.ERROR_TECHNICAL_DIFFICULTY} {str(e)}"
+            error_msg = str(e)
+            print(f"Unexpected Gemini error: {error_msg}")
+            
+            # Specific hint for Render/Regional issues
+            if "User location is not supported" in error_msg:
+                yield (
+                    f"{GeminiConfig.ERROR_TECHNICAL_DIFFICULTY} "
+                    "Vị trí của máy chủ hiện tại (Render) chưa được Google hỗ trợ API này. "
+                    "Gợi ý: Hãy thiết lập GEMINI_API_ENDPOINT hoặc GEMINI_TRANSPORT='rest' trong biến môi trường."
+                )
+            else:
+                yield f"{GeminiConfig.ERROR_TECHNICAL_DIFFICULTY} {error_msg}"
             return

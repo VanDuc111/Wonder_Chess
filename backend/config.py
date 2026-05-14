@@ -127,6 +127,13 @@ class GeminiConfig:
     ERROR_SERVER_BUSY = "Google server is currently busy. Please try again later."
     ERROR_TECHNICAL_DIFFICULTY = "Alice is experiencing technical difficulties."
     
+    # API Endpoint (Helpful for bypassing regional restrictions via proxies)
+    # Default is None (uses standard Google endpoint)
+    API_ENDPOINT = os.environ.get("GEMINI_API_ENDPOINT")
+    
+    # Transport type ('rest' or 'grpc'). 'rest' is often more compatible with cloud proxies.
+    TRANSPORT_TYPE = os.environ.get("GEMINI_TRANSPORT", "rest")
+    
     # Warnings
     WARNING_MISSING_KEY = "Warning: Missing GEMINI_API_KEY environment variable."
 
